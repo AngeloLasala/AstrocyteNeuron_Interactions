@@ -26,7 +26,8 @@ def LiRinzel(X, t):
 
     Returns
     -------
-    
+    dvdt: numpy.array
+        numpy array of vector field
 
     """
     C,h = X
@@ -44,7 +45,43 @@ def LiRinzel(X, t):
             (h_inf - h)/tau_h]
 
     return np.array(dvdt)
-     
+
+def LiRinzel_nunc(C_start=0, C_stop=0.8, steps=1000):
+    """
+    Nunclines of Li-Rinzel model
+
+    Parameters
+    ----------
+    C_start: integer,float(optional)
+        initial value of C 
+
+    C_stop: integer or float(optional)
+        final value of C
+
+    steps: integer(optional)
+        total number of C value
+
+    Returns
+    -------
+    C_nunc: numpy array
+        numpy array of C value
+
+    h_nunc1: numpy array
+        numpy array of h values of first nuncline
+
+    h_nunc2: numpy array 
+        numpy array of h values of second nuncline
+    """
+    C_nunc = np.linspace(0,0.8,100)
+
+    Q2 = d2 * ((I+d1)/(I+d3))
+    
+    h_nunc1 = Q2/(Q2+C_nunc)
+    h_nunc2 = ((((v3*C_nunc**2)/(K3**2+C_nunc**2))-v2*(C0-(1+c1)*C_nunc))/
+               (v1*(((I/(I+d1))*(C_nunc/(C_nunc+d5)))**3)*(C0-(1+c1)*C_nunc)))**(1/3)
+    
+    return np.array(C_nunc), np.array(h_nunc1), np.array(h_nunc2)
+
 
 if __name__ == "__main__":
     
@@ -61,11 +98,16 @@ if __name__ == "__main__":
     c1 = 0.185    #adimensional
     a2 = 0.2      #muM-1*sec-1
 
-    I = 0.2    #muM
+    I = 0.9    #muM
+
+
+    #Nunclines - just 1 (NOT WORK!!)
+    C_nunc, h_nunc1, h_nunc2 = LiRinzel_nunc()
+    print(h_nunc1[h_nunc1==h_nunc2])
 
     #Dynamical behavior - solution
     t0 = 0.      #sec
-    t_fin = 60.
+    t_fin = 100.
     dt = 2E-2
 
     t = np.arange(t0, t_fin, dt)
@@ -74,6 +116,19 @@ if __name__ == "__main__":
     sol  = integrate.odeint(LiRinzel, X0, t)
     C = sol[:,0]
     h = sol[:,1]
+
+    #Qualitative analysis - Arrow field rapr
+    xx = np.linspace(0.0, 0.8, 20)
+    yy = np.linspace(0.0, 1.0, 20)
+
+    XX, YY = np.meshgrid(xx, yy)    #create grid
+    DX1, DY1 = LiRinzel([XX,YY],t)  #arrows' lenghts in cartesian cordinate
+    
+    M = np.hypot(DX1,DY1)  #normalization with square root
+    M[M==0] = 1
+
+    DX1 = DX1/M
+    DY1 = DY1/M
 
     #Plots
     fig = plt.figure(figsize=(15,5))
@@ -88,7 +143,10 @@ if __name__ == "__main__":
     ax1.legend(loc='best')
 
 
-    ax2.plot(C, h, color="orange", label='dynamic')
+    ax2.plot(C, h, color="red", label='dynamic')
+    ax2.quiver(XX, YY, DX1, DY1, color='orange', pivot='mid', alpha=0.5)
+    ax2.plot(C_nunc,h_nunc1, color="blue", linewidth=0.7, alpha=0.5, label="nunclines")
+    ax2.plot(C_nunc,h_nunc2, color="blue", linewidth=0.7, alpha=0.5)
     ax2.set_xlabel(r'$Ca^{2\plus}$')
     ax2.set_ylabel("h")  
     ax2.set_title("Phase space")
