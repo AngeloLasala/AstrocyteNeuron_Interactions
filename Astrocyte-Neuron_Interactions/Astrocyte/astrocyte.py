@@ -8,8 +8,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sympy as sym
 from scipy import integrate
+from scipy.signal import argrelextrema
 
-def LiRinzel(X, t):
+def LiRinzel(X, t, I):
     """
     Li-Rinzel model, dynamical behavior of calcium oscillation
     in a single astrocyte.
@@ -48,7 +49,7 @@ def LiRinzel(X, t):
 
 def LiRinzel_nunc(C_start=0, C_stop=0.8, steps=1000):
     """
-    Nunclines of Li-Rinzel model
+    Nunclines of Li-Rinzel model, analytic expression.
 
     Parameters
     ----------
@@ -72,7 +73,7 @@ def LiRinzel_nunc(C_start=0, C_stop=0.8, steps=1000):
     h_nunc2: numpy array 
         numpy array of h values of second nuncline
     """
-    C_nunc = np.linspace(0,0.8,100)
+    C_nunc = np.linspace(C_start,C_stop,steps)
 
     Q2 = d2 * ((I+d1)/(I+d3))
     
@@ -81,6 +82,70 @@ def LiRinzel_nunc(C_start=0, C_stop=0.8, steps=1000):
                (v1*(((I/(I+d1))*(C_nunc/(C_nunc+d5)))**3)*(C0-(1+c1)*C_nunc)))**(1/3)
     
     return np.array(C_nunc), np.array(h_nunc1), np.array(h_nunc2)
+
+def Biforcation(model, par_start, par_stop, par_tot=300, t0=0., t_stop=500., dt=2E-2, t_relax=-5000):
+    """
+    Biformation analysis of continous 2D dynamical system
+    throught maximum and minimum discete mapping
+
+    To taking acount relaxation time avoiding transient regime, 
+    local extremes is found only in the second part of dynamic vector.
+
+    Parameters
+    ----------
+    model: callable(y, t, ...) or callable(t, y, ...) 
+        Computes the derivative of y at t. If the signature is callable(t, y, ...), then the argument tfirst must be set True.
+        Model codimension must be 1 thereby bifurcation analysis concerns only the parameters.
+        from scipy.integrate.odeint
+    
+    par_stat: integer or float
+        initial value of parameter
+
+    par_stop: integer or float
+        final value of parameter
+
+    par_tot: integer(optional)
+        total number of parameter value. Default par_tot=300
+
+    
+    t0: integer or float(optional)
+        initial time. Default t0=0
+
+    t_stop: integer or float(optional)
+        final time. Default t_stop=200
+
+    dt: integer or float(optional)
+        integration step. Default dt=2E-2
+    """
+    t0 = t0      #sec
+    t_stop = t_stop
+    dt = dt
+      
+    t = np.arange(t0, t_stop, dt)
+    X0 = np.array([0.2,0.2])
+
+    I_list = list()
+    Bif_list = list()
+    
+    for i in np.linspace(par_start, par_stop, par_tot):
+        sol  = integrate.odeint(model, X0, t, args=(i,))
+        X = sol[:,0]
+        Y = sol[:,1]
+        X = X[t_relax:]
+        
+        max_loc = argrelextrema(X, np.greater)
+        min_loc = argrelextrema(X, np.less)
+
+        X_max = X[max_loc].tolist()
+        X_min = X[min_loc].tolist()
+        Bif_val = X_max + X_min
+        I_x = [i for item in range(len(Bif_val))]
+
+        I_list.append(I_x)
+        Bif_list.append(Bif_val)
+        
+        
+    return I_list, Bif_list
 
 
 if __name__ == "__main__":
@@ -98,22 +163,21 @@ if __name__ == "__main__":
     c1 = 0.185    #adimensional
     a2 = 0.2      #muM-1*sec-1
 
-    I = 0.9    #muM
+    I = 0.4   #muM
 
 
-    #Nunclines - just 1 (NOT WORK!!)
+    #Nunclines 
     C_nunc, h_nunc1, h_nunc2 = LiRinzel_nunc()
-    print(h_nunc1[h_nunc1==h_nunc2])
-
+    
     #Dynamical behavior - solution
     t0 = 0.      #sec
-    t_fin = 100.
+    t_fin = 500.
     dt = 2E-2
 
     t = np.arange(t0, t_fin, dt)
     X0 = np.array([0.2,0.2])
 
-    sol  = integrate.odeint(LiRinzel, X0, t)
+    sol  = integrate.odeint(LiRinzel, X0, t, args=(I,))
     C = sol[:,0]
     h = sol[:,1]
 
@@ -122,7 +186,7 @@ if __name__ == "__main__":
     yy = np.linspace(0.0, 1.0, 20)
 
     XX, YY = np.meshgrid(xx, yy)    #create grid
-    DX1, DY1 = LiRinzel([XX,YY],t)  #arrows' lenghts in cartesian cordinate
+    DX1, DY1 = LiRinzel([XX,YY],t,I)  #arrows' lenghts in cartesian cordinate
     
     M = np.hypot(DX1,DY1)  #normalization with square root
     M[M==0] = 1
@@ -130,18 +194,22 @@ if __name__ == "__main__":
     DX1 = DX1/M
     DY1 = DY1/M
 
+    #Biforcation
+    I_l1, Bif_l1 = Biforcation(LiRinzel,0.1,0.4,par_tot=100,t0=0.,t_stop=300.,dt=2E-2,t_relax=-10000)
+    I_l2, Bif_l2 = Biforcation(LiRinzel,0.4,0.7,par_tot=200,t0=0.,t_stop=700.,dt=2E-2,t_relax=-5000)
+    
     #Plots
-    fig = plt.figure(figsize=(15,5))
-    ax1 = fig.add_subplot(1,2,1)
-    ax2 = fig.add_subplot(1,2,2)
+    fig = plt.figure(figsize=(25,5))
+    ax1 = fig.add_subplot(1,3,1)
+    ax2 = fig.add_subplot(1,3,2)
+    ax3 = fig.add_subplot(1,3,3)
 
-    ax1.plot(t, C, 'r-', label=r'$Ca^{2\plus}$')
-    ax1.set_title("Dynamics in time")
+    ax1.plot(t[-10000:], C[-10000:], 'r-', label=r'$Ca^{2\plus}$')  
+    ax1.set_title("Dynamic in time")
     ax1.set_xlabel("time")
     ax1.set_ylabel(r'$Ca^{2\plus}$')
     ax1.grid(linestyle='dotted')
     ax1.legend(loc='best')
-
 
     ax2.plot(C, h, color="red", label='dynamic')
     ax2.quiver(XX, YY, DX1, DY1, color='orange', pivot='mid', alpha=0.5)
@@ -152,6 +220,15 @@ if __name__ == "__main__":
     ax2.set_title("Phase space")
     ax2.grid(linestyle='dotted')
     ax2.legend(loc='upper right')
+
+    for I, bif in zip(I_l1,Bif_l1):
+        ax3.plot(I, bif, 'bo', markersize=0.5)
+    for I, bif in zip(I_l2,Bif_l2):
+        ax3.plot(I, bif, 'bo', markersize=0.5)
+    ax3.set_xlabel('I')
+    ax3.set_ylabel(r'$Ca^{2\plus}$')  
+    ax3.set_title('Biforcation')
+    ax3.grid(linestyle='dotted')
 
     plt.show()
 
