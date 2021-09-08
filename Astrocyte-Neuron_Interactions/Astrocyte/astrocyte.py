@@ -1,6 +1,6 @@
 """
 Calcium oscillations in single astrocyte.
-Dynamical analysis of Li-Rinzel model, for details see
+Dynamic analysis of Li-Rinzel model, for details see
 - De Pittà et al, 'Coexistence of amplitude and frequency 
   modulations in intracellular calcium dynamics' (2008)
 """
@@ -35,15 +35,15 @@ def LiRinzel(X, t, I):
 
     Q2 = d2 * ((I+d1)/(I+d3))
     m_inf = (I/(I+d1)) * (C/(C+d5))
-    h_inf = Q2/(Q2+C)
-    tau_h = 1/(a2*(Q2+C))
+    h_inf = Q2 / (Q2+C)
+    tau_h = 1 / (a2*(Q2+C))
 
     J_leak = v2 * (C0-(1+c1)*C)
     J_pump = (v3*C**2) / (K3**2+C**2)
     J_chan = v1 * (m_inf**3) * (h**3) * (C0-(1+c1)*C)
 
     dvdt = [J_chan + J_leak - J_pump,
-            (h_inf - h)/tau_h]
+            (h_inf - h) / tau_h]
 
     return np.array(dvdt)
 
@@ -85,11 +85,12 @@ def LiRinzel_nunc(C_start=0, C_stop=0.8, steps=1000):
 
 def Biforcation(model, par_start, par_stop, par_tot=300, t0=0., t_stop=500., dt=2E-2, t_relax=-5000):
     """
-    Biformation analysis of continous 2D dynamical system
+    Biforcation analysis of continous 2D dynamical system
     throught maximum and minimum discete mapping
 
-    To taking acount relaxation time avoiding transient regime, 
-    local extremes is found only in the second part of dynamic vector.
+    To taking account relaxation time avoiding transient regime, 
+    local extremes is found only at the end of variable evolution, 
+    the extation of this time regione is set by t_relax.
 
     Parameters
     ----------
@@ -116,6 +117,9 @@ def Biforcation(model, par_start, par_stop, par_tot=300, t0=0., t_stop=500., dt=
 
     dt: integer or float(optional)
         integration step. Default dt=2E-2
+
+    t_relax: negative integer(optional)
+        time window to taking account relaxation time. Default t_relax=-5000
     """
     t0 = t0      #sec
     t_stop = t_stop
@@ -195,8 +199,8 @@ if __name__ == "__main__":
     DY1 = DY1/M
 
     #Biforcation
-    I_l1, Bif_l1 = Biforcation(LiRinzel,0.1,0.4,par_tot=100,t0=0.,t_stop=300.,dt=2E-2,t_relax=-10000)
-    I_l2, Bif_l2 = Biforcation(LiRinzel,0.4,0.7,par_tot=200,t0=0.,t_stop=700.,dt=2E-2,t_relax=-5000)
+    I_l1, Bif_l1 = Biforcation(LiRinzel,0.1,0.4,par_tot=50,t0=0.,t_stop=400.,dt=2E-2,t_relax=-17000)
+    I_l2, Bif_l2 = Biforcation(LiRinzel,0.4,0.7,par_tot=70,t0=0.,t_stop=700.,dt=2E-2,t_relax=-5000)
     
     #Plots
     fig = plt.figure(figsize=(25,5))
@@ -205,12 +209,11 @@ if __name__ == "__main__":
     ax3 = fig.add_subplot(1,3,3)
 
     ax1.plot(t[-10000:], C[-10000:], 'r-', label=r'$Ca^{2\plus}$')  
-    ax1.set_title("Dynamic in time")
+    ax1.set_title(f"Calcium dynamic - I = {I}")
     ax1.set_xlabel("time")
     ax1.set_ylabel(r'$Ca^{2\plus}$')
     ax1.grid(linestyle='dotted')
-    ax1.legend(loc='best')
-
+    
     ax2.plot(C, h, color="red", label='dynamic')
     ax2.quiver(XX, YY, DX1, DY1, color='orange', pivot='mid', alpha=0.5)
     ax2.plot(C_nunc,h_nunc1, color="blue", linewidth=0.7, alpha=0.5, label="nunclines")
@@ -222,9 +225,9 @@ if __name__ == "__main__":
     ax2.legend(loc='upper right')
 
     for I, bif in zip(I_l1,Bif_l1):
-        ax3.plot(I, bif, 'bo', markersize=0.5)
+        ax3.plot(I, bif, 'bo', markersize=2)
     for I, bif in zip(I_l2,Bif_l2):
-        ax3.plot(I, bif, 'bo', markersize=0.5)
+        ax3.plot(I, bif, 'bo', markersize=2)
     ax3.set_xlabel('I')
     ax3.set_ylabel(r'$Ca^{2\plus}$')  
     ax3.set_title('Biforcation')
