@@ -4,6 +4,7 @@ Dynamic analysis of Li-Rinzel model, for details see
 - De Pittà et al, 'Coexistence of amplitude and frequency 
   modulations in intracellular calcium dynamics' (2008)
 """
+import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 import sympy as sym
@@ -153,6 +154,14 @@ def Biforcation(model, par_start, par_stop, par_tot=300, t0=0., t_stop=500., dt=
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description='Dynamic analysis of Li Rinzel model')
+    parser.add_argument("-K3", type=float,
+                        help="""K3 parameter descriminates Amplitude Modulation (AM) to Frequency Modelation (FM):
+                                 K3=0.1 AM; K3=0.051 FM""")
+    parser.add_argument("-I", type=float,
+                        help="""I parameter determines single dynamic behaviour: suggest range [0.1-1.5]""")
+    args = parser.parse_args()
     
     #Parameters
     v1 = 6.0      #sec-1
@@ -163,11 +172,11 @@ if __name__ == "__main__":
     d3 = 0.9434
     d5 = 0.08234
     C0 = 2.0      #muM
-    K3 = 0.1
+    K3 = args.K3  #muM
     c1 = 0.185    #adimensional
     a2 = 0.2      #muM-1*sec-1
 
-    I = 0.4   #muM
+    I = args.I  #muM
 
 
     #Nunclines 
@@ -175,7 +184,7 @@ if __name__ == "__main__":
     
     #Dynamical behavior - solution
     t0 = 0.      #sec
-    t_fin = 500.
+    t_fin = 800.
     dt = 2E-2
 
     t = np.arange(t0, t_fin, dt)
@@ -199,11 +208,24 @@ if __name__ == "__main__":
     DY1 = DY1/M
 
     #Biforcation
-    I_l1, Bif_l1 = Biforcation(LiRinzel,0.1,0.4,par_tot=50,t0=0.,t_stop=400.,dt=2E-2,t_relax=-17000)
-    I_l2, Bif_l2 = Biforcation(LiRinzel,0.4,0.7,par_tot=70,t0=0.,t_stop=700.,dt=2E-2,t_relax=-5000)
+    if args.K3 == 0.1:
+        I_l1, Bif_l1 = Biforcation(LiRinzel,0.1,0.4,par_tot=50,t0=0.,t_stop=400.,dt=2E-2,t_relax=-17000)
+        I_l2, Bif_l2 = Biforcation(LiRinzel,0.4,0.7,par_tot=70,t0=0.,t_stop=700.,dt=2E-2,t_relax=-10000)
+
+    if args.K3 == 0.051:
+        I_l1, Bif_l1 = Biforcation(LiRinzel,0.1,0.5,par_tot=50,t0=0.,t_stop=400.,dt=2E-2,t_relax=-15000)
+        I_l2, Bif_l2 = Biforcation(LiRinzel,0.5,1.1,par_tot=60,t0=0.,t_stop=700.,dt=2E-2,t_relax=-10000)
+        I_l3, Bif_l3 = Biforcation(LiRinzel,1.1,1.5,par_tot=50,t0=0.,t_stop=400.,dt=2E-2,t_relax=-15000)
+    
+
     
     #Plots
-    fig = plt.figure(figsize=(25,5))
+    if args.K3 == 0.1:
+        title=f'Amplitude Modulation - K3:{K3} I:{I}'
+    if args.K3 == 0.051:
+        title=f'Frequency Modulation - K3:{K3} I:{I}'
+
+    fig = plt.figure(num=title, figsize=(25,5))
     ax1 = fig.add_subplot(1,3,1)
     ax2 = fig.add_subplot(1,3,2)
     ax3 = fig.add_subplot(1,3,3)
@@ -224,15 +246,28 @@ if __name__ == "__main__":
     ax2.grid(linestyle='dotted')
     ax2.legend(loc='upper right')
 
-    for I, bif in zip(I_l1,Bif_l1):
-        ax3.plot(I, bif, 'bo', markersize=2)
-    for I, bif in zip(I_l2,Bif_l2):
-        ax3.plot(I, bif, 'bo', markersize=2)
-    ax3.set_xlabel('I')
-    ax3.set_ylabel(r'$Ca^{2\plus}$')  
-    ax3.set_title('Biforcation')
-    ax3.grid(linestyle='dotted')
+    if args.K3 == 0.1:
+        for I, bif in zip(I_l1,Bif_l1):
+            ax3.plot(I, bif, 'go', markersize=2)
+        for I, bif in zip(I_l2,Bif_l2):
+            ax3.plot(I, bif, 'go', markersize=2)
+        ax3.set_xlabel('I')
+        ax3.set_ylabel(r'$Ca^{2\plus}$')  
+        ax3.set_title('Biforcation')
+        ax3.grid(linestyle='dotted')
 
+    if args.K3 == 0.051:
+        for I, bif in zip(I_l1,Bif_l1):
+            ax3.plot(I, bif, 'go', markersize=2)
+        for I, bif in zip(I_l2,Bif_l2):
+            ax3.plot(I, bif, 'go', markersize=2)
+        for I, bif in zip(I_l3,Bif_l3):
+            ax3.plot(I, bif, 'go', markersize=2)
+        ax3.set_xlabel('I')
+        ax3.set_ylabel(r'$Ca^{2\plus}$')  
+        ax3.set_title('Biforcation')
+        ax3.grid(linestyle='dotted')
+    
     plt.show()
 
 
