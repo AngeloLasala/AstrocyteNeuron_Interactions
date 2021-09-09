@@ -152,6 +152,44 @@ def Biforcation(model, par_start, par_stop, par_tot=300, t0=0., t_stop=500., dt=
         
     return I_list, Bif_list
 
+def AF_Modulation(model, *I_values):
+    """
+    Different type of excitability of Li-Rinzel. Amplitude and Frequency
+    modulation concern different values od IP3 concentration.
+
+    Parameters
+    ----------
+    model: callable(y, t, ...) or callable(t, y, ...) 
+        Computes the derivative of y at t. If the signature is callable(t, y, ...), then the argument tfirst must be set True.
+        from scipy.integrate.odeint
+    Returns
+    -------
+    """
+
+    t0 = 0.      
+    t_wind = 100.
+    dt = 2E-2
+    t_fin = t_wind
+    X0 = np.array([0.0,0.0])
+
+    C_tot = list()
+    t_tot = list()
+    
+    for I_item in I_values: 
+        t = np.arange(t0, t_fin, dt)
+        
+        sol  = integrate.odeint(model, X0, t, args=(I_item,))
+        C = sol[:,0]
+        h = sol[:,1]
+
+        C_tot.append(C)
+        t_tot.append(t)
+
+        t0 = t_fin
+        t_fin = t0 +t_wind
+        X0 = np.array([C[-1],h[-1]])
+
+    return C_tot, t_tot
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -184,7 +222,7 @@ if __name__ == "__main__":
     
     #Dynamical behavior - solution
     t0 = 0.      #sec
-    t_fin = 800.
+    t_fin = 600.
     dt = 2E-2
 
     t = np.arange(t0, t_fin, dt)
@@ -216,7 +254,9 @@ if __name__ == "__main__":
         I_l1, Bif_l1 = Biforcation(LiRinzel,0.1,0.5,par_tot=50,t0=0.,t_stop=400.,dt=2E-2,t_relax=-15000)
         I_l2, Bif_l2 = Biforcation(LiRinzel,0.5,1.1,par_tot=60,t0=0.,t_stop=700.,dt=2E-2,t_relax=-10000)
         I_l3, Bif_l3 = Biforcation(LiRinzel,1.1,1.5,par_tot=50,t0=0.,t_stop=400.,dt=2E-2,t_relax=-15000)
-    
+
+    #Differnt type of exatability
+    C_ex, t_ex = AF_Modulation(LiRinzel, 0.2,0.4,0.5,0.6,0.8,1.0,1.5)
 
     
     #Plots
@@ -267,7 +307,16 @@ if __name__ == "__main__":
         ax3.set_ylabel(r'$Ca^{2\plus}$')  
         ax3.set_title('Biforcation')
         ax3.grid(linestyle='dotted')
-    
+
+    fig1 = plt.figure(f'Different type of excitability - K3:{K3}', figsize=(15,5))
+    ax4 = fig1.add_subplot(1,1,1)
+    for C_i,t_i in zip(C_ex,t_ex):
+        plt.plot(t_i, C_i, linestyle='-', color='indigo', label=r'$Ca^{2\plus}$')
+    ax4.set_title(f"Exatability")
+    ax4.set_xlabel("time (s)")
+    ax4.set_ylabel(r'$Ca^{2\plus}$')
+    ax4.grid(linestyle='dotted')
+
     plt.show()
 
 
