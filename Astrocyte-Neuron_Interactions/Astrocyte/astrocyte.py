@@ -152,18 +152,71 @@ def Biforcation(model, par_start, par_stop, par_tot=300, t0=0., t_stop=500., dt=
         
     return I_list, Bif_list
 
+
+def Period(model, par_start, par_stop, par_tot=300, t0=0., t_stop=500., dt=2E-2):
+    """
+    Oscillation periods concern different values of the parameter
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+    
+    """
+    t0 = t0      #sec
+    t_stop = t_stop
+    dt = dt
+    t = np.arange(t0, t_stop, dt)
+
+    X0 = np.array([0.0,0.0])
+
+    par_list = np.linspace(par_start, par_stop, par_tot)
+    period_list = list()
+    for i in par_list:
+        sol  = integrate.odeint(model, X0, t, args=(i,))
+        X = sol[:,0]
+        Y = sol[:,1]
+
+        max_loc = argrelextrema(X, np.greater)
+
+        X_max = X[max_loc]
+        t_max0 = t[max_loc]
+        t_max1 = t_max0[1:]
+        
+        per = t_max1 - t_max0[:-1]
+        period = np.mean(per)
+
+        period_list.append(period)
+
+    return par_list, period_list
+    
+
 def AF_Modulation(model, *I_values):
     """
     Different type of excitability of Li-Rinzel. Amplitude and Frequency
-    modulation concern different values od IP3 concentration.
+    modulation concern different values of IP3 concentration.
+    IP3 signals is a steps function with increasing values of IP3 concentration
 
     Parameters
     ----------
     model: callable(y, t, ...) or callable(t, y, ...) 
         Computes the derivative of y at t. If the signature is callable(t, y, ...), then the argument tfirst must be set True.
         from scipy.integrate.odeint
+
+    I_values: integer or float
+        IP3 values concentration of signal
+
     Returns
     -------
+    t_tot: list
+        each item of the list is the time widow where the IP3
+        concentration is costan
+
+    C_tot: list
+        Each item of the list is the dynamical behaviour 
+        of Calcium concentration inside time window with constant 
+        IP3 concentration
     """
 
     t0 = 0.      
@@ -174,6 +227,7 @@ def AF_Modulation(model, *I_values):
 
     C_tot = list()
     t_tot = list()
+    I_tot = list()
     
     for I_item in I_values: 
         t = np.arange(t0, t_fin, dt)
@@ -189,7 +243,10 @@ def AF_Modulation(model, *I_values):
         t_fin = t0 +t_wind
         X0 = np.array([C[-1],h[-1]])
 
-    return C_tot, t_tot
+        I_graph = np.repeat(I_item, t.shape[0])
+        I_tot.append(I_graph)
+
+    return t_tot, C_tot , I_tot
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -199,6 +256,7 @@ if __name__ == "__main__":
                                  K3=0.1 AM; K3=0.051 FM""")
     parser.add_argument("-I", type=float,
                         help="""I parameter determines single dynamic behaviour: suggest range [0.1-1.5]""")
+    parser.add_argument('-excitability', action='store_false', help="""Different type of excitability, default=True""")
     args = parser.parse_args()
     
     #Parameters
@@ -210,11 +268,11 @@ if __name__ == "__main__":
     d3 = 0.9434
     d5 = 0.08234
     C0 = 2.0      #muM
-    K3 = args.K3  #muM
     c1 = 0.185    #adimensional
     a2 = 0.2      #muM-1*sec-1
 
     I = args.I  #muM
+    K3 = args.K3  #muM
 
 
     #Nunclines 
@@ -255,9 +313,20 @@ if __name__ == "__main__":
         I_l2, Bif_l2 = Biforcation(LiRinzel,0.5,1.1,par_tot=60,t0=0.,t_stop=700.,dt=2E-2,t_relax=-10000)
         I_l3, Bif_l3 = Biforcation(LiRinzel,1.1,1.5,par_tot=50,t0=0.,t_stop=400.,dt=2E-2,t_relax=-15000)
 
-    #Differnt type of exatability
-    C_ex, t_ex = AF_Modulation(LiRinzel, 0.2,0.4,0.5,0.6,0.8,1.0,1.5)
 
+    #Periods
+    I_list, Per_list = Period(LiRinzel, 0.35, 0.7, par_tot=20)
+
+    plt.figure()
+    plt.scatter(I_list, Per_list, marker="^")
+
+    #Differnt type of exatability
+    if args.excitability:
+        K3 = 0.1
+        t_AM, C_AM ,I_AM = AF_Modulation(LiRinzel, 0.2,0.4,0.5,0.6,0.8,1.5)
+
+        K3= 0.051
+        t_FM, C_FM, I_FM = AF_Modulation(LiRinzel, 0.2,0.4,0.5,0.6,0.8,1.5)
     
     #Plots
     if args.K3 == 0.1:
@@ -308,14 +377,27 @@ if __name__ == "__main__":
         ax3.set_title('Biforcation')
         ax3.grid(linestyle='dotted')
 
-    fig1 = plt.figure(f'Different type of excitability - K3:{K3}', figsize=(15,5))
-    ax4 = fig1.add_subplot(1,1,1)
-    for C_i,t_i in zip(C_ex,t_ex):
-        plt.plot(t_i, C_i, linestyle='-', color='indigo', label=r'$Ca^{2\plus}$')
-    ax4.set_title(f"Exatability")
-    ax4.set_xlabel("time (s)")
+    fig1 = plt.figure(f'Different type of excitability', figsize=(15,8))
+    ax4 = fig1.add_subplot(3,1,1)
+    ax5 = fig1.add_subplot(3,1,2)
+    ax6 = fig1.add_subplot(3,1,3)
+
+    for t_i,C_i, in zip(t_AM,C_AM):
+        ax4.plot(t_i, C_i, linestyle='-', color='indigo', label=r'$Ca^{2\plus}$ - AM')
+    ax4.set_title(f"Different type of excitability")
     ax4.set_ylabel(r'$Ca^{2\plus}$')
     ax4.grid(linestyle='dotted')
+
+    for t_i,C_i, in zip(t_FM,C_FM):
+        ax5.plot(t_i, C_i, linestyle='-', color='indigo', label=r'$Ca^{2\plus} - FM$')
+    ax5.set_ylabel(r'$Ca^{2\plus}$')
+    ax5.grid(linestyle='dotted')
+    
+    for t_i,I_i, in zip(t_FM,I_FM):
+        ax6.plot(t_i, I_i, linestyle='-', color='indigo', label='I signal')
+    ax6.set_xlabel("time (s)")
+    ax6.set_ylabel(r'I')
+    ax6.grid(linestyle='dotted')
 
     plt.show()
 
