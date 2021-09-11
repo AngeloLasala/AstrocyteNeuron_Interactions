@@ -315,10 +315,11 @@ if __name__ == "__main__":
 
 
     #Periods
-    I_list, Per_list = Period(LiRinzel, 0.35, 0.7, par_tot=20)
+    if args.K3 == 0.1:
+        I_list, Per_list = Period(LiRinzel, 0.35, 0.7, par_tot=30)
+    if args.K3 == 0.051:
+        I_list, Per_list = Period(LiRinzel, 0.5, 1.1, par_tot=50)
 
-    plt.figure()
-    plt.scatter(I_list, Per_list, marker="^")
 
     #Differnt type of exatability
     if args.excitability:
@@ -327,17 +328,19 @@ if __name__ == "__main__":
 
         K3= 0.051
         t_FM, C_FM, I_FM = AF_Modulation(LiRinzel, 0.2,0.4,0.5,0.6,0.8,1.5)
-    
+
+        
     #Plots
     if args.K3 == 0.1:
         title=f'Amplitude Modulation - K3:{K3} I:{I}'
     if args.K3 == 0.051:
         title=f'Frequency Modulation - K3:{K3} I:{I}'
 
-    fig = plt.figure(num=title, figsize=(25,5))
-    ax1 = fig.add_subplot(1,3,1)
-    ax2 = fig.add_subplot(1,3,2)
-    ax3 = fig.add_subplot(1,3,3)
+    fig = plt.figure(num=title, figsize=(12,9))
+    ax1 = fig.add_subplot(2,2,1)
+    ax2 = fig.add_subplot(2,2,2)
+    ax3 = fig.add_subplot(2,2,3)
+    ax31 = fig.add_subplot(2,2,4)
 
     ax1.plot(t[-10000:], C[-10000:], 'r-', label=r'$Ca^{2\plus}$')  
     ax1.set_title(f"Calcium dynamic - I = {I}")
@@ -376,6 +379,12 @@ if __name__ == "__main__":
         ax3.set_ylabel(r'$Ca^{2\plus}$')  
         ax3.set_title('Biforcation')
         ax3.grid(linestyle='dotted')
+    
+    ax31.scatter(I_list, Per_list, marker="^")
+    ax31.set_xlabel('I')
+    ax31.set_ylabel('Period [s]')  
+    ax31.set_title('Periods')
+    ax31.grid(linestyle='dotted')
 
     fig1 = plt.figure(f'Different type of excitability', figsize=(15,8))
     ax4 = fig1.add_subplot(3,1,1)
