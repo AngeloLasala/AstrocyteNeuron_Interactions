@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from brian2 import *
 
-def Connectivity(Syn):
+def Connectivity_plot(Syn):
     """
     Connectiovity of neuronal network
 
@@ -27,12 +27,17 @@ def Connectivity(Syn):
 
     ax1.plot(np.zeros(Ns), np.arange(Ns), 'ok', ms=10)
     ax1.plot(np.ones(Nt), np.arange(Nt), 'ok', ms=10)
-    for i,j in zip(S.i,S.j):
+    for i,j in zip(Syn.i,Syn.j):
         ax1.plot([0,1], [i,j], '-k')
     ax1.set_xticks([0,1])
     ax1.set_xticklabels(['Source', 'Target'])
     ax1.set_ylabel('Neuron index')
     ax1.set_title('Connectivity')
+
+    ax2.plot(Syn.i, Syn.j, 'ok')
+    ax2.set_xlabel('Source neuron index')
+    ax2.set_ylabel('Target neuron index')
+    ax2.set_title('Source vs Target connectivity')
 
 if __name__ == "__main__":
 
@@ -47,6 +52,11 @@ if __name__ == "__main__":
     M = StateMonitor(G, 'v', record=True)
     G.v = 'rand()'
 
+    #only connect neighbouring neurons.
+    S2 = Synapses(G,G)
+    S2.connect(condition='abs(i-j)<4 and i!=j')
+    #S2.connect(j='k for k in range(i-3, i+4) if i!=k', skip_if_invalid=True)
+    #more appropriate with larger network
     run(100*ms)
 
     fig = plt.figure()
@@ -59,6 +69,7 @@ if __name__ == "__main__":
     ax1.set_title('Neurons dynamics')
     ax1.legend()
 
-    Connectivity(S)
+    Connectivity_plot(S)
+    Connectivity_plot(S2)
 
     plt.show()
