@@ -159,10 +159,36 @@ def Period(model, par_start, par_stop, par_tot=300, t0=0., t_stop=500., dt=2E-2)
 
     Parameters
     ----------
+    model: callable(y, t, ...) or callable(t, y, ...) 
+        Computes the derivative of y at t. If the signature is callable(t, y, ...), then the argument tfirst must be set True.
+        Model codimension must be 1 thereby bifurcation analysis concerns only the parameters.
+        from scipy.integrate.odeint
+
+    par_stat: integer or float
+        initial value of parameter
+
+    par_stop: integer or float
+        final value of parameter
+
+    par_tot: integer(optional)
+        total number of parameter value. Default par_tot=300
+
+    t0: integer or float(optional)
+        initial time. Default t0=0
+
+    t_stop: integer or float(optional)
+        final time. Default t_stop=200
+
+    dt: integer or float(optional)
+        integration step. Default dt=2E-2
 
     Returns
     -------
-    
+    par_list: list
+        paremeters list over compute the oscillation periods
+
+    period_list: list
+        list of oscillation periods
     """
     t0 = t0      #sec
     t_stop = t_stop
