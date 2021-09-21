@@ -1,0 +1,7 @@
+numpy==1.19.2
+requests==2.25.1
+matplotlib==3.3.4
+scipy==1.6.2
+sklearn
+brian2
+sphinx_rtd_theme
