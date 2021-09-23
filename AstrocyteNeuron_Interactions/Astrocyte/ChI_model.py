@@ -227,7 +227,7 @@ if __name__ == "__main__":
 
     # Parameters IP3 metabolism
     #PLC delta production 
-    v_delta = 0.5    # Maximal rate of IP3 production by PLC_delta, muM*sec-1
+    v_delta = 0.40     # Maximal rate of IP3 production by PLC_delta, muM*sec-1
     k_delta = 1.5      # Inhibition constant of PLC_delta activity, muM
     K_PLCdelta = 0.1   # Ca affinity of PLC_delta, muM
     #degradation
@@ -238,11 +238,11 @@ if __name__ == "__main__":
 
     # Parameters - time
     t0 = 0.      #sec
-    t_fin = 500.
+    t_fin = 700.
     dt = 2E-2
 
     t = np.arange(t0, t_fin, dt)
-    X0 = np.array([0.4,0.4,0.4])
+    X0 = np.array([0.0,0.0,0.0])
 
     sol  = integrate.odeint(ChI, X0, t, args=(v_delta,))
     C = sol[:,0]
@@ -258,14 +258,16 @@ if __name__ == "__main__":
         v_delta_l4, bif_l4 = Biforcation3D(ChI, par_start=0.14, par_stop=0.16, par_tot=20,t0=0.,t_stop=800.,dt=2E-2,t_relax=-5000)
 
     if args.K3 == 0.051:
-        v_delta_l1, bif_l1 = Biforcation3D(ChI, par_start=0.01, par_stop=1.0, par_tot=100,t0=0.,t_stop=700.,dt=2E-2,t_relax=-20000)
+        v_delta_l1, bif_l1 = Biforcation3D(ChI, par_start=0.01, par_stop=0.16, par_tot=50,t0=0.,t_stop=200.,dt=2E-2,t_relax=15)
+        v_delta_l2, bif_l2 = Biforcation3D(ChI, par_start=0.16, par_stop=0.57, par_tot=80,t0=0.,t_stop=700.,dt=2E-2,t_relax=-10000)
+        v_delta_l3, bif_l3 = Biforcation3D(ChI, par_start=0.57, par_stop=0.80, par_tot=50,t0=0.,t_stop=200.,dt=2E-2,t_relax=-5000)
 
     #Periods
     if args.K3 == 0.1:
         v_delta_list, Per_list = Period3D(ChI, 0.027, 0.147, par_tot=30)
     
     if args.K3 == 0.051:
-        v_delta_list, Per_list = Period3D(ChI, 0.18, 0.53, par_tot=30)
+        v_delta_list, Per_list = Period3D(ChI, 0.18, 0.56, par_tot=30)
         
 
     # I_s = symbols('I_s')
@@ -330,6 +332,10 @@ if __name__ == "__main__":
 
     if args.K3 == 0.051:
         for v, bif in zip(v_delta_l1, bif_l1):
+            ax21.plot(v, bif, 'go', markersize=2)
+        for v, bif in zip(v_delta_l2, bif_l2):
+            ax21.plot(v, bif, 'go', markersize=2)
+        for v, bif in zip(v_delta_l3, bif_l3):
             ax21.plot(v, bif, 'go', markersize=2)
         ax21.set_xlabel(r'$v_{\delta}$')
         ax21.set_ylabel(r'$Ca^{2\plus}$')  
