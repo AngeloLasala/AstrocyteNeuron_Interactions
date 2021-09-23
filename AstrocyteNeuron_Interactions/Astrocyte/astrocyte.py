@@ -93,6 +93,8 @@ def Biforcation(model, par_start, par_stop, par_tot=300, t0=0., t_stop=500., dt=
     local extremes is found only at the end of variable evolution, 
     the extation of this time regione is set by t_relax.
 
+    Note: In this version the bifurcation is cpmputed only respect to first variable in the model
+
     Parameters
     ----------
     model: callable(y, t, ...) or callable(t, y, ...) 
@@ -155,7 +157,8 @@ def Biforcation(model, par_start, par_stop, par_tot=300, t0=0., t_stop=500., dt=
 
 def Period(model, par_start, par_stop, par_tot=300, t0=0., t_stop=500., dt=2E-2):
     """
-    Oscillation periods concern different values of the parameter
+    Oscillation periods of 2D dynamical system
+    concern different values of the parameter
 
     Parameters
     ----------
@@ -358,9 +361,9 @@ if __name__ == "__main__":
         
     #Plots
     if args.K3 == 0.1:
-        title=f'Amplitude Modulation - K3:{K3} I:{I}'
+        title=f'Li-Rinzel Amplitude Modulation - K3:{K3} I:{I}'
     if args.K3 == 0.051:
-        title=f'Frequency Modulation - K3:{K3} I:{I}'
+        title=f'Li-Rinzel Frequency Modulation - K3:{K3} I:{I}'
 
     fig = plt.figure(num=title, figsize=(12,9))
     ax1 = fig.add_subplot(2,2,1)
