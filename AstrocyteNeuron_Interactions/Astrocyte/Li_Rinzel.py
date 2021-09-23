@@ -361,9 +361,9 @@ if __name__ == "__main__":
         
     #Plots
     if args.K3 == 0.1:
-        title=f'Li-Rinzel Amplitude Modulation - K3:{K3} I:{I}'
+        title=f'Li-Rinzel Amplitude Modulation - I:{I}'
     if args.K3 == 0.051:
-        title=f'Li-Rinzel Frequency Modulation - K3:{K3} I:{I}'
+        title=f'Li-Rinzel Frequency Modulation - I:{I}'
 
     fig = plt.figure(num=title, figsize=(12,9))
     ax1 = fig.add_subplot(2,2,1)
@@ -377,7 +377,7 @@ if __name__ == "__main__":
     ax1.set_ylabel(r'$Ca^{2\plus}$')
     ax1.grid(linestyle='dotted')
     
-    ax2.plot(C, h, color="red", label='dynamic')
+    ax2.plot(C, h, 'm-', label='dynamic')
     ax2.quiver(XX, YY, DX1, DY1, color='orange', pivot='mid', alpha=0.5)
     ax2.plot(C_nunc,h_nunc1, color="blue", linewidth=0.7, alpha=0.5, label="nunclines")
     ax2.plot(C_nunc,h_nunc2, color="blue", linewidth=0.7, alpha=0.5)
