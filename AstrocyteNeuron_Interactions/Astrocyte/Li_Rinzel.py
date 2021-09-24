@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sympy as sym
 from scipy import integrate
+from scipy.optimize import fsolve
 from scipy.signal import argrelextrema
 
 def LiRinzel(X, t, I):
@@ -50,7 +51,8 @@ def LiRinzel(X, t, I):
 
 def LiRinzel_nunc(C_start=0, C_stop=0.8, steps=1000):
     """
-    Nunclines of Li-Rinzel model, analytic expression.
+    Nunclines of Li-Rinzel model, analytic expression and 
+    just one stable state.
 
     Parameters
     ----------
@@ -83,6 +85,49 @@ def LiRinzel_nunc(C_start=0, C_stop=0.8, steps=1000):
                (v1*(((I/(I+d1))*(C_nunc/(C_nunc+d5)))**3)*(C0-(1+c1)*C_nunc)))**(1/3)
     
     return np.array(C_nunc), np.array(h_nunc1), np.array(h_nunc2)
+
+def LiRinzel_stable(X):
+    """
+    Stable state of Li Rinzel model by implicit equations
+    of nunclines
+    
+    Parameters
+    ----------
+    X: array
+        state variables
+
+    Returns
+    -------
+    implicit_form: tuple
+        Implicit form of nunclines
+    """
+    C,h = X
+
+    Q2 = d2 * ((I+d1)/(I+d3))
+    eqs1 = h - Q2/(Q2+C)
+    eqs2 =  h - ((((v3*C**2)/(K3**2+C**2))-v2*(C0-(1+c1)*C))/
+               (v1*(((I/(I+d1))*(C/(C+d5)))**3)*(C0-(1+c1)*C)))**(1/3)
+        
+    implicit_form = (eqs1, eqs2)
+
+    return implicit_form
+
+def LiRinzel_Jacobian(C,h):
+    """
+    Jacobian matrix of Li Rinzel model
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+    """
+    Q2 = d2 * ((I+d1)/(I+d3))
+
+    Jac_21 = -a2*h
+    Jac_22 = -a2*Q2
+    pass
+
 
 def Biforcation(model, par_start, par_stop, par_tot=300, t0=0., t_stop=500., dt=2E-2, t_relax=-5000):
     """
@@ -303,6 +348,9 @@ if __name__ == "__main__":
     I = args.I  #muM
     K3 = args.K3  #muM
 
+    #Stable state
+    C_stable, h_stable =  fsolve(LiRinzel_stable, (0.2,0.7))
+    print (f'Stable state K3 = {K3}, I = {I}:  C={C_stable:.4f} h={h_stable:.4f}')
 
     #Nunclines 
     C_nunc, h_nunc1, h_nunc2 = LiRinzel_nunc()
