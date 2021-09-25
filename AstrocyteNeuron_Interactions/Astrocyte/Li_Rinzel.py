@@ -123,10 +123,21 @@ def LiRinzel_Jacobian(C,h):
     -------
     """
     Q2 = d2 * ((I+d1)/(I+d3))
+    m_inf = (I/(I+d1)) * (C/(C+d5))
 
+    A = v1*(I**3/(I+d1)**3)*h**3*(C**2/(C+d5)**3)*(((3*d5*(C0-(1+c1)*C))/(C+d5))-(C*(1+c1)))
+
+    Jac_11 = A - v2*(1+c1) -2*K3**2*v3*(C/(C**2+K3**2)**2)
+    Jac_12 = v1*(I**3/(I+d1)**3)*(C0-(1+c1)*C)*3*h**2
     Jac_21 = -a2*h
-    Jac_22 = -a2*Q2
-    pass
+    Jac_22 = -a2*(Q2+C)
+
+    Jac1 = np.array([Jac_11, Jac_12])
+    Jac2 = np.array([Jac_21, Jac_22])
+
+    Jac = np.vstack([Jac1,Jac2])
+
+    return Jac
 
 
 def Biforcation(model, par_start, par_stop, par_tot=300, t0=0., t_stop=500., dt=2E-2, t_relax=-5000):
@@ -351,6 +362,12 @@ if __name__ == "__main__":
     #Stable state
     C_stable, h_stable =  fsolve(LiRinzel_stable, (0.2,0.7))
     print (f'Stable state K3 = {K3}, I = {I}:  C={C_stable:.4f} h={h_stable:.4f}')
+
+    #Stability of Stable State
+    Jacobian = LiRinzel_Jacobian(C=C_stable, h=h_stable)
+    e_val, e_vec = np.linalg.eig(Jacobian)
+    print(Jacobian)
+    print(e_val)
 
     #Nunclines 
     C_nunc, h_nunc1, h_nunc2 = LiRinzel_nunc()
