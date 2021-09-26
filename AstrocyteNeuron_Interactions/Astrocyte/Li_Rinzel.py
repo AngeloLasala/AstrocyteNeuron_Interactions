@@ -149,46 +149,6 @@ def LiRinzel_Jacobian(C,h):
 
     return Jac
 
-def Hopf_plot(par_start, par_stop, par_tot=300):
-    """
-    Hopf biforcation plots with regards control parameter.
-
-
-    Note: this fuction makes sanse only in Amplitude modulation
-    with I equals to 0.1
-
-    Parameters
-    ----------
-    par_stat: integer or float
-        initial value of parameter
-
-    par_stop: integer or float
-        final value of parameter
-
-    par_tot: integer(optional)
-        total number of parameter value. Default par_tot=300
-
-    Returns
-    -------
-    par_list: list
-        Parameters values over compute the eigensvalues
-
-    real: list
-        Real part of eigenvalue computed over the par_list
-
-    """
-    real=[]
-    imag=[]
-    par_list=np.linspace(par_start, par_stop, par_tot)
-    for I in par_list:
-        C_stable, h_stable =  fsolve(LiRinzel_stable, (0.2,0.7), args=(I,))
-        Jacobian = LiRinzel_Jacobian(C=C_stable, h=h_stable)
-        e_val, e_vec = np.linalg.eig(Jacobian)
-        # print(f'Eigenvalues stable state: {e_val}')
-        real.append(np.real(e_val[0]))
-
-    return par_list, real
-
 def Biforcation(model, par_start, par_stop, par_tot=300, t0=0., t_stop=500., dt=2E-2, t_relax=-5000):
     """
     Biforcation analysis of continous 2D dynamical system
@@ -430,17 +390,21 @@ if __name__ == "__main__":
             e_val, e_vec = np.linalg.eig(Jacobian)
             real1.append(np.real(e_val[0]))
 
-        fig3 = plt.figure(num='Hopf biforcations', figsize=(12,5))
+        fig3 = plt.figure(num='Hopf biforcations - Trasversality condiction', figsize=(12,5))
         ax_b31 = fig3.add_subplot(1,2,1)
         ax_b32 = fig3.add_subplot(1,2,2)
 
         ax_b31.plot(par_list,real,'cs')
+        ax_b31.axvline(0.355,color='black', linewidth=0.5)
+        ax_b31.axhline(0,color='black', linewidth=0.5)
         ax_b31.set_title("Supercritical Hopf-Biforcation")
         ax_b31.set_xlabel(r'I')
         ax_b31.set_ylabel(r'Re(e_val)')
         ax_b31.grid(linestyle='dotted')
 
         ax_b32.plot(par_list1,real1,'cs')
+        ax_b32.axvline(0.637,color='black', linewidth=0.5)
+        ax_b32.axhline(0,color='black', linewidth=0.5)
         ax_b32.set_title("Subcritical Hopf-Biforcation")
         ax_b32.set_xlabel(r'I')
         ax_b32.set_ylabel(r'Re(e_val)')
@@ -499,6 +463,18 @@ if __name__ == "__main__":
             e_val, e_vec = np.linalg.eig(Jacobian)
             print (f'Stable state K3 = {K3}, I = {I}:  C={C_stable:.4f} h={h_stable:.4f}')
             print(f'Eigenvalues stable state: {e_val}')
+
+            real=[]
+            par_list=np.linspace(0.85, 0.86, 30)
+            for I in par_list:
+                C_stable, h_stable =  fsolve(LiRinzel_stable, (0.17,0.1), args=(I,))
+                Jacobian = LiRinzel_Jacobian(C=C_stable, h=h_stable)
+                e_val, e_vec = np.linalg.eig(Jacobian)
+                real.append(np.real(e_val[0]))
+
+            plt.figure()
+            plt.plot(par_list,real,'cs')
+            
 
 
     #Nunclines 
