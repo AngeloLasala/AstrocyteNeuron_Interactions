@@ -86,7 +86,7 @@ def LiRinzel_nunc(C_start=0, C_stop=0.8, steps=1000):
     
     return np.array(C_nunc), np.array(h_nunc1), np.array(h_nunc2)
 
-def LiRinzel_stable(X):
+def LiRinzel_stable(X, I):
     """
     Stable state of Li Rinzel model by implicit equations
     of nunclines
@@ -95,6 +95,9 @@ def LiRinzel_stable(X):
     ----------
     X: array
         state variables
+
+    I: float
+        IP3 concentration parameter
 
     Returns
     -------
@@ -118,9 +121,16 @@ def LiRinzel_Jacobian(C,h):
 
     Parameters
     ----------
+    C: float
+        C value evaluates at fixed points 
+
+    h: float
+        h value evaluates st fixed point
 
     Returns
     -------
+    Jac: numpy array
+        Jacobian matric evaluates at given fixed points
     """
     Q2 = d2 * ((I+d1)/(I+d3))
     m_inf = (I/(I+d1)) * (C/(C+d5))
@@ -139,6 +149,45 @@ def LiRinzel_Jacobian(C,h):
 
     return Jac
 
+def Hopf_plot(par_start, par_stop, par_tot=300):
+    """
+    Hopf biforcation plots with regards control parameter.
+
+
+    Note: this fuction makes sanse only in Amplitude modulation
+    with I equals to 0.1
+
+    Parameters
+    ----------
+    par_stat: integer or float
+        initial value of parameter
+
+    par_stop: integer or float
+        final value of parameter
+
+    par_tot: integer(optional)
+        total number of parameter value. Default par_tot=300
+
+    Returns
+    -------
+    par_list: list
+        Parameters values over compute the eigensvalues
+
+    real: list
+        Real part of eigenvalue computed over the par_list
+
+    """
+    real=[]
+    imag=[]
+    par_list=np.linspace(par_start, par_stop, par_tot)
+    for I in par_list:
+        C_stable, h_stable =  fsolve(LiRinzel_stable, (0.2,0.7), args=(I,))
+        Jacobian = LiRinzel_Jacobian(C=C_stable, h=h_stable)
+        e_val, e_vec = np.linalg.eig(Jacobian)
+        # print(f'Eigenvalues stable state: {e_val}')
+        real.append(np.real(e_val[0]))
+
+    return par_list, real
 
 def Biforcation(model, par_start, par_stop, par_tot=300, t0=0., t_stop=500., dt=2E-2, t_relax=-5000):
     """
@@ -356,18 +405,101 @@ if __name__ == "__main__":
     c1 = 0.185    #adimensional
     a2 = 0.2      #muM-1*sec-1
 
-    I = args.I  #muM
+    I = args.I    #muM
     K3 = args.K3  #muM
 
-    #Stable state
-    C_stable, h_stable =  fsolve(LiRinzel_stable, (0.2,0.7))
-    print (f'Stable state K3 = {K3}, I = {I}:  C={C_stable:.4f} h={h_stable:.4f}')
 
-    #Stability of Stable State
-    Jacobian = LiRinzel_Jacobian(C=C_stable, h=h_stable)
-    e_val, e_vec = np.linalg.eig(Jacobian)
-    print(Jacobian)
-    print(e_val)
+    # Eigenvalues analysis
+    if K3 == 0.1:
+
+        real=[]
+        imag=[]
+        par_list=np.linspace(0.34, 0.36, 30)
+        for I in par_list:
+            C_stable, h_stable =  fsolve(LiRinzel_stable, (0.2,0.7), args=(I,))
+            Jacobian = LiRinzel_Jacobian(C=C_stable, h=h_stable)
+            e_val, e_vec = np.linalg.eig(Jacobian)
+            real.append(np.real(e_val[0]))
+
+        real1=[]
+        imag1=[]
+        par_list1=np.linspace(0.6, 0.7, 30)
+        for I in par_list1:
+            C_stable, h_stable =  fsolve(LiRinzel_stable, (0.2,0.7), args=(I,))
+            Jacobian = LiRinzel_Jacobian(C=C_stable, h=h_stable)
+            e_val, e_vec = np.linalg.eig(Jacobian)
+            real1.append(np.real(e_val[0]))
+
+        fig3 = plt.figure(num='Hopf biforcations', figsize=(12,5))
+        ax_b31 = fig3.add_subplot(1,2,1)
+        ax_b32 = fig3.add_subplot(1,2,2)
+
+        ax_b31.plot(par_list,real,'cs')
+        ax_b31.set_title("Supercritical Hopf-Biforcation")
+        ax_b31.set_xlabel(r'I')
+        ax_b31.set_ylabel(r'Re(e_val)')
+        ax_b31.grid(linestyle='dotted')
+
+        ax_b32.plot(par_list1,real1,'cs')
+        ax_b32.set_title("Subcritical Hopf-Biforcation")
+        ax_b32.set_xlabel(r'I')
+        ax_b32.set_ylabel(r'Re(e_val)')
+        ax_b32.grid(linestyle='dotted')
+
+    I = args.I
+
+    #Stable state and stabilily
+    if K3 == 0.1:
+        #Stable state
+        C_stable, h_stable =  fsolve(LiRinzel_stable, (0.2,0.7), args=(I,))
+        print (f'Stable state K3 = {K3}, I = {I}:  C={C_stable:.4f} h={h_stable:.4f}')
+
+        #Stability of Stable State
+        Jacobian = LiRinzel_Jacobian(C=C_stable, h=h_stable)
+        e_val, e_vec = np.linalg.eig(Jacobian)
+        print(f'Eigenvalues stable state: {e_val}')
+
+    if K3 == 0.051:
+        #Stable state
+        if I<0.479:
+            C_stable, h_stable =  fsolve(LiRinzel_stable, (0.03,0.9), args=(I,))
+            print (f'Stable state K3 = {K3}, I = {I}:  C={C_stable:.4f} h={h_stable:.4f}')
+            
+            #Stability of Stable State
+            Jacobian = LiRinzel_Jacobian(C=C_stable, h=h_stable)
+            e_val, e_vec = np.linalg.eig(Jacobian)
+            print(f'Eigenvalues stable state: {e_val}')
+
+        if I>=0.479 and I<=0.526:
+            C_stable1, h_stable1 =  fsolve(LiRinzel_stable, (0.03,0.9), args=(I,))
+            C_stable2, h_stable2 =  fsolve(LiRinzel_stable, (0.08,0.08), args=(I,))
+            C_stable3, h_stable3 =  fsolve(LiRinzel_stable, (0.17,0.7), args=(I,))
+            
+            Jacobian1 = LiRinzel_Jacobian(C=C_stable1, h=h_stable1)
+            Jacobian2 = LiRinzel_Jacobian(C=C_stable2, h=h_stable2)
+            Jacobian3 = LiRinzel_Jacobian(C=C_stable3, h=h_stable3)
+
+            e_val1, e_vec1 = np.linalg.eig(Jacobian1)
+            e_val2, e_vec2 = np.linalg.eig(Jacobian2)
+            e_val3, e_vec3 = np.linalg.eig(Jacobian3)
+
+            print (f'Stable state K3 = {K3}, I = {I}:  C={C_stable1:.4f} h={h_stable1:.4f}')
+            print(f'Eigenvalues stable state: {e_val1}')
+            print('')
+            print (f'Stable state K3 = {K3}, I = {I}:  C={C_stable2:.4f} h={h_stable2:.4f}')
+            print(f'Eigenvalues stable state: {e_val2}')
+            print('')
+            print (f'Stable state K3 = {K3}, I = {I}:  C={C_stable3:.4f} h={h_stable3:.4f}')
+            print(f'Eigenvalues stable state: {e_val3}')
+            print('')
+
+        if I>0.526:
+            C_stable, h_stable =  fsolve(LiRinzel_stable, (0.17,0.1), args=(I,))
+            Jacobian = LiRinzel_Jacobian(C=C_stable, h=h_stable)
+            e_val, e_vec = np.linalg.eig(Jacobian)
+            print (f'Stable state K3 = {K3}, I = {I}:  C={C_stable:.4f} h={h_stable:.4f}')
+            print(f'Eigenvalues stable state: {e_val}')
+
 
     #Nunclines 
     C_nunc, h_nunc1, h_nunc2 = LiRinzel_nunc()
@@ -385,7 +517,7 @@ if __name__ == "__main__":
     h = sol[:,1]
 
     #Qualitative analysis - Arrow field rapr
-    xx = np.linspace(0.0, 0.8, 20)
+    xx = np.linspace(0.0, 1.5, 20)
     yy = np.linspace(0.0, 1.0, 20)
 
     XX, YY = np.meshgrid(xx, yy)    #create grid
@@ -423,7 +555,7 @@ if __name__ == "__main__":
         K3= 0.051
         t_FM, C_FM, I_FM = AF_Modulation(LiRinzel, 0.2,0.4,0.5,0.6,0.8,1.5)
 
-        
+       
     #Plots
     if args.K3 == 0.1:
         title=f'Li-Rinzel Amplitude Modulation - I:{I}'
