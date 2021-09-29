@@ -10,12 +10,14 @@ the IP3 production and degeneration.
 import argparse
 import matplotlib.pyplot as plt
 import numpy as np
+from mpl_toolkits.mplot3d import Axes3D
 from scipy import integrate
 from scipy.signal import argrelextrema
-from sympy import Eq, symbols, solve
+from sympy.solvers import solve
+from sympy import re, im, symbols
 
 
-def ChI(X, t, v_delta):
+def ChI(X, t, v_delta ):
     """
     Model of calcium dynamics with endogenous IP3 metabolism based on
     Li Rinzel (C and h variable)model and IP3 (I) concentration
@@ -55,6 +57,36 @@ def ChI(X, t, v_delta):
             J_delta - J_3K - J_5P]
 
     return np.array(dvdt)
+
+def ChI_nunc_h(C, I):
+    """
+    """
+    nunc = (d2*((I+d1)/(I+d3)))/((d2*((I+d1)/(I+d3)))+C)
+    
+    return  nunc
+
+def ChI_nunc_C(C, I):
+    """
+    """
+    nunc = ((((v3*C**2)/(K3**2+C**2))-v2*(C0-(1+c1)*C))/
+               (v1*(((I/(I+d1))*(C/(C+d5)))**3)*(C0-(1+c1)*C)))**(1/3)
+    return nunc
+
+def ChI_nunc_I(C, h):
+    """
+    """
+    C2 = v_3k*(C**4/(C**4+K_D**4))
+    C1 = k_delta*v_delta*(C**2/(C**2+K_PLCdelta**2))
+
+    a = -r_5p
+    b = -(r_5p*(k_delta+K_3k)+C2)
+    c = C1 - C2*k_delta - r_5p*k_delta*K_3k
+    d = K_3k*C1
+
+    I = symbols('I')
+    sol = solve(a*I**3+b*I**2+c*I+d,I)
+    
+    return sol
 
 def Biforcation3D(model, par_start, par_stop, par_tot=300, t0=0., t_stop=500., dt=2E-2, t_relax=-5000):
     """
@@ -192,14 +224,6 @@ def Period3D(model, par_start, par_stop, par_tot=300, t0=0., t_stop=500., dt=2E-
 
     return par_list, period_list
 
-# Nunclines 3D
-def h_nunc(h, C=0.25):
-    nunc1 = (d3*h*C-d1*d2*(1-h))/(d2*(1-h)-h*C)
-    return nunc1
-
-def C_nunc(C, h=0.71):
-    nunc2 = d1*((C+d5)/(C*h))*((v3/v1)*(C**2/(C**2+K3**2))/(C0-(1+c1)*C)-(v2/v1))**1/3 / (1-((C+d5)/(C*h))*((v3/v1)*(C**2/(C**2+K3**2))*(C0-(1+c1)*C)-(v2/v1))**1/3)
-    return nunc2
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -227,7 +251,7 @@ if __name__ == "__main__":
 
     # Parameters IP3 metabolism
     #PLC delta production 
-    v_delta = 0.40     # Maximal rate of IP3 production by PLC_delta, muM*sec-1
+    v_delta = 0.02     # Maximal rate of IP3 production by PLC_delta, muM*sec-1
     k_delta = 1.5      # Inhibition constant of PLC_delta activity, muM
     K_PLCdelta = 0.1   # Ca affinity of PLC_delta, muM
     #degradation
@@ -249,6 +273,31 @@ if __name__ == "__main__":
     h = sol[:,1]
     I = sol[:,2]
 
+    # Nunclines 
+    CC = np.linspace(0.05,0.8,15)
+    II = np.linspace(0.1,0.8,15)
+    hh = np.linspace(0.1,0.99,15)
+
+    X, Y = np.meshgrid(CC, II)
+    print('Compute C and h nunclines...')
+    Z_h = ChI_nunc_h(X, Y)
+    Z_C = ChI_nunc_C(X, Y)
+
+    c_plot = np.linspace(0.0,0.8,100)
+    i_plot = []
+    for c in c_plot:
+        i = ChI_nunc_I(c, 6)
+        print(c, re(i[2]))
+        i_plot.append(re(i[2]))
+
+    #Qualitative analysis - Arrow field rapr
+    CC = np.linspace(0.05,0.8,6)
+    II = np.linspace(0.1,0.8,6)
+    hh = np.linspace(0.1,0.99,6)
+
+    XX, YY, ZZ = np.meshgrid(CC, hh, II)    #create grid
+    DX1, DY1, DZ1 = ChI([XX,YY,ZZ],t,v_delta)  #arrows' lenghts in cartesian cordinate
+    
 
     #Biforcations
     if args.K3 == 0.1:
@@ -270,19 +319,7 @@ if __name__ == "__main__":
         v_delta_list, Per_list = Period3D(ChI, 0.18, 0.56, par_tot=30)
         
 
-    # I_s = symbols('I_s')
-    # C_s = 0.2
-    # A = v_delta*k_delta*(C_s**2/(C_s**2-K_PLCdelta**2))
-    # B = v_3k*(C_s**4/(C_s**4-K_D**2))
-    # J_5P = r_5p *I_s
-    # eqs = Eq(A*(I_s+K_3k)-B*(I_s**2+I_s*k_delta)-r_5p*I_s*(I_s+K_3k)*(I_s+k_delta),0)
-    # print(solve(eqs,I_s))
-         
-
-    # cc = np.linspace(0, 0.8, 100)
-    # II = h_nunc(cc)
-    # print(II)
-
+    # Plots
     if K3==0.1: title='ChI Amplitude Modulation'
     if K3==0.051: title='ChI Frequency Modulation'
 
@@ -347,4 +384,17 @@ if __name__ == "__main__":
         ax22.set_ylabel('Period [s]')  
         ax22.set_title('Periods')
         ax22.grid(linestyle='dotted')
+
+    fig_p = plt.figure(num='3D phase space ChI model')
+    ax_p = plt.axes(projection='3d')
+    ax_p.plot_surface(X, Z_h, Y, color='green', edgecolor='none')
+    ax_p.plot_surface(X, Z_C, Y, color='orange', edgecolor='none')
+    for h in np.linspace(0.05,1.0,100):
+        ax_p.plot3D(c_plot, np.full((100),h), np.array(i_plot), color='red')
+    ax_p.quiver(XX, YY, ZZ, DX1, DY1, DZ1, length=0.08, normalize=True, alpha=0.5)
+    ax_p.set_xlabel('C')
+    ax_p.set_ylabel('h')
+    ax_p.set_zlabel('I');
+
+
     plt.show()
