@@ -17,7 +17,7 @@ from sympy.solvers import solve
 from sympy import re, im, symbols
 
 
-def ChI(X, t, v_delta ):
+def ChI(X, t, v_delta, r_5p):
     """
     Model of calcium dynamics with endogenous IP3 metabolism based on
     Li Rinzel (C and h variable)model and IP3 (I) concentration
@@ -60,6 +60,20 @@ def ChI(X, t, v_delta ):
 
 def ChI_nunc_h(C, I):
     """
+    Nuncline equation of h variable
+
+    Parameters
+    ----------
+    C: float
+        C value
+
+    I: float
+        I value
+
+    Returns
+    -------
+    nunc: float
+        h value
     """
     nunc = (d2*((I+d1)/(I+d3)))/((d2*((I+d1)/(I+d3)))+C)
     
@@ -67,6 +81,20 @@ def ChI_nunc_h(C, I):
 
 def ChI_nunc_C(C, I):
     """
+    Nuncline equation of C variable
+
+    Parameters
+    ----------
+    C: float
+        C value
+
+    I: float
+        I value
+
+    Returns
+    -------
+    nunc: float
+        h value
     """
     nunc = ((((v3*C**2)/(K3**2+C**2))-v2*(C0-(1+c1)*C))/
                (v1*(((I/(I+d1))*(C/(C+d5)))**3)*(C0-(1+c1)*C)))**(1/3)
@@ -74,6 +102,20 @@ def ChI_nunc_C(C, I):
 
 def ChI_nunc_I(C, h):
     """
+    Nuncline equation of I variable
+
+    Parameters
+    ----------
+    C: float
+        C value
+
+    h: float
+        h value
+
+    Returns
+    -------
+    nunc: float
+        I value
     """
     C2 = v_3k*(C**4/(C**4+K_D**4))
     C1 = k_delta*v_delta*(C**2/(C**2+K_PLCdelta**2))
@@ -88,7 +130,7 @@ def ChI_nunc_I(C, h):
     
     return sol
 
-def Biforcation3D(model, par_start, par_stop, par_tot=300, t0=0., t_stop=500., dt=2E-2, t_relax=-5000):
+def Biforcation3D(model, par, par_start, par_stop, par_tot=300, t0=0., t_stop=500., dt=2E-2, t_relax=-5000):
     """
     Biforcation analysis of continous 3D dynamical system
     throught maximum and minimum discete mapping
@@ -97,7 +139,9 @@ def Biforcation3D(model, par_start, par_stop, par_tot=300, t0=0., t_stop=500., d
     local extremes is found only at the end of variable evolution, 
     the extation of this time regione is set by t_relax.
 
-    Note: In this version the bifurcation is cpmputed only respect to first variable in the model
+    Note: In this version the bifurcation is computed only respect to 
+    variable selected by 'par' argument. Limitation concerns the knowladge
+    of vectiorial field and the name of only two control parameters 
 
     Parameters
     ----------
@@ -105,7 +149,13 @@ def Biforcation3D(model, par_start, par_stop, par_tot=300, t0=0., t_stop=500., d
         Computes the derivative of y at t. If the signature is callable(t, y, ...), then the argument tfirst must be set True.
         Model codimension must be 1 thereby bifurcation analysis concerns only the parameters.
         from scipy.integrate.odeint
-    
+        Limitation: this version works only for ChI model
+
+    par: 0 or 1
+        selects the control parameter over wich compute the biforcation
+        0: first parameters
+        1: second parameters
+
     par_stat: integer or float
         initial value of parameter
 
@@ -139,7 +189,8 @@ def Biforcation3D(model, par_start, par_stop, par_tot=300, t0=0., t_stop=500., d
     Bif_list = list()
     
     for i in np.linspace(par_start, par_stop, par_tot):
-        sol  = integrate.odeint(model, X0, t, args=(i,))
+        if par == 0: sol  = integrate.odeint(model, X0, t, args=(i,r_5p))
+        if par == 1: sol  = integrate.odeint(model, X0, t, args=(v_delta,i))
         X = sol[:,0]
         Y = sol[:,1]
         X = X[t_relax:]
@@ -158,7 +209,7 @@ def Biforcation3D(model, par_start, par_stop, par_tot=300, t0=0., t_stop=500., d
         
     return I_list, Bif_list
 
-def Period3D(model, par_start, par_stop, par_tot=300, t0=0., t_stop=500., dt=2E-2):
+def Period3D(model, par, par_start, par_stop, par_tot=300, t0=0., t_stop=500., dt=2E-2):
     """
     Oscillation periods of 2D dynamical system
     concern different values of the parameter.
@@ -170,6 +221,11 @@ def Period3D(model, par_start, par_stop, par_tot=300, t0=0., t_stop=500., dt=2E-
         Computes the derivative of y at t. If the signature is callable(t, y, ...), then the argument tfirst must be set True.
         Model codimension must be 1 thereby bifurcation analysis concerns only the parameters.
         from scipy.integrate.odeint
+
+    par: 0 or 1
+        selects the control parameter over wich compute the biforcation
+        0: first parameters
+        1: second parameters
 
     par_stat: integer or float
         initial value of parameter
@@ -207,7 +263,8 @@ def Period3D(model, par_start, par_stop, par_tot=300, t0=0., t_stop=500., dt=2E-
     par_list = np.linspace(par_start, par_stop, par_tot)
     period_list = list()
     for i in par_list:
-        sol  = integrate.odeint(model, X0, t, args=(i,))
+        if par == 0: sol  = integrate.odeint(model, X0, t, args=(i,r_5p))
+        if par == 1: sol  = integrate.odeint(model, X0, t, args=(v_delta,i))
         X = sol[:,0]
         Y = sol[:,1]
 
@@ -231,9 +288,7 @@ if __name__ == "__main__":
     parser.add_argument("-K3", type=float,
                         help="""K3 parameter descriminates Amplitude Modulation (AM) to Frequency Modelation (FM):
                                  K3=0.1 AM; K3=0.051 FM""")
-    parser.add_argument("-r_5p", type=float,
-                        help="""r_5p parameter descriminates Amplitude Modulation (AM) to Frequency Modelation (FM):
-                                 r_5p=0.04 AM; r_5p=0.05 FM""")
+
     args = parser.parse_args()
 
     # Parameter CICR
@@ -251,14 +306,17 @@ if __name__ == "__main__":
 
     # Parameters IP3 metabolism
     #PLC delta production 
-    v_delta = 0.02     # Maximal rate of IP3 production by PLC_delta, muM*sec-1
+    if K3 == 0.1:  v_delta = 0.02  # Maximal rate of IP3 production by PLC_delta, muM*sec-1
+    if K3 ==0.051: v_delta = 0.05
     k_delta = 1.5      # Inhibition constant of PLC_delta activity, muM
     K_PLCdelta = 0.1   # Ca affinity of PLC_delta, muM
     #degradation
     v_3k = 2.0         # Maximal rate of degradation by IP3-3K, muM*sec-1
     K_3k = 1.0         # IP3 affinity of IP3-3K, muM
     K_D = 0.7          # Ca affinity of IP3-3K, muM
-    r_5p = args.r_5p   # Maximal rate of degradation by IP3-5P, muM*sec-1
+    if K3 == 0.1:   r_5p = 0.04    # Maximal rate of degradation by IP3-5P, muM*sec-1
+    if K3 == 0.051: r_5p = 0.05
+      
 
     # Parameters - time
     t0 = 0.      #sec
@@ -268,7 +326,7 @@ if __name__ == "__main__":
     t = np.arange(t0, t_fin, dt)
     X0 = np.array([0.0,0.0,0.0])
 
-    sol  = integrate.odeint(ChI, X0, t, args=(v_delta,))
+    sol  = integrate.odeint(ChI, X0, t, args=(v_delta,r_5p))
     C = sol[:,0]
     h = sol[:,1]
     I = sol[:,2]
@@ -279,7 +337,6 @@ if __name__ == "__main__":
     hh = np.linspace(0.1,0.99,15)
 
     X, Y = np.meshgrid(CC, II)
-    print('Compute C and h nunclines...')
     Z_h = ChI_nunc_h(X, Y)
     Z_C = ChI_nunc_C(X, Y)
 
@@ -287,7 +344,6 @@ if __name__ == "__main__":
     i_plot = []
     for c in c_plot:
         i = ChI_nunc_I(c, 6)
-        print(c, re(i[2]))
         i_plot.append(re(i[2]))
 
     #Qualitative analysis - Arrow field rapr
@@ -296,27 +352,32 @@ if __name__ == "__main__":
     hh = np.linspace(0.1,0.99,6)
 
     XX, YY, ZZ = np.meshgrid(CC, hh, II)    #create grid
-    DX1, DY1, DZ1 = ChI([XX,YY,ZZ],t,v_delta)  #arrows' lenghts in cartesian cordinate
+    DX1, DY1, DZ1 = ChI([XX,YY,ZZ],t,v_delta,r_5p)  #arrows' lenghts in cartesian cordinate
     
-
     #Biforcations
     if args.K3 == 0.1:
-        v_delta_l1, bif_l1 = Biforcation3D(ChI, par_start=0.005, par_stop=0.025, par_tot=70,t0=0.,t_stop=700.,dt=2E-2,t_relax=-20000)
-        v_delta_l2, bif_l2 = Biforcation3D(ChI, par_start=0.020, par_stop=0.025, par_tot=70,t0=0.,t_stop=1000.,dt=2E-2,t_relax=-15000)
-        v_delta_l3, bif_l3 = Biforcation3D(ChI, par_start=0.025, par_stop=0.14, par_tot=60,t0=0.,t_stop=400.,dt=2E-2,t_relax=-7000)
-        v_delta_l4, bif_l4 = Biforcation3D(ChI, par_start=0.14, par_stop=0.16, par_tot=20,t0=0.,t_stop=800.,dt=2E-2,t_relax=-5000)
+        v_delta_l1, bif_l1 = Biforcation3D(ChI, 0, par_start=0.005, par_stop=0.025, par_tot=70,t0=0.,t_stop=700.,dt=2E-2,t_relax=-20000)
+        v_delta_l2, bif_l2 = Biforcation3D(ChI, 0, par_start=0.020, par_stop=0.025, par_tot=70,t0=0.,t_stop=1000.,dt=2E-2,t_relax=-15000)
+        v_delta_l3, bif_l3 = Biforcation3D(ChI, 0, par_start=0.025, par_stop=0.14, par_tot=60,t0=0.,t_stop=400.,dt=2E-2,t_relax=-7000)
+        v_delta_l4, bif_l4 = Biforcation3D(ChI, 0, par_start=0.14, par_stop=0.16, par_tot=20,t0=0.,t_stop=800.,dt=2E-2,t_relax=-5000)
+
+        r_delta_rl1, bif_rl1 = Biforcation3D(ChI, 1, par_start=0.0002, par_stop=0.03, par_tot=80,t0=0.,t_stop=700.,dt=2E-2,t_relax=-5000)
 
     if args.K3 == 0.051:
-        v_delta_l1, bif_l1 = Biforcation3D(ChI, par_start=0.01, par_stop=0.16, par_tot=50,t0=0.,t_stop=200.,dt=2E-2,t_relax=15)
-        v_delta_l2, bif_l2 = Biforcation3D(ChI, par_start=0.16, par_stop=0.57, par_tot=80,t0=0.,t_stop=700.,dt=2E-2,t_relax=-10000)
-        v_delta_l3, bif_l3 = Biforcation3D(ChI, par_start=0.57, par_stop=0.80, par_tot=50,t0=0.,t_stop=200.,dt=2E-2,t_relax=-5000)
+        v_delta_l1, bif_l1 = Biforcation3D(ChI, 0, par_start=0.01, par_stop=0.16, par_tot=50,t0=0.,t_stop=200.,dt=2E-2,t_relax=15)
+        v_delta_l2, bif_l2 = Biforcation3D(ChI, 0, par_start=0.16, par_stop=0.57, par_tot=80,t0=0.,t_stop=700.,dt=2E-2,t_relax=-10000)
+        v_delta_l3, bif_l3 = Biforcation3D(ChI, 0, par_start=0.57, par_stop=0.80, par_tot=50,t0=0.,t_stop=200.,dt=2E-2,t_relax=-5000)
+
+        r_delta_rl1, bif_rl1 = Biforcation3D(ChI, 1, par_start=0.0002, par_stop=0.03, par_tot=50,t0=0.,t_stop=400.,dt=2E-2,t_relax=-20000)
 
     #Periods
     if args.K3 == 0.1:
-        v_delta_list, Per_list = Period3D(ChI, 0.027, 0.147, par_tot=30)
+        v_delta_list, Per_list = Period3D(ChI, 0, 0.027, 0.147, par_tot=30)
+        r_delta_list, Per_rlist = Period3D(ChI, 1, 0.0002, 0.027, par_tot=30)
     
     if args.K3 == 0.051:
-        v_delta_list, Per_list = Period3D(ChI, 0.18, 0.56, par_tot=30)
+        v_delta_list, Per_list = Period3D(ChI, 0, 0.18, 0.56, par_tot=30)
+        r_delta_list, Per_rlist = Period3D(ChI, 1, 0.0002, 0.01, par_tot=30)
         
 
     # Plots
@@ -343,9 +404,11 @@ if __name__ == "__main__":
 
     
 
-    fig2 = plt.figure(num=title+' - Biforcation', figsize=(10,5))
-    ax21 = fig2.add_subplot(1,2,1)
-    ax22 = fig2.add_subplot(1,2,2)
+    fig2 = plt.figure(num=title+' - Biforcation', figsize=(10,10))
+    ax21 = fig2.add_subplot(2,2,1)
+    ax22 = fig2.add_subplot(2,2,2)
+    ax23 = fig2.add_subplot(2,2,3)
+    ax24 = fig2.add_subplot(2,2,4)
 
     if args.K3 == 0.1:
         for I, bif in zip(v_delta_l1, bif_l1):
@@ -367,6 +430,20 @@ if __name__ == "__main__":
         ax22.set_title('Periods')
         ax22.grid(linestyle='dotted')
 
+        for r, bif in zip(r_delta_rl1, bif_rl1):
+            ax23.plot(r, bif, 'go', markersize=2)
+        ax23.set_xlabel(r'$r_{5P}$')
+        ax23.set_ylabel(r'$Ca^{2\plus}$')  
+        ax23.set_title(r'Biforcation with regard $v_{5P}$')
+        ax23.grid(linestyle='dotted')
+
+        ax24.scatter(r_delta_list, Per_rlist, marker="^")
+        ax24.set_xlabel(r'$r_{5P}$')
+        ax24.set_ylabel('Period [s]')  
+        ax24.set_title('Periods')
+        ax24.grid(linestyle='dotted')
+        
+
     if args.K3 == 0.051:
         for v, bif in zip(v_delta_l1, bif_l1):
             ax21.plot(v, bif, 'go', markersize=2)
@@ -384,6 +461,19 @@ if __name__ == "__main__":
         ax22.set_ylabel('Period [s]')  
         ax22.set_title('Periods')
         ax22.grid(linestyle='dotted')
+
+        for r, bif in zip(r_delta_rl1, bif_rl1):
+            ax23.plot(r, bif, 'go', markersize=2)
+        ax23.set_xlabel(r'$r_{5P}$')
+        ax23.set_ylabel(r'$Ca^{2\plus}$')  
+        ax23.set_title(r'Biforcation with regard $v_{5P}$')
+        ax23.grid(linestyle='dotted')
+
+        ax24.scatter(r_delta_list, Per_rlist, marker="^")
+        ax24.set_xlabel(r'$r_{5P}$')
+        ax24.set_ylabel('Period [s]')  
+        ax24.set_title('Periods')
+        ax24.grid(linestyle='dotted')
 
     fig_p = plt.figure(num='3D phase space ChI model')
     ax_p = plt.axes(projection='3d')
