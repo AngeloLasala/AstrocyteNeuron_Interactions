@@ -114,6 +114,14 @@ def Biforcation3D(model, par_start, par_stop, par_tot=300, X0_ic=0.0,X1_ic=0.0,X
     par_tot: integer(optional)
         total number of parameter value. Default par_tot=300
 
+    X0_ic: float (optional)
+        first variable initial condiction. Defaul=0
+
+    X1_ic: float (optional)
+        second variable initial condiction. Defaul=0
+    
+    X2_ic: float (optional)
+        third variable initial condiction. Defaul=0
     
     t0: integer or float(optional)
         initial time. Default t0=0
@@ -223,6 +231,76 @@ def Period3D(model, par_start, par_stop, par_tot=300, t0=0., t_stop=500., dt=2E-
 
     return par_list, period_list
 
+def Encoding(model, *G_values, X0_ic=0, X1_ic=0, X2_ic=0, t_wind=100):
+    """
+    Different type of encoding modes of a dynamical 3D model, as G-ChI.
+    The external stimulus is steps fuction defined by G_values parameters
+
+    Parameters
+    ----------
+    model: callable(y, t, ...) or callable(t, y, ...) 
+        Computes the derivative of y at t. If the signature is callable(t, y, ...), then the argument tfirst must be set True.
+        from scipy.integrate.odeint
+
+    G_values: integer or float
+        External stumuls concentration 
+
+    X0_ic: float (optional)
+        first variable initial condiction. Defaul=0
+
+    X1_ic: float (optional)
+        second variable initial condiction. Defaul=0
+    
+    X2_ic: float (optional)
+        third variable initial condiction. Defaul=0
+
+    t_wind: float (optional)
+        time window over which the external signal concentration is costant. Defaul=100
+
+    Returns
+    -------
+    t_tot: list
+        each item of the list is the time widow where the IP3
+        concentration is costan
+
+    C_tot: list
+        Each item of the list is the dynamical behaviour 
+        of Calcium concentration inside time window with constant 
+        external signal concentration
+    """
+
+    t0 = 0.      
+    t_wind = t_wind
+    dt = 2E-2
+    t_fin = t_wind
+    X0 = np.array([X0_ic,X1_ic,X2_ic])
+
+    C_tot = list()
+    I_tot = list()
+    t_tot = list()
+    G_tot = list()
+    
+    for G_item in G_values: 
+        t = np.arange(t0, t_fin, dt)
+        
+        sol  = integrate.odeint(model, X0, t, args=(G_item,))
+        C = sol[:,0]
+        h = sol[:,1]
+        I = sol[:,2]
+
+        C_tot.append(C)
+        I_tot.append(I)
+        t_tot.append(t)
+
+        t0 = t_fin
+        t_fin = t0 +t_wind
+        X0 = np.array([C[-1],h[-1], I[-1]])
+
+        G_graph = np.repeat(G_item, t.shape[0])
+        G_tot.append(G_graph)
+
+    return t_tot, C_tot , I_tot, G_tot
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -230,6 +308,7 @@ if __name__ == "__main__":
     parser.add_argument("-K3", type=float,
                         help="""K3 parameter descriminates Amplitude Modulation (AM) to Frequency Modelation (FM):
                                  K3=0.1 AM; K3=0.051 FM""")
+    parser.add_argument("-gamma", type=float, help="""gamma parameter: extracellular Glutammate concentration:""")
     parser.add_argument('-biforcation', action='store_true', help="""Different type of excitability, default=False""")
 
     args = parser.parse_args()
@@ -267,7 +346,7 @@ if __name__ == "__main__":
     if K3 == 0.1:   r_5p = 0.04    # Maximal rate of degradation by IP3-5P, muM*sec-1
     if K3 == 0.051: r_5p = 0.05
       
-    gamma = 15 #muM
+    gamma = args.gamma #muM
 
     # Parameters - time
     t0 = 0.      #sec
@@ -282,6 +361,15 @@ if __name__ == "__main__":
     h = sol[:,1]
     I = sol[:,2]
 
+    #Encoding modes
+    if K3 == 0.1:
+        t_AFM, C_AFM , I_AFM, gamma_AFM = Encoding(G_ChI, 0.002,3,0.002,3,0.002)
+
+    if K3 == 0.051:
+        t_AFM, C_AFM , I_AFM, gamma_AFM = Encoding(G_ChI, 0.001,3,0.001,3,0.001)
+
+
+    
     #Biforcations and Periods
     if args.biforcation:
         if args.K3 == 0.1:
@@ -305,12 +393,13 @@ if __name__ == "__main__":
     if K3==0.1: title='G-ChI Amplitude Modulation'
     if K3==0.051: title='G-ChI Frequency Modulation'
 
-    fig = plt.figure(num=title+' - Time evolution',figsize=(10,5))
-    ax1 = fig.add_subplot(1,2,1)
-    ax2 = fig.add_subplot(1,2,2)
+    #Dynamics behaviour
+    fig1 = plt.figure(num=title+' - Time evolution',figsize=(10,5))
+    ax1 = fig1.add_subplot(1,2,1)
+    ax2 = fig1.add_subplot(1,2,2)
 
-    ax1.plot(t, C, 'r-', label=r'$Ca^{2\plus}$')  
-    ax1.plot(t, I, 'b-', label=r'$IP_3$')  
+    ax1.plot(t[-10000:], C[-10000:], 'r-', label=r'$Ca^{2\plus}$')  
+    ax1.plot(t[-10000:], I[-10000:], 'b-', label=r'$IP_3$')  
     ax1.set_title(fr"ChI dynamics - $\gamma$ = {gamma}")
     ax1.set_xlabel("time (s)")
     ax1.set_ylabel(r'C,I ($\mu$M)')
@@ -323,29 +412,54 @@ if __name__ == "__main__":
     ax2.set_title(f"C-I Phase space")
     ax2.grid(linestyle='dotted')
 
+    #Encoding mode
+    if K3==0.1: mod='AM'
+    if K3==0.051: mod='FM'
+    fig2 = plt.figure(num=title+' - Encoding modes',figsize=(10,5))
+    ax21 = fig2.add_subplot(3,1,1)
+    ax22 = fig2.add_subplot(3,1,2)
+    ax23 = fig2.add_subplot(3,1,3)
+
+    for t_i,C_i, in zip(t_AFM,C_AFM):
+        ax21.plot(t_i, C_i, linestyle='-', color='red', label=r'$Ca^{2\plus}$ - AM')
+    ax21.set_title(f"{mod} - Encoding Mode")
+    ax21.set_ylabel(r'C ($\mu$M)')
+    ax21.grid(linestyle='dotted')
+
+    for t_i,I_i, in zip(t_AFM,I_AFM):
+        ax22.plot(t_i, I_i, linestyle='-', color='blue', label=r'$Ca^{2\plus}$ - AM')
+    ax22.set_ylabel(r'I ($\mu$M)')
+    ax22.grid(linestyle='dotted')
+
+    for t_i,gamma_i, in zip(t_AFM,gamma_AFM):
+        ax23.plot(t_i, gamma_i, linestyle='-', color='black', label=r'$Ca^{2\plus}$ - AM')
+    ax23.set_ylabel(r'$\gamma$ ($\mu$M)')
+    ax23.set_xlabel('time (s)')
+    ax23.grid(linestyle='dotted')
+
+    #Biforcation
     if args.biforcation:
-        fig2 = plt.figure(num=title+' - Biforcation', figsize=(10,5))
-        ax21 = fig2.add_subplot(1,2,1)
-        ax22 = fig2.add_subplot(1,2,2)
+        fig3 = plt.figure(num=title+' - Biforcation', figsize=(12,8))
+        ax31 = fig3.add_subplot(1,2,1)
+        ax32 = fig3.add_subplot(1,2,2)
 
         for gam, bif in zip(gamma_l1, bif_l1):
-            ax21.plot(gam, bif, 'go', markersize=2)
+            ax31.plot(gam, bif, 'go', markersize=2)
         for gam, bif in zip(gamma_l2, bif_l2):
-            ax21.plot(gam, bif, 'go', markersize=2)
+            ax31.plot(gam, bif, 'go', markersize=2)
         for gam, bif in zip(gamma_l3, bif_l3):
-            ax21.plot(gam, bif, 'go', markersize=2)
+            ax31.plot(gam, bif, 'go', markersize=2)
         
-        ax21.set_xlabel(r'$\gamma$ ($\mu$M)')
-        ax21.set_ylabel(r'$Ca^{2\plus} ($\mu$M)$')  
-        ax21.set_title(r'Biforcation respect to $\gamma$')
-        ax21.grid(linestyle='dotted')
+        ax31.set_xlabel(r'$\gamma$ ($\mu$M)')
+        ax31.set_ylabel(r'$Ca^{2\plus} ($\mu$M)$')  
+        ax31.set_title(r'Biforcation respect to $\gamma$')
+        ax31.grid(linestyle='dotted')
 
-        ax22.scatter(gamma_list, Per_list, marker="^")
-        ax22.set_xlabel(r'$\gamma$ ($\mu$M)')
-        ax22.set_ylabel('Period [s]')  
-        ax22.set_title('Periods')
-        ax22.grid(linestyle='dotted')
+        ax32.scatter(gamma_list, Per_list, marker="^")
+        ax32.set_xlabel(r'$\gamma$ ($\mu$M)')
+        ax32.set_ylabel('Period [s]')  
+        ax32.set_title('Periods')
+        ax32.grid(linestyle='dotted')
 
-    
 
     plt.show()
