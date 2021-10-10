@@ -1,6 +1,7 @@
 """
 'G-ChI' model, extention of Li Rinzel that takes into account
 the IP3 metabolism and the glutamate-dependent production.
+The later mechanism is treated in quasi-static approximation
 
 - "Glutamate regulation of calcium and IP3 oscillating 
    and pulsating dynamics in astrocytes" De Pittà et al (2009a)
