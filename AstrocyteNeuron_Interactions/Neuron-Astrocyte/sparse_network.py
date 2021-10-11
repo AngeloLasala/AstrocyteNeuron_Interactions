@@ -54,22 +54,22 @@ exc_neurons = neurons[:N_e]
 inh_neurons = neurons[N_e:]
 
 syn_model = """
-du_s/dt = -Omega_f * u_s : 1 (clock-driven)
-dx_s/dt = Omega_d * (1-x_s) : 1 (clock-driven)
+du_S/dt = -Omega_f * u_S : 1 (clock-driven)
+dx_S/dt = Omega_d * (1-x_S) : 1 (clock-driven)
 """
 
 action="""
-u_s += U_0*(1-u_s)
-r_s = u_s*x_s
-x_s -= r_s
+u_S += U_0*(1-u_S)
+r_S = u_S*x_S
+x_S -= r_S
 """
 
 exc="""
-g_e_post+=w_e*r_s
+g_e_post+=w_e*r_S
 """
 
 inh="""
-g_i_post+=w_i*r_s
+g_i_post+=w_i*r_S
 """
 
 exc_syn = Synapses(exc_neurons, neurons, model= syn_model, on_pre=action+exc)
@@ -78,8 +78,8 @@ inh_syn = Synapses(inh_neurons, neurons, model= syn_model, on_pre=action+inh)
 exc_syn.connect(p=0.05)
 inh_syn.connect(p=0.2)
 
-exc_syn.x_s = 1
-inh_syn.x_s = 1
+exc_syn.x_S = 1
+inh_syn.x_S = 1
 
 # MONITOR 
 spikes_exc_mon = SpikeMonitor(exc_neurons)
@@ -89,21 +89,21 @@ spikes_inh_mon = SpikeMonitor(inh_neurons)
 index = randrange(N_e) 
 
 state_exc_mon = StateMonitor(exc_neurons, ['v', 'g_e', 'g_i'], record=index)
-syn_exc_mon = StateMonitor(exc_syn, ['u_s','x_s'], record=exc_syn[index, :])
-syn_inh_mon = StateMonitor(inh_syn, ['u_s','x_s'], record=inh_syn[index, :])
+syn_exc_mon = StateMonitor(exc_syn, ['u_S','x_S'], record=exc_syn[index, :])
+syn_inh_mon = StateMonitor(inh_syn, ['u_S','x_S'], record=inh_syn[index, :])
 
 spikes_mon = SpikeMonitor(neurons)
 
 
 run(duration, report='text')
 print(f'exc neuron number: {index}')
-print(f'exc syn: {len(syn_exc_mon.u_s[:])}')
-print(f'inh syn: {len(syn_inh_mon.u_s[:])}')
+print(f'exc syn: {len(syn_exc_mon.u_S[:])}')
+print(f'inh syn: {len(syn_inh_mon.u_S[:])}')
 print()
 print(exc_syn[index, :])
 print(inh_syn[index, :])
 print()
-print(syn_exc_mon.u_s)
+print(syn_exc_mon.u_S)
 print('\n\n')
 
 #Plots
@@ -130,10 +130,10 @@ ax12.set_ylabel('Conductance (nS)')
 ax12.grid(linestyle='dotted')
 ax12.legend(loc = 'upper right')
 
-ax13.plot(syn_exc_mon.t/ms, syn_exc_mon.u_s[0], label=f'{index}'+r' $u_s$', color='C1')
-ax13.plot(syn_exc_mon.t/ms, syn_exc_mon.x_s[0], label=f'{index}'+r' $x_s$', color='C4')
+ax13.plot(syn_exc_mon.t/ms, syn_exc_mon.u_S[0], label=f'{index}'+r' $u_S$', color='C1')
+ax13.plot(syn_exc_mon.t/ms, syn_exc_mon.x_S[0], label=f'{index}'+r' $x_S$', color='C4')
 ax12.set_xlabel('time (ms)')
-ax13.set_ylabel(r'$u_s$, $x_s$')
+ax13.set_ylabel(r'$u_S$, $x_S$')
 ax13.grid(linestyle='dotted')
 ax13.legend(loc = 'upper right')
 
