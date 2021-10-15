@@ -15,7 +15,7 @@ from AstrocyteNeuron_Interactions.Brian2_tutorial.connectivity import Connectivi
 ## General Parameters ## 
 N_syn = 500                # Total number of synapses
 N_a = 1                    # Total number of astrocyte
-duration = 30*second       # Total simulation time
+duration = 20*second       # Total simulation time
 
 ## Synapses parameters ##
 rho_c = 0.005                 # Synaptic vesicle-to-extracellular space volume ratio (bigger then G_ChI_astrpcyte.py)
@@ -70,11 +70,11 @@ U_A = 0.6                   # Gliotransmitter release probability
 G_T = 200*mmolar            # Total vesicular gliotransmitter concentration
 rho_e = 6.5e-4              # Astrocytic vesicle-to-extracellular volume ratio
 Omega_e = 60/second         # Gliotransmitter clearance rate
-alpha = 0.0                   # Gliotransmission nature
+alpha = 0.0                 # Gliotransmission nature
 ##############################################################################
 seed(16283) 
 #Neurons
-rate_in = TimedArray([0.011, 0.11, 1.1, 11, 11, 11]*Hz, dt=5*second)
+rate_in = TimedArray([0.011, 0.11, 1.1, 11]*Hz, dt=5*second)
 pre_synaptic = PoissonGroup(N_syn, rates='rate_in(t)')
 post_synaptic = NeuronGroup(N_syn, model="")
 
@@ -161,15 +161,15 @@ ecs_astro_to_syn.connect(j='i if i<N_syn')
 
 
 #Monitor
-syn_mon = StateMonitor(synapses, 'Y_S', record=True)
+syn_mon = StateMonitor(synapses, ['Y_S', 'Gamma_S'], record=True)
+astro_mon = StateMonitor(astrocyte, 'G_A', record=True)
 
 run(duration, report='text')
-print(syn_mon.Y_S[:N_syn].shape)
-print(len(syn_mon.Y_S.mean(axis=0)))
-
+# print(syn_mon.Y_S[:N_syn].shape)
+# print(len(syn_mon.Y_S.mean(axis=0)))
 
 # Plots
-fig1 = plt.figure(figsize=(10,10))
+fig1 = plt.figure(num=f'Average synaptic Neurotrasmitter, alpha:{alpha}',figsize=(10,10))
 ax11 = fig1.add_subplot(3,1,1)
 ax12 = fig1.add_subplot(3,1,2)
 ax13 = fig1.add_subplot(3,1,3)
@@ -180,16 +180,32 @@ ax11.grid(linestyle='dotted')
 
 ax12.plot(syn_mon.t[:], syn_mon.Y_S[N_syn:].mean(axis=0)/umolar, color='C2', label='no gliotrasmission')
 ax12.set_ylabel(r'$\langle Y_S \rangle$  ($\mu$M)')
+ax12.legend()
 ax12.grid(linestyle='dotted')
 
 ax13.plot(syn_mon.t[:], syn_mon.Y_S[:N_syn].mean(axis=0)/umolar, color='C3', label='gliotrasmission')
 ax13.set_ylabel(r'$\langle Y_S \rangle$  ($\mu$M)')
 ax13.set_xlabel('time (s)')
+ax13.legend()
 ax13.grid(linestyle='dotted')
 
-Connectivity_plot(synapses, source='pre_syn', target='post_syn', color_s='b', color_t='b', size=2)
-Connectivity_plot(ecs_syn_to_astro, source='synapse', target='astrocyte', color_s='b', color_t='b', size=2)
-Connectivity_plot(ecs_astro_to_syn, source='astrocyte', target='synapse', color_s='b', color_t='b', size=2)
+fig2 = plt.figure(num=f'Gliotrasmitter release, alpha:{alpha}',figsize=(10,5))
+ax21 = fig2.add_subplot(2,1,1)
+ax22 = fig2.add_subplot(2,1,2)
 
+ax21.plot(astro_mon.t[:], astro_mon.G_A.mean(axis=0), label='average GRE')
+ax21.set_ylabel(r'$\langle G_A \rangle$  ($\mu$M)')
+ax21.legend()
+ax21.grid(linestyle='dotted')
+
+ax22.plot(syn_mon.t[:], syn_mon.Gamma_S[:N_syn].mean(axis=0), label=r'average $\Gamma_S$')
+ax22.set_ylabel(r'$\langle \Gamma_S \rangle$  ($\mu$M)')
+ax22.set_xlabel('time (s)')
+ax22.legend()
+ax22.grid(linestyle='dotted')
+
+# Connectivity_plot(synapses, source='pre_syn', target='post_syn', color_s='b', color_t='b', size=2)
+# Connectivity_plot(ecs_syn_to_astro, source='synapse', target='astrocyte', color_s='b', color_t='b', size=2)
+# Connectivity_plot(ecs_astro_to_syn, source='astrocyte', target='synapse', color_s='b', color_t='b', size=2)
 
 plt.show()
