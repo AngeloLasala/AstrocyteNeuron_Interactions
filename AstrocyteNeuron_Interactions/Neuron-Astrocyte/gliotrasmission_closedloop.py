@@ -20,8 +20,9 @@ duration = 20*second       # Total simulation time
 ## Synapses parameters ##
 rho_c = 0.005                 # Synaptic vesicle-to-extracellular space volume ratio (bigger then G_ChI_astrpcyte.py)
 Y_T = 500*mmolar              # Total vesicular neurotransmitter concentration
-Omega_c = 40/second            # Neurotransmitter clearance rate
-U_0__star = 0.6               # Resting synaptic release probabilityOmega_d = 2.0/second          # Synaptic depression rate
+Omega_c = 40/second           # Neurotransmitter clearance rate
+U_0__star = 0.6               # Resting synaptic release probability
+Omega_d = 2.0/second          # Synaptic depression rate
 Omega_f = 3.33/second         # Synaptic facilitation rate
 Omega_d = 2.0/second          # Synaptic depression rate
 O_G = 1.5/umolar/second       # Agonist binding (activating) rate
