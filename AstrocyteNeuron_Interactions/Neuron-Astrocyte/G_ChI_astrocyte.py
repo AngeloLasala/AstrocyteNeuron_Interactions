@@ -192,7 +192,7 @@ if __name__ == '__main__':
 
 
     #Plots
-    fig1 = plt.figure(num='Free astrocyte dynamics',figsize=(10,10))
+    fig1 = plt.figure(num='Synaptically activated astrocyte',figsize=(10,10))
     ax11 = fig1.add_subplot(5,1,1)
     ax12 = fig1.add_subplot(5,1,2)
     ax13 = fig1.add_subplot(5,1,3)
@@ -200,7 +200,7 @@ if __name__ == '__main__':
     ax15 = fig1.add_subplot(5,1,5)
 
     ax11.plot(syn_mon.t, syn_mon.Y_S[0]/umolar, color='C5')
-    ax11.set_ylabel(r'$Y_S$ ($mu$M)')
+    ax11.set_ylabel(r'$Y_S$ ($\mu$M)')
     ax11.grid(linestyle='dotted')
 
     ax12.plot(astro_mon.t, astro_mon.Gamma_A[0], color='C4')
