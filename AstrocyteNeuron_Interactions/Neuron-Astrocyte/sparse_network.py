@@ -10,8 +10,8 @@ from brian2 import *
 from AstrocyteNeuron_Interactions.Brian2_tutorial.connectivity import Connectivity_plot
 
 # Parameters
-N_e = 600                #Total number of excitatory neurons
-N_i = 150                #Total number of inhibitory neurons
+N_e = 80                #Total number of excitatory neurons
+N_i = 20                #Total number of inhibitory neurons
 duration = 1.0*second  # Total simulation time
 seed(19958)
 
@@ -24,7 +24,7 @@ C_m = 198*pF           # Membrane capacitance
 tau_e = 5*ms           # Excitatory synaptic time constant
 tau_i = 10*ms          # Inhibitory synaptic time constant
 tau_r = 5*ms           # Refractory period
-I_ex = 115*pA          # External current
+I_ex = 100*pA          # External current
 V_th = -50*mV          # Firing threshold
 V_r = E_l              # Reset potential 
 
@@ -89,8 +89,9 @@ spikes_inh_mon = SpikeMonitor(inh_neurons)
 index = randrange(N_e) 
 
 state_exc_mon = StateMonitor(exc_neurons, ['v', 'g_e', 'g_i'], record=index)
-syn_exc_mon = StateMonitor(exc_syn, ['u_S','x_S'], record=exc_syn[index, :])
+syn_exc_mon = StateMonitor(exc_syn, ['u_S','x_S'], record=exc_syn[index, :]) 
 syn_inh_mon = StateMonitor(inh_syn, ['u_S','x_S'], record=inh_syn[index, :])
+#record=exc_syn[index, :], outgoing synapses from neurons labeled by index
 
 spikes_mon = SpikeMonitor(neurons)
 
@@ -107,7 +108,7 @@ print(syn_exc_mon.u_S)
 print('\n\n')
 
 #Plots
-fig1 = plt.figure(figsize=(9,10))
+fig1 = plt.figure(num=f'exc variable dynamics, Ne:{N_e} Ni:{N_i}, Iex={I_ex/pA}',figsize=(9,10))
 ax11 = fig1.add_subplot(3,1,1)
 ax12 = fig1.add_subplot(3,1,2)
 ax13 = fig1.add_subplot(3,1,3)
@@ -138,7 +139,7 @@ ax13.grid(linestyle='dotted')
 ax13.legend(loc = 'upper right')
 
 
-fig2 = plt.figure(figsize=(8,8))
+fig2 = plt.figure(num=f'Rater plot, Ne:{N_e} Ni:{N_i}, Iex={I_ex/pA}', figsize=(8,8))
 ax21 = fig2.add_subplot(1,1,1)
 
 ax21.scatter(spikes_exc_mon.t[:], spikes_exc_mon.i[:], color='C3', marker='|')
