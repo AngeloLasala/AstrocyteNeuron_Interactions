@@ -79,7 +79,7 @@ if __name__ == '__main__':
 
     #####  PARAMETERS  #######################################################
     ## General Parameters ##
-    N_a = 1                    # Total number of astrocyte
+    N_a = 2                    # Total number of astrocyte
     duration = 50*second       # Integration time
 
     ## Synapses parameters ##
@@ -124,6 +124,7 @@ if __name__ == '__main__':
     zeta = 10                  # Maximal reduction of receptor affinity by PKC
     ##############################################################################
 
+    seed(1224689)
 
     astro_eqs = """
     # Fraction of activated astrocyte receptors (1):
@@ -140,10 +141,14 @@ if __name__ == '__main__':
     J_5P = Omega_5P*I                                 : mmolar/second
 
     # Calcium dynamics (2):
-    dC/dt = J_r + J_l - J_p: mmolar
-    dh/dt = (h_inf - h) / tau_h: 1
+    dC/dt = J_r + J_l - J_p                          : mmolar
+    dh/dt = (h_inf - h_clipped) / tau_h  * (1+noise*xi*tau_h**0.5): 1
+    # dh/dt = alpha *(1-h_clipped) - beta * h_clipped 
+    #         + ((alpha *(1-h_clipped) + beta * h_clipped) / N_ch )*xi*second**0.5 : 1
+    
+    h_clipped = clip(h,0,1)                            : 1
 
-    J_r = Omega_C*(m_inf**3)*(h**3)*(C_T-(1+rho_A)*C)  : mmolar/second
+    J_r = Omega_C*(m_inf**3)*(h_clipped**3)*(C_T-(1+rho_A)*C)  : mmolar/second
     J_l = Omega_L*(C_T-(1+rho_A)*C)                    : mmolar/second
     J_p = (O_P*C**2)/(K_P**2+C**2)                     : mmolar/second
 
@@ -151,9 +156,15 @@ if __name__ == '__main__':
     m_inf = (I/(I+d_1))*(C/(C+d_5))              : 1
     tau_h = 1 / (O_2*(Q_2+C))                    : second
     h_inf = Q_2/(Q_2+C)                          : 1
+    alpha =  O_2 * Q_2                           : 1/second
+    beta =  O_2 * C                              : 1/second  
 
     # Neurotransmitter concentration in the extracellular space
     Y_S     : mmolar
+
+    #Stochastic parameters
+    N_ch                                         : 1 (constant) 
+    noise                                        : 1 (constant) 
     """
 
     # Neuron 
@@ -171,7 +182,10 @@ if __name__ == '__main__':
     synapses.connect()
 
     # Astrocyte
-    astrocyte = NeuronGroup(N_a, astro_eqs)
+    astrocyte = NeuronGroup(N_a, astro_eqs, method='milstein')
+    astrocyte.noise = [0,1]
+    astrocyte.N_ch = [1000,3]
+    astrocyte.h = 0.9
     
     # Connection between synapses and astrocytes 
     ecs_syn_to_astro = Synapses(synapses, astrocyte, 
@@ -192,35 +206,40 @@ if __name__ == '__main__':
 
 
     #Plots
-    fig1 = plt.figure(num='Synaptically activated astrocyte',figsize=(10,10))
-    ax11 = fig1.add_subplot(5,1,1)
-    ax12 = fig1.add_subplot(5,1,2)
-    ax13 = fig1.add_subplot(5,1,3)
-    ax14 = fig1.add_subplot(5,1,4)
-    ax15 = fig1.add_subplot(5,1,5)
+    for astro_i in range(N_a):
+        stoc=''
+        if astro_i>0 : stoc = ' stocasticity'
+        fig1 = plt.figure(num=f'Synaptically activated astrocyte {astro_i}'+ stoc,figsize=(10,10))
+        ax11 = fig1.add_subplot(5,1,1)
+        ax12 = fig1.add_subplot(5,1,2)
+        ax13 = fig1.add_subplot(5,1,3)
+        ax14 = fig1.add_subplot(5,1,4)
+        ax15 = fig1.add_subplot(5,1,5)
 
-    ax11.plot(syn_mon.t, syn_mon.Y_S[0]/umolar, color='C5')
-    ax11.set_ylabel(r'$Y_S$ ($\mu$M)')
-    ax11.grid(linestyle='dotted')
+        ax11.plot(syn_mon.t, syn_mon.Y_S[0]/umolar, color='C6')
+        ax11.set_ylabel(r'$Y_S$ ($\mu$M)')
+        ax11.grid(linestyle='dotted')
 
-    ax12.plot(astro_mon.t, astro_mon.Gamma_A[0], color='C4')
-    ax12.set_ylabel(r'$\Gamma_A$')
-    ax12.grid(linestyle='dotted')
+        ax12.plot(astro_mon.t, astro_mon.Gamma_A[astro_i], color='C4')
+        if astro_i>0: ax12.plot(astro_mon.t, astro_mon.Gamma_A[0], color='k', alpha=0.4)
+        ax12.set_ylabel(r'$\Gamma_A$')
+        ax12.grid(linestyle='dotted')
 
-    ax13.plot(astro_mon.t, astro_mon.I[0]/umolar, color='blue')
-    ax13.set_ylabel(r'$I$ ($\mu$M)') 
-    ax13.grid(linestyle='dotted')
+        ax13.plot(astro_mon.t, astro_mon.I[astro_i]/umolar, color='blue')
+        if astro_i>0: ax13.plot(astro_mon.t, astro_mon.I[0]/umolar, color='k', alpha=0.4)
+        ax13.set_ylabel(r'$I$ ($\mu$M)') 
+        ax13.grid(linestyle='dotted')
 
-    ax14.plot(astro_mon.t, astro_mon.C[0]/umolar, color='red')
-    ax14.set_ylabel(r'$Ca^{2\plus}$ ($\mu$M)') 
-    ax14.grid(linestyle='dotted')
+        ax14.plot(astro_mon.t, astro_mon.C[astro_i]/umolar, color='red')
+        if astro_i>0: ax14.plot(astro_mon.t, astro_mon.C[0]/umolar, color='k', alpha=0.4)
+        ax14.set_ylabel(r'$Ca^{2\plus}$ ($\mu$M)') 
+        ax14.grid(linestyle='dotted')
 
-    ax15.plot(astro_mon.t, astro_mon.h[0], color='C5')
-    ax15.set_ylabel(r'h')
-    ax15.set_xlabel('time (s)')
-    ax15.grid(linestyle='dotted')
-
-
+        ax15.plot(astro_mon.t, astro_mon.h[astro_i], color='C5')
+        if astro_i>0: ax15.plot(astro_mon.t, astro_mon.h[0], color='k', alpha=0.4)
+        ax15.set_ylabel(r'h')
+        ax15.set_xlabel('time (s)')
+        ax15.grid(linestyle='dotted')
 
 
     if args.b:
