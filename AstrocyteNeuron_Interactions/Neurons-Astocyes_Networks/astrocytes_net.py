@@ -121,6 +121,8 @@ ax11.plot(astro_mon.t[:]/second,
           astro_mon.C[N_a//2]/astro_mon.C.max() + N_a//2, color='red')
 ax11.plot(astro_mon.t[:]/second, 
           astro_mon.C[N_a//2+1:].T/astro_mon.C.max() + np.arange(N_a//2+1, N_a), color='k')
+ax11.set_xlabel('time (s)')
+ax11.set_ylabel(r'$Ca^{2\plus}$/$C_{MAX}$ (atrocyte index)')
 
 Connectivity_plot(astro_to_astro, size=10)
 
