@@ -5,7 +5,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from brian2 import *
 
-def Connectivity_plot(Syn, source='Source', target='Target', color_s='k', color_t='k', size=35):
+def Connectivity_plot(Syn, name='Source_to_Target', source='Source', target='Target', 
+                    color_s='k', color_t='k', size=35):
     """
     Connectiovity of neuronal network
 
@@ -13,6 +14,9 @@ def Connectivity_plot(Syn, source='Source', target='Target', color_s='k', color_
     ----------
     Syn : 'brian2.synapses.synapses.Synapses'
         Synapses object when the connectivity is defined
+
+    name : string (optional)
+        main name of figure
 
     source : string (optional)
             name of Sourge network. Default='Source'
@@ -35,7 +39,7 @@ def Connectivity_plot(Syn, source='Source', target='Target', color_s='k', color_
     Ns = len(Syn.source) #number of neuron in Source
     Nt = len(Syn.target) #number of neuron in Target
 
-    fig = plt.figure(figsize=(10,5))
+    fig = plt.figure(num='Connectivity'+' '+name, figsize=(10,5))
     ax1 = fig.add_subplot(1,2,1)
     ax2 = fig.add_subplot(1,2,2)
 

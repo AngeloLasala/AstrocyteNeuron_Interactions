@@ -10,8 +10,8 @@ from brian2 import *
 from AstrocyteNeuron_Interactions.Brian2_tutorial.connectivity import Connectivity_plot
 
 # Parameters
-N_e = 80                #Total number of excitatory neurons
-N_i = 20                #Total number of inhibitory neurons
+N_e = 3600                #Total number of excitatory neurons
+N_i = 800                #Total number of inhibitory neurons
 duration = 1.0*second  # Total simulation time
 seed(19958)
 
@@ -139,7 +139,7 @@ ax13.grid(linestyle='dotted')
 ax13.legend(loc = 'upper right')
 
 
-fig2 = plt.figure(num=f'Rater plot, Ne:{N_e} Ni:{N_i}, Iex={I_ex/pA}', figsize=(8,8))
+fig2 = plt.figure(num=f'Raster plot, Ne:{N_e} Ni:{N_i}, Iex={I_ex/pA}', figsize=(8,8))
 ax21 = fig2.add_subplot(1,1,1)
 
 ax21.scatter(spikes_exc_mon.t[:], spikes_exc_mon.i[:], color='C3', marker='|')
@@ -148,7 +148,7 @@ ax21.set_xlabel('time (s)')
 ax21.set_ylabel('neuron index')
 ax21.set_title('Raster plot')
 
-Connectivity_plot(exc_syn, source='Exc', target='Exc+Inh', color_s='red', color_t='indigo', size=10)
-Connectivity_plot(inh_syn, source='Inh', target='Exc+Inh', color_s='C0', color_t='indigo', size=10)
+# Connectivity_plot(exc_syn, source='Exc', target='Exc+Inh', color_s='red', color_t='indigo', size=10)
+# Connectivity_plot(inh_syn, source='Inh', target='Exc+Inh', color_s='C0', color_t='indigo', size=10)
 
 plt.show()

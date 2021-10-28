@@ -72,6 +72,9 @@ alpha = 0.0                   # Gliotransmission nature
 # Neurons
 spikes = [0, 50, 100, 150, 200,
           300, 310, 320, 330, 340, 350, 360, 370, 380, 390, 400]*ms
+spikes = [-16000, 50, 100, 150, 200,
+          300, 310, 320, 330, 340, 350, 360, 370, 380, 390, 400]*ms
+
 spikes += transient
 print(spikes)
 pre_synaptic = SpikeGeneratorGroup(1, np.zeros(len(spikes)), spikes)
@@ -139,13 +142,14 @@ Y_S     : mmolar
 
 astro_release = """
 G_A += rho_e*G_T*U_A*x_A
+x_A -= U_A * x_A
 """
 
 astrocyte = NeuronGroup(1, model=astro_eqs, method='rk4',
                         threshold='C>C_Theta', refractory='C>C_Theta', reset='G_A += rho_e*G_T*U_A*x_A')
 astrocyte.x_A = 1.0
 astrocyte.h = 0.9
-astrocyte.I = 0.4*umolar
+astrocyte.I = 0.01*umolar
 
 # Synaptic to Astrocyte connection
 ecs_syn_to_astro = Synapses(synapses, astrocyte,
@@ -159,7 +163,7 @@ ecs_astro_to_syn.connect(i=0, j=1)
 #Monitor
 spike_mon = SpikeMonitor(pre_synaptic)
 syn_mon = StateMonitor(synapses, ['u_S','x_S','Y_S','Gamma_S'], record=True)
-astro_mon = StateMonitor(astrocyte, ['C', 'G_A', 'Y_S'], record=True)
+astro_mon = StateMonitor(astrocyte, ['C', 'G_A', 'Y_S', 'Gamma_A'], record=True)
 
 run(duration, report='text')
 print(spike_mon.t)
@@ -170,9 +174,10 @@ print(syn_mon.u_S)
 fig1 = plt.figure(num='Extracellular gliotrasmitter and Calcium dynamics',
                   figsize=(10,10))
 
-ax11 = fig1.add_subplot(3,1,1)
-ax12 = fig1.add_subplot(3,1,2)
-ax13 = fig1.add_subplot(3,1,3)
+ax11 = fig1.add_subplot(4,1,1)
+ax12 = fig1.add_subplot(4,1,2)
+ax13 = fig1.add_subplot(4,1,3)
+ax14 = fig1.add_subplot(4,1,4)
 
 ax11.plot(astro_mon.t[:], astro_mon.Y_S[0]/umolar, color='C3')
 ax11.set_ylabel(r'$Y_S$ ($\mu$M)')
@@ -183,10 +188,14 @@ ax12.set_ylabel(r'$Ca^{2\plus}$ ($\mu$M)')
 ax12.axhline(C_Theta/umolar,0,duration/second, ls='dashed', color='black')
 ax12.grid(linestyle='dotted')
 
-ax13.plot(astro_mon.t[:], astro_mon.G_A[0]/umolar, color='C5')
-ax13.set_ylabel(r'$G_A$ ($\mu$M)')
-ax13.set_xlabel('time (s)')
+ax13.plot(astro_mon.t[:], astro_mon.Gamma_A[0], color='C3')
+ax13.set_ylabel(r'$\Gamma_A$')
 ax13.grid(linestyle='dotted')
+
+ax14.plot(astro_mon.t[:], astro_mon.G_A[0]/umolar, color='C5')
+ax14.set_ylabel(r'$G_A$ ($\mu$M)')
+ax14.set_xlabel('time (s)')
+ax14.grid(linestyle='dotted')
 
 fig2 = plt.figure(num='Modulation of synapses by gliotrasmission',
                   figsize=(10,10))
