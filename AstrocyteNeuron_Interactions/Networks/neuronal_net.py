@@ -7,7 +7,7 @@ Randomly connected networks with conductance-based synapses.
 import matplotlib.pyplot as plt
 from random import randrange
 from brian2 import *
-from AstrocyteNeuron_Interactions.Brian2_tutorial.connectivity import Connectivity_plot
+from AstrocyteNeuron_Interactions.Brian2_utils.connectivity import connectivity_plot
 
 # Parameters
 N_e = 3600                #Total number of excitatory neurons

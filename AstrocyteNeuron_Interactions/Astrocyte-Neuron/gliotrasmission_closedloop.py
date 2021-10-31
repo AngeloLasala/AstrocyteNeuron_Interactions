@@ -8,7 +8,7 @@ with and without gliotrasmission
 """
 import matplotlib.pyplot as plt
 from brian2 import *
-from AstrocyteNeuron_Interactions.Brian2_tutorial.connectivity import Connectivity_plot
+from AstrocyteNeuron_Interactions.Brian2_utils.connectivity import connectivity_plot
 
 
 #####  PARAMETERS  #######################################################

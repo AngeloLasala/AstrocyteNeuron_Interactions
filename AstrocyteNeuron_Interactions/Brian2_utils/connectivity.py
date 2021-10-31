@@ -1,14 +1,15 @@
 """
-Network connectivity using Brian2
+Collection of usefull pyhton fuction to plot network connectivity 
+defined by Brian2 simulator
 """
 import numpy as np
 import matplotlib.pyplot as plt
 from brian2 import *
 
-def Connectivity_plot(Syn, name='Source_to_Target', source='Source', target='Target', 
+def connectivity_plot(Syn, name='Source_to_Target', source='Source', target='Target', 
                     color_s='k', color_t='k', size=35):
     """
-    Connectiovity of neuronal network
+    Easy rapresentation of network connectivity
 
     Parameters
     ----------
@@ -57,18 +58,44 @@ def Connectivity_plot(Syn, name='Source_to_Target', source='Source', target='Tar
     ax2.set_ylabel('Target neuron index')
     ax2.set_title('Source vs Target connectivity')
 
+def connectivity_ring(Syn, r=10):
+    """
+    Network connectivity in a ring fashion
+    version0.1: works only if Syn.source==Syn.target
+
+    Parameters
+    ----------
+    Syn : 'brian2.synapses.synapses.Synapses'
+        Synapses object when the connectivity is defined 
+
+    r : integer (optional)
+        ring's radius
+    """
+    N = len(Syn.source)
+    theta = np.linspace(2*np.pi/N, 2*np.pi, N)
+    xx = r*np.cos(theta)
+    yy = r*np.sin(theta)
+    
+    plt.figure(figsize=(10,10))
+    for i,j in zip(Syn.i,Syn.j):
+        plt.plot([xx[i],xx[j]], [yy[i],yy[j]], lw=0.4, color='C0') 
+    plt.scatter(xx,yy)
+
+
 if __name__ == "__main__":
 
-    N = 10
-    G = NeuronGroup(N, 'v:1')  #dumb neuron, costant 
+    N = 20
+    G = NeuronGroup(N, 'v:1')  #dumb neuron, costant
+    G1= NeuronGroup(N+10, 'v:1') 
+
     S = Synapses(source=G, target=G)
-    
     S.connect(condition='i!=j', p=0.2)
     # S.connect(condition='i!=j', p=0.2) will connect all pairs of neurons i and j 
     # with probability 0.2 as long as the condition i!=j holds
 
-    M = StateMonitor(G, 'v', record=True)
-    G.v = 'rand()'
+    S1 = Synapses(source=G, target=G1)
+    S1.connect(p=0.2)
+    
 
     #only connect neighbouring neurons.
     S2 = Synapses(G,G)
@@ -77,17 +104,9 @@ if __name__ == "__main__":
     #more appropriate with larger network
     run(100*ms)
 
-    fig = plt.figure()
-    ax1 = fig.add_subplot(1,1,1)
+    connectivity_plot(S)
+    connectivity_plot(S2)
 
-    ax1.plot(M.t/ms, M.v[0], label='1 neuron')
-    ax1.plot(M.t/ms, M.v[1], label='2 neuron')
-    ax1.set_xlabel('time (ms)')
-    ax1.set_ylabel('v')
-    ax1.set_title('Neurons dynamics')
-    ax1.legend()
-
-    Connectivity_plot(S)
-    Connectivity_plot(S2)
+    connectivity_ring(S)
 
     plt.show()

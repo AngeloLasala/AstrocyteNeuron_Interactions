@@ -9,15 +9,15 @@ by release-increasing gliotransmission from a connected network of astrocytes.
 import numpy as np
 import matplotlib.pyplot as plt
 from brian2 import *
-from AstrocyteNeuron_Interactions.Brian2_tutorial.connectivity import Connectivity_plot
+from AstrocyteNeuron_Interactions.Brian2_utils.connectivity import connectivity_plot
 
 if __name__ == '__main__': 
     
     ## PARAMETERS ###################################################################
     # --  General parameters --
-    N_e = 3200                    # Number of excitatory neurons
-    N_i = 800                    # Number of inhibitory neurons
-    N_a = 3200                    # Number of astrocytes
+    N_e = 32                    # Number of excitatory neurons
+    N_i = 8                    # Number of inhibitory neurons
+    N_a = 32                    # Number of astrocytes
 
     # -- Some metrics parameters needed to establish proper connections --
     size = 3.75*mmeter           # Length and width of the square lattice
