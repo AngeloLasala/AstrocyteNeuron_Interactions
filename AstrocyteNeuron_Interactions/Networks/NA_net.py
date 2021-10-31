@@ -1,5 +1,5 @@
 """
-coupling neurons and astrocyte network
+coupling neurons and astrocytes network
 
 Randomly connected COBA network  with excitatory synapses modulated
 by release-increasing gliotransmission from a connected network of astrocytes.
@@ -15,9 +15,9 @@ if __name__ == '__main__':
     
     ## PARAMETERS ###################################################################
     # --  General parameters --
-    N_e = 320                    # Number of excitatory neurons
-    N_i = 80                      # Number of inhibitory neurons
-    N_a = 320                    # Number of astrocytes
+    N_e = 3200                    # Number of excitatory neurons
+    N_i = 800                    # Number of inhibitory neurons
+    N_a = 3200                    # Number of astrocytes
 
     # -- Some metrics parameters needed to establish proper connections --
     size = 3.75*mmeter           # Length and width of the square lattice
@@ -123,13 +123,13 @@ if __name__ == '__main__':
     grid_dist = (size / N_cols_exc)
     print(f'dist neurons = {grid_dist}')
     #square grid
-    # x = np.arange(N_rows_exc)
-    # y = np.arange(N_cols_exc)
-    # XX,YY = np.meshgrid(x,y)
+    # xx = np.arange(N_rows_exc)
+    # yy = np.arange(N_cols_exc)
+    # XX,YY = np.meshgrid(xx,yy)
 
     # exc_neurons.x = XX.flatten()[:N_e]*grid_dist
     # exc_neurons.y = YY.flatten()[:N_e]*grid_dist
-    exc_neurons.x = '(i / N_rows_exc)*grid_dist - N_rows_exc/2.0*grid_dist'
+    exc_neurons.x = '(i // N_rows_exc)*grid_dist - N_rows_exc/2.0*grid_dist'
     exc_neurons.y = '(i % N_rows_exc)*grid_dist - N_cols_exc/2.0*grid_dist'
     
     # Random initial membrane potential values and conductances
@@ -184,21 +184,24 @@ if __name__ == '__main__':
 
     # ASTROCYTE
     astro_eqs = """
-    # ELLIPSIS BEGIN
-    # Fraction of activated astrocyte receptors:
+    # Fraction of activated astrocyte receptors (1):
     dGamma_A/dt = O_N * Y_S * (1 - clip(Gamma_A,0,1)) -
                 Omega_N*(1 + zeta * C/(C + K_KC)) * clip(Gamma_A,0,1) : 1
-    # Intracellular IP_3
+    
+    # IP_3 dynamics (1)
     dI/dt = J_beta + J_delta - J_3K - J_5P + J_coupling              : mmolar
+    
     J_beta = O_beta * Gamma_A                                        : mmolar/second
     J_delta = O_delta/(1 + I/kappa_delta) * C**2/(C**2 + K_delta**2) : mmolar/second
     J_3K = O_3K * C**4/(C**4 + K_D**4) * I/(I + K_3K)                : mmolar/second
     J_5P = Omega_5P*I                                                : mmolar/second
-    # Diffusion between astrocytes:
+    # Diffusion between astrocytes (1):
     J_coupling                                                       : mmolar/second
-    # Ca^2+-induced Ca^2+ release:
+    
+    # Calcium dynamics (2):
     dC/dt = J_r + J_l - J_p                                   : mmolar
     dh/dt = (h_inf - h)/tau_h                                 : 1
+    
     J_r = (Omega_C * m_inf**3 * h**3) * (C_T - (1 + rho_A)*C) : mmolar/second
     J_l = Omega_L * (C_T - (1 + rho_A)*C)                     : mmolar/second
     J_p = O_P * C**2/(C**2 + K_P**2)                          : mmolar/second
@@ -206,13 +209,15 @@ if __name__ == '__main__':
     h_inf = Q_2/(Q_2 + C)                                     : 1
     tau_h = 1/(O_2 * (Q_2 + C))                               : second
     Q_2 = d_2 * (I + d_1)/(I + d_3)                           : mmolar
-    # Fraction of gliotransmitter resources available for release:
+    
+    # Fraction of gliotransmitter resources available for release (1):
     dx_A/dt = Omega_A * (1 - x_A) : 1
-    # gliotransmitter concentration in the extracellular space:
+    # gliotransmitter concentration in the extracellular space (1):
     dG_A/dt = -Omega_e*G_A        : mmolar
+   
     # Neurotransmitter concentration in the extracellular space:
     Y_S                           : mmolar
-    # ELLIPSIS END
+
     # The astrocyte position in space
     x : meter (constant)
     y : meter (constant)
@@ -235,7 +240,7 @@ if __name__ == '__main__':
 
     # astrocyte.x = XX_A.flatten()[:N_a]*grid_dist
     # astrocyte.y = YY_A.flatten()[:N_a]*grid_dist
-    astrocyte.x = '(i / N_rows_astro)*grid_dist - N_rows_astro/2.0*grid_dist'
+    astrocyte.x = '(i // N_rows_astro)*grid_dist - N_rows_astro/2.0*grid_dist'
     astrocyte.y = '(i % N_rows_astro)*grid_dist - N_cols_astro/2.0*grid_dist'
 
     
@@ -257,24 +262,23 @@ if __name__ == '__main__':
     ecs_syn_to_astro.connect('astrocyte_index_pre == j')
 
     # Diffusion between astrocytes
-    astro_to_astro_eqs = '''
+    astro_to_astro_eqs = """
     delta_I = I_post - I_pre            : mmolar
     J_coupling_post = -(1 + tanh((abs(delta_I) - I_Theta)/omega_I))*
                     sign(delta_I)*F/2 : mmolar/second (summed)
-    '''
+    """
     astro_to_astro = Synapses(astrocyte, astrocyte,
                             model=astro_to_astro_eqs)
     # Connect to all astrocytes less than 75um away
     # (about 4 connections per astrocyte)
     astro_to_astro.connect('i != j and '
-                        'sqrt((x_pre-x_post)**2 +'
-                        '     (y_pre-y_post)**2) < 75*um')
+                           'sqrt((x_pre-x_post)**2+(y_pre-y_post)**2) < 75*um')
 
     #MOMITOR
     spikes_exc_mon = SpikeMonitor(exc_neurons)
     spikes_inh_mon = SpikeMonitor(inh_neurons)
     astro_mon = SpikeMonitor(astrocyte)
-    avar_mon = StateMonitor(astrocyte, ['C','I','h','Gamma_A','Y_S','G_A','x_A'], record=True)
+    var_astro_mon = StateMonitor(astrocyte, ['C','I','h','Gamma_A','Y_S','G_A','x_A'], record=True)
 
     run(duration, report='text')
 
@@ -291,57 +295,49 @@ if __name__ == '__main__':
     
 
     #Plots
-    fig1 = plt.figure(num=f'Raster plot, Ne:{N_e} Ni:{N_i}, Iex={I_ex/pA}', figsize=(12,12))
-    ax11 = fig1.add_subplot(1,1,1)
+    fig1, ax1 = plt.subplots(nrows=1, ncols=1, sharex=True, figsize=(12, 14), num=f'Raster plot, Ne:{N_e} Ni:{N_i}, Iex={I_ex/pA}')
 
-    step = 10
-    ax11.scatter(spikes_exc_mon.t[np.array(spikes_exc_mon.i)%step==0], 
-                spikes_exc_mon.i[np.array(spikes_exc_mon.i)%step==0], color='C3', marker='|')
-    ax11.scatter(spikes_inh_mon.t[np.array(spikes_inh_mon.i)%step==0], 
-                spikes_inh_mon.i[np.array(spikes_inh_mon.i)%step==0]+N_e, color='C0', marker='|')
-    ax11,scatter(astro_mon.t[np.array(astro_mon.i)%step==0], 
-                astro_mon.i[np.array(astro_mon.i)%step==0]+N_e+N_i, color='green', marker='|')
-    ax11.set_xlabel('time (s)')
-    ax11.set_ylabel('cell index')
+    step = 1
+    ax1.plot(spikes_exc_mon.t[np.array(spikes_exc_mon.i)%step==0], 
+                spikes_exc_mon.i[np.array(spikes_exc_mon.i)%step==0], '|', color='C3')
+    ax1.plot(spikes_inh_mon.t[np.array(spikes_inh_mon.i)%step==0], 
+                spikes_inh_mon.i[np.array(spikes_inh_mon.i)%step==0]+N_e, '|', color='C0',)
+    ax1.plot(astro_mon.t[np.array(astro_mon.i)%step==0], 
+                astro_mon.i[np.array(astro_mon.i)%step==0]+(N_e+N_i),'|' , color='green')
+    ax1.set_xlabel('time (s)')
+    ax1.set_ylabel('cell index')
 
-    fig2 = plt.figure(num='astrocyte dynamics', figsize=(12,12))
-    ax21 = fig2.add_subplot(7,1,1)
-    ax22 = fig2.add_subplot(7,1,2)
-    ax23 = fig2.add_subplot(7,1,3)
-    ax24 = fig2.add_subplot(7,1,4)
-    ax25 = fig2.add_subplot(7,1,5)
-    ax26 = fig2.add_subplot(7,1,6)
-    ax27 = fig2.add_subplot(7,1,7)
+    fig2, ax2 = plt.subplots(nrows=7, ncols=1, sharex=True, figsize=(14, 14), num='astrocyte dynamics')
 
-    index_plot = 0
-    ax21.plot(avar_mon.t[:], avar_mon.Y_S[index_plot]/umolar, color='C3')
-    ax21.set_ylabel(r'$Y_S$ ($\mu$M)')
-    ax21.grid(linestyle='dotted')
+    index_plot = 30
+    ax2[0].plot(var_astro_mon.t[:], var_astro_mon.Y_S[index_plot]/umolar, color='C3')
+    ax2[0].set_ylabel(r'$Y_S$ ($\mu$M)')
+    ax2[0].grid(linestyle='dotted')
 
-    ax22.plot(avar_mon.t[:], avar_mon.Gamma_A[index_plot], color='C4')
-    ax22.set_ylabel(r'$\Gamma_A$ ')
-    ax22.grid(linestyle='dotted')
+    ax2[1].plot(var_astro_mon.t[:], var_astro_mon.Gamma_A[index_plot], color='C7')
+    ax2[1].set_ylabel(r'$\Gamma_A$ ')
+    ax2[1].grid(linestyle='dotted')
 
-    ax23.plot(avar_mon.t[:], avar_mon.I[index_plot]/umolar, color='C5')
-    ax23.set_ylabel(r'$I$ ($\mu$M)')
-    ax23.grid(linestyle='dotted')
+    ax2[2].plot(var_astro_mon.t[:], var_astro_mon.I[index_plot]/umolar, color='C5')
+    ax2[2].set_ylabel(r'$I$ ($\mu$M)')
+    ax2[2].grid(linestyle='dotted')
 
-    ax24.plot(avar_mon.t[:], avar_mon.C[index_plot]/umolar, color='red')
-    ax24.set_ylabel(r'$Ca^{2\plus}$ ($\mu$M)')
-    ax24.axhline(C_Theta/umolar,0,duration/second, ls='dashed', color='black')
-    ax24.grid(linestyle='dotted')
+    ax2[3].plot(var_astro_mon.t[:], var_astro_mon.C[index_plot]/umolar, color='red')
+    ax2[3].set_ylabel(r'$Ca^{2\plus}$ ($\mu$M)')
+    ax2[3].axhline(C_Theta/umolar,0,duration/second, ls='dashed', color='black')
+    ax2[3].grid(linestyle='dotted')
 
-    ax25.plot(avar_mon.t[:], avar_mon.h[index_plot], color='C6')
-    ax25.set_ylabel(r'$h$')
-    ax25.grid(linestyle='dotted')
+    ax2[4].plot(var_astro_mon.t[:], var_astro_mon.h[index_plot], color='C6')
+    ax2[4].set_ylabel(r'$h$')
+    ax2[4].grid(linestyle='dotted')
 
-    ax26.plot(avar_mon.t[:], avar_mon.G_A[index_plot], color='C7')
-    ax26.set_ylabel(r'$G_A$')
-    ax26.grid(linestyle='dotted')
+    ax2[5].plot(var_astro_mon.t[:], var_astro_mon.G_A[index_plot], color='C7')
+    ax2[5].set_ylabel(r'$G_A$')
+    ax2[5].grid(linestyle='dotted')
 
-    ax27.plot(avar_mon.t[:], avar_mon.x_A[index_plot], color='C8')
-    ax27.set_ylabel(r'$x_A$')
-    ax27.grid(linestyle='dotted')
+    ax2[6].plot(var_astro_mon.t[:], var_astro_mon.x_A[index_plot], color='C8')
+    ax2[6].set_ylabel(r'$x_A$')
+    ax2[6].grid(linestyle='dotted')
 
     # Connectivity_plot(exc_syn, source='Exc', target='Exc+Inh', color_s='red', color_t='indigo', size=10, name='exc syn')
     # Connectivity_plot(inh_syn, source='Inh', target='Exc+Inh', color_s='C0', color_t='indigo', size=10)
@@ -349,20 +345,20 @@ if __name__ == '__main__':
     # Connectivity_plot(ecs_syn_to_astro, source='Exc syn', target='Astro', color_s='red', color_t='green', size=10, name='syn_to_astro')
 
 
-    # plt.figure(num='N_e grid')
-    # plt.scatter(exc_neurons.x/mmeter, exc_neurons.y/mmeter)
-    # plt.scatter(exc_syn.x_pre/mmeter, exc_syn.y_pre/mmetre, label='pre')
-    # plt.legend()
+    plt.figure(num='N_e grid')
+    plt.scatter(exc_neurons.x/mmeter, exc_neurons.y/mmeter)
+    plt.scatter(exc_syn.x_pre/mmeter, exc_syn.y_pre/mmetre, label='pre')
+    plt.legend()
 
-    # plt.figure(num='N_e grid_1')
-    # plt.scatter(exc_neurons.x/mmeter, exc_neurons.y/mmeter)
-    # plt.scatter(exc_syn.x_post/mmeter, exc_syn.y_post/mmetre, label='post')
-    # plt.legend()
+    plt.figure(num='N_e grid_1')
+    plt.scatter(exc_neurons.x/mmeter, exc_neurons.y/mmeter)
+    plt.scatter(exc_syn.x_post/mmeter, exc_syn.y_post/mmetre, label='post')
+    plt.legend()
 
 
-    # plt.figure(num='Astro grid')
-    # plt.scatter(astrocyte.x/mmeter, astrocyte.y/mmeter)
-    # plt.legend()
+    plt.figure(num='Astro grid')
+    plt.scatter(astrocyte.x/mmeter, astrocyte.y/mmeter)
+    plt.legend()
 
    
     plt.show()

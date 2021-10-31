@@ -16,9 +16,9 @@ seed(28371)  # to get identical figures for repeated runs
 # Model parameters
 ################################################################################
 ### General parameters
-N_e = 320                   # Number of excitatory neurons
-N_i = 80                    # Number of inhibitory neurons
-N_a = 320                   # Number of astrocytes
+N_e = 3200                   # Number of excitatory neurons
+N_i = 800                    # Number of inhibitory neurons
+N_a = 3200                   # Number of astrocytes
 
 ## Some metrics parameters needed to establish proper connections
 size = 3.75*mmeter           # Length and width of the square lattice
@@ -289,6 +289,16 @@ var_astro_mon = StateMonitor(astrocytes, ['C','I','h','Gamma_A','Y_S','G_A','x_A
 ################################################################################
 run(duration, report='text')
 
+print('NETWORK INFORMATION')
+print(f'excitatory neurons = {N_e}')
+print(f'inhibitory neurons = {N_i}')
+print(f'excitatory synapses = {len(exc_syn.i)}')
+print(f'inhibitory synapses = {len(inh_syn.i)}')
+print('_______________\n')
+print(f'astrocytes = {N_a}')
+print(f'syn to astro connection = {len(ecs_syn_to_astro.i)}')
+print(f'astro to syn connection = {len(ecs_astro_to_syn.i)}\n\n')
+
 ################################################################################
 # Plot of Spiking activity
 ################################################################################
@@ -329,44 +339,37 @@ ax[2].set(xlim=(0, duration/second), ylim=(0.1, 150),
           xlabel='time (s)', ylabel='rate (Hz)')
 ax[2].get_yaxis().set_major_formatter(ScalarFormatter())
 
-fig2 = plt.figure(num='astrocyte dynamics', figsize=(12,12))
-ax21 = fig2.add_subplot(7,1,1)
-ax22 = fig2.add_subplot(7,1,2)
-ax23 = fig2.add_subplot(7,1,3)
-ax24 = fig2.add_subplot(7,1,4)
-ax25 = fig2.add_subplot(7,1,5)
-ax26 = fig2.add_subplot(7,1,6)
-ax27 = fig2.add_subplot(7,1,7)
+fig2, ax2 = plt.subplots(nrows=7, ncols=1, sharex=True, figsize=(14, 14), num='astrocyte dynamics_prof')
 
 index_plot = 50
-ax21.plot(var_astro_mon.t[:], var_astro_mon.Y_S[index_plot]/umolar, color='C3')
-ax21.set_ylabel(r'$Y_S$ ($\mu$M)')
-ax21.grid(linestyle='dotted')
+ax2[0].plot(var_astro_mon.t[:], var_astro_mon.Y_S[index_plot]/umolar, color='C3')
+ax2[0].set_ylabel(r'$Y_S$ ($\mu$M)')
+ax2[0].grid(linestyle='dotted')
 
-ax22.plot(var_astro_mon.t[:], var_astro_mon.Gamma_A[index_plot], color='C7')
-ax22.set_ylabel(r'$\Gamma_A$ ')
-ax22.grid(linestyle='dotted')
+ax2[1].plot(var_astro_mon.t[:], var_astro_mon.Gamma_A[index_plot], color='C7')
+ax2[1].set_ylabel(r'$\Gamma_A$ ')
+ax2[1].grid(linestyle='dotted')
 
-ax23.plot(var_astro_mon.t[:], var_astro_mon.I[index_plot]/umolar, color='C5')
-ax23.set_ylabel(r'$I$ ($\mu$M)')
-ax23.grid(linestyle='dotted')
+ax2[2].plot(var_astro_mon.t[:], var_astro_mon.I[index_plot]/umolar, color='C5')
+ax2[2].set_ylabel(r'$I$ ($\mu$M)')
+ax2[2].grid(linestyle='dotted')
 
-ax24.plot(var_astro_mon.t[:], var_astro_mon.C[index_plot]/umolar, color='red')
-ax24.set_ylabel(r'$Ca^{2\plus}$ ($\mu$M)')
-ax24.axhline(C_Theta/umolar,0,duration/second, ls='dashed', color='black')
-ax24.grid(linestyle='dotted')
+ax2[3].plot(var_astro_mon.t[:], var_astro_mon.C[index_plot]/umolar, color='red')
+ax2[3].set_ylabel(r'$Ca^{2\plus}$ ($\mu$M)')
+ax2[3].axhline(C_Theta/umolar,0,duration/second, ls='dashed', color='black')
+ax2[3].grid(linestyle='dotted')
 
-ax25.plot(var_astro_mon.t[:], var_astro_mon.h[index_plot], color='C6')
-ax25.set_ylabel(r'$h$')
-ax25.grid(linestyle='dotted')
+ax2[4].plot(var_astro_mon.t[:], var_astro_mon.h[index_plot], color='C6')
+ax2[4].set_ylabel(r'$h$')
+ax2[4].grid(linestyle='dotted')
 
-ax26.plot(var_astro_mon.t[:], var_astro_mon.G_A[index_plot], color='C7')
-ax26.set_ylabel(r'$G_A$')
-ax26.grid(linestyle='dotted')
+ax2[5].plot(var_astro_mon.t[:], var_astro_mon.G_A[index_plot], color='C7')
+ax2[5].set_ylabel(r'$G_A$')
+ax2[5].grid(linestyle='dotted')
 
-ax27.plot(var_astro_mon.t[:], var_astro_mon.x_A[index_plot], color='C8')
-ax27.set_ylabel(r'$x_A$')
-ax27.grid(linestyle='dotted')
+ax2[6].plot(var_astro_mon.t[:], var_astro_mon.x_A[index_plot], color='C8')
+ax2[6].set_ylabel(r'$x_A$')
+ax2[6].grid(linestyle='dotted')
 
 # Save figures  # DELETE
 plt.show()
