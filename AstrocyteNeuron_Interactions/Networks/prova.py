@@ -16,9 +16,9 @@ seed(28371)  # to get identical figures for repeated runs
 # Model parameters
 ################################################################################
 ### General parameters
-N_e = 3200                   # Number of excitatory neurons
-N_i = 800                    # Number of inhibitory neurons
-N_a = 3200                   # Number of astrocytes
+N_e = 320                   # Number of excitatory neurons
+N_i = 80                    # Number of inhibitory neurons
+N_a = 320                   # Number of astrocytes
 
 ## Some metrics parameters needed to establish proper connections
 size = 3.75*mmeter           # Length and width of the square lattice
@@ -341,7 +341,7 @@ ax[2].get_yaxis().set_major_formatter(ScalarFormatter())
 
 fig2, ax2 = plt.subplots(nrows=7, ncols=1, sharex=True, figsize=(14, 14), num='astrocyte dynamics_prof')
 
-index_plot = 50
+index_plot = 0
 ax2[0].plot(var_astro_mon.t[:], var_astro_mon.Y_S[index_plot]/umolar, color='C3')
 ax2[0].set_ylabel(r'$Y_S$ ($\mu$M)')
 ax2[0].grid(linestyle='dotted')
