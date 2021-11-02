@@ -58,7 +58,7 @@ def connectivity_plot(Syn, name='Source_to_Target', source='Source', target='Tar
     ax2.set_ylabel('Target neuron index')
     ax2.set_title('Source vs Target connectivity')
 
-def connectivity_ring(Syn, r=10):
+def connectivity_ring(Syn, r=10, color='C0', size=20):
     """
     Network connectivity in a ring fashion
     version0.1: works only if Syn.source==Syn.target
@@ -70,6 +70,12 @@ def connectivity_ring(Syn, r=10):
 
     r : integer (optional)
         ring's radius
+
+    color : array-like or list of colors or color (optional)
+        color of Source network. See matplotlib.color for more information about color.
+    
+    size : integer or float (optional)
+        marker size. Default=20
     """
     N = len(Syn.source)
     theta = np.linspace(2*np.pi/N, 2*np.pi, N)
@@ -78,8 +84,56 @@ def connectivity_ring(Syn, r=10):
     
     plt.figure(figsize=(10,10))
     for i,j in zip(Syn.i,Syn.j):
-        plt.plot([xx[i],xx[j]], [yy[i],yy[j]], lw=0.4, color='C0') 
-    plt.scatter(xx,yy)
+        plt.plot([xx[i],xx[j]], [yy[i],yy[j]], lw=0.4, color=color) 
+    plt.scatter(xx,yy, color=color, s=size)
+
+def connectivity_EIring(Syn_exc, Syn_inh, r=1, step=1, color='C0', size=10):
+    """
+    Network connectivity of a Exitatory-Inhibitory Neural Network in a ring fashion.
+    Neurons are defined in a unique NeuronGroup objet with N_e+N_I elements
+    when first N_e neurons are excitatory while the others are inhibitory.
+    The connectivity is built up by two Synapses class, one 'exc' and the other 'inh':
+    - exc_syn = Synapses(exc_neurons, neurons,...)
+    - inh_syn = Synapses(inh_neurons, neurons, ...)
+
+    Parameters
+    ----------
+    Syn_exc : 'brian2.synapses.synapses.Synapses'
+        Synapses object when the excitatory connectivity is defined 
+
+    Syn_inh : 'brian2.synapses.synapses.Synapses'
+        Synapses object when the inhibitory connectivity is defined
+
+    r : integer (optional)
+        ring's radius
+
+    step : integer (oprional)
+        step therby the neurons are effectivly plot on th ring, usefull for a large network
+        example: with Ne=400 Ni=100 step=10 the neurons ploted are [0,10,20,..]
+        so only the 10% of the network is plotted. Default=1
+
+    color : array-like or list of colors or color (optional)
+        color of Source network. See matplotlib.color for more information about color.
+    
+    size : integer or float (optional)
+        marker size. Default=20
+    """
+    N_e = len(Syn_exc.source) #exc neurons
+    N_i = len(Syn_inh.source) #inh neurons
+    N = N_e + N_i
+
+    theta = np.linspace(2*np.pi/N, 2*np.pi, N)
+    xx = r*np.cos(theta)
+    yy = r*np.sin(theta)
+   
+    plt.figure(figsize=(10,10))
+    # for i,j in zip(Syn_exc.i,Syn_exc.j):
+    #     plt.plot([xx[:N_e][i],xx[j]], [yy[:N_e][i],yy[j]], lw=0.2, color='C3') 
+    for i,j in zip(Syn_inh.i,Syn_inh.j):
+        plt.plot([xx[N_e:][i],xx[j]], [yy[N_e:][i],yy[j]], lw=0.2, color='C0')
+    plt.scatter(xx[:N_e],yy[:N_e], color='C3',  marker='o', s=size)
+    plt.scatter(xx[N_e:],yy[N_e:], color='C0',  marker='o', s=size)
+
 
 
 if __name__ == "__main__":
@@ -102,11 +156,25 @@ if __name__ == "__main__":
     S2.connect(condition='abs(i-j)<4 and i!=j')
     #S2.connect(j='k for k in range(i-3, i+4) if i!=k', skip_if_invalid=True)
     #more appropriate with larger network
+    
+    N_e = 40
+    N_i = 10
+    neurons = NeuronGroup(N_e+N_i, model='')
+    exc_neurons = neurons[:N_e]
+    inh_neurons = neurons[N_e:]
+
+    exc_syn = Synapses(exc_neurons, neurons)
+    inh_syn = Synapses(inh_neurons, neurons)
+    exc_syn.connect(True, p=0.05)
+    inh_syn.connect(True, p=0.2)
+
+
     run(100*ms)
 
     connectivity_plot(S)
     connectivity_plot(S2)
-
     connectivity_ring(S)
+
+    connectivity_EIring(exc_syn, inh_syn, step=1)
 
     plt.show()
