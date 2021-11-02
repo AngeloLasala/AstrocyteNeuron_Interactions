@@ -7,6 +7,7 @@ by release-increasing gliotransmission from a connected network of astrocytes.
 - "Modelling neuro-glia interactions with the Brian2 simulator" Stimberg et al (2017)
 """
 import os
+import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 from brian2 import *
@@ -14,9 +15,9 @@ from AstrocyteNeuron_Interactions.Brian2_utils.connectivity import connectivity_
 
 ## PARAMETERS ###################################################################
 # --  General parameters --
-N_e = 320                    # Number of excitatory neurons
-N_i = 80                    # Number of inhibitory neurons
-N_a = 320                    # Number of astrocytes
+N_e = 3200                    # Number of excitatory neurons
+N_i = 800                    # Number of inhibitory neurons
+N_a = 3200                    # Number of astrocytes
 
 # -- Some metrics parameters needed to establish proper connections --
 size = 3.75*mmeter           # Length and width of the square lattice
@@ -123,7 +124,6 @@ inh_neurons = neurons[N_e:]
 N_rows_exc = int(sqrt(N_e))
 N_cols_exc = N_e/N_rows_exc
 grid_dist = (size / N_cols_exc)
-print(f'dist neurons = {grid_dist}')
 #square grid
 # xx = np.arange(N_rows_exc)
 # yy = np.arange(N_cols_exc)
@@ -284,6 +284,7 @@ var_astro_mon = StateMonitor(astrocyte, ['C','I','h','Gamma_A','Y_S','G_A','x_A'
 
 ## RUN and NETWORK INFORMATION ###################################################################
 run(duration, report='text')
+print(exc_syn)
 
 print('\n NETWORK INFORMATION')
 print(f'excitatory neurons = {N_e}')
@@ -321,9 +322,12 @@ np.save(f'{name}/var_astro_mon.C',var_astro_mon.C)
 np.save(f'{name}/var_astro_mon.h',var_astro_mon.h)
 np.save(f'{name}/var_astro_mon.x_A',var_astro_mon.x_A)
 np.save(f'{name}/var_astro_mon.G_A',var_astro_mon.G_A)
-## PLOTS #########################################################################################
 
-fig1, ax1 = plt.subplots(nrows=1, ncols=1, sharex=True, figsize=(12, 14), num=f'Raster plot, Ne:{N_e} Ni:{N_i}, Iex={I_ex/pA}')
+###################################################################################################
+
+## PLOTS #########################################################################################
+fig1, ax1 = plt.subplots(nrows=1, ncols=1, sharex=True, figsize=(12, 14),
+                         num=f'Raster plot: Ne={N_e} Ni={N_i}, Na={N_a}')
 step = 1
 ax1.plot(spikes_exc_mon.t[np.array(spikes_exc_mon.i)%step==0], 
             spikes_exc_mon.i[np.array(spikes_exc_mon.i)%step==0], '|', color='C3')
