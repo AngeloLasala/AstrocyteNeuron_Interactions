@@ -8,6 +8,7 @@ by release-increasing gliotransmission from a randomly connected network of astr
 # matplotlib.use('agg')  # DELETE
 from brian2 import *
 import matplotlib.pyplot as plt
+import os
 
 set_device('cpp_standalone', directory=None)  # Use fast "C++ standalone mode"
 seed(28371)  # to get identical figures for repeated runs
@@ -16,9 +17,9 @@ seed(28371)  # to get identical figures for repeated runs
 # Model parameters
 ################################################################################
 ### General parameters
-N_e = 320                   # Number of excitatory neurons
-N_i = 80                    # Number of inhibitory neurons
-N_a = 320                   # Number of astrocytes
+N_e = 3200                   # Number of excitatory neurons
+N_i = 800                    # Number of inhibitory neurons
+N_a = 3200                   # Number of astrocytes
 
 ## Some metrics parameters needed to establish proper connections
 size = 3.75*mmeter           # Length and width of the square lattice
@@ -298,6 +299,27 @@ print('_______________\n')
 print(f'astrocytes = {N_a}')
 print(f'syn to astro connection = {len(ecs_syn_to_astro.i)}')
 print(f'astro to syn connection = {len(ecs_astro_to_syn.i)}\n\n')
+
+name = f'Neuro-Astro_network/Network:Ne={N_e}_Ni={N_i}_Na={N_a}'+'_prof'
+os.mkdir(name)
+
+# Raster plot
+np.save(f'{name}/spikes_exc_mon.t',exc_mon.t)
+np.save(f'{name}/spikes_exc_mon.i',exc_mon.i)
+np.save(f'{name}/spikes_inh_mon.t',inh_mon.t)
+np.save(f'{name}/spikes_inh_mon.i',inh_mon.i)
+np.save(f'{name}/astro_mon.t',ast_mon.t)
+np.save(f'{name}/astro_mon.i',ast_mon.i)
+
+# Astrocte variables dynamics
+np.save(f'{name}/var_astro_mon.t',var_astro_mon.t)
+np.save(f'{name}/var_astro_mon.Y_S',var_astro_mon.Y_S)
+np.save(f'{name}/var_astro_mon.Gamma_A',var_astro_mon.Gamma_A)
+np.save(f'{name}/var_astro_mon.I',var_astro_mon.I)
+np.save(f'{name}/var_astro_mon.C',var_astro_mon.C)
+np.save(f'{name}/var_astro_mon.h',var_astro_mon.h)
+np.save(f'{name}/var_astro_mon.x_A',var_astro_mon.x_A)
+np.save(f'{name}/var_astro_mon.G_A',var_astro_mon.G_A)
 
 ################################################################################
 # Plot of Spiking activity
