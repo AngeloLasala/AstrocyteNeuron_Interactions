@@ -24,7 +24,6 @@ Omega_c = 40/second           # Neurotransmitter clearance rate
 U_0__star = 0.6               # Resting synaptic release probability
 Omega_d = 2.0/second          # Synaptic depression rate
 Omega_f = 3.33/second         # Synaptic facilitation rate
-Omega_d = 2.0/second          # Synaptic depression rate
 O_G = 1.5/umolar/second       # Agonist binding (activating) rate
 Omega_G = 0.5/(60*second)     # Agonist release (deactivating) rate
 
@@ -41,7 +40,7 @@ d_5 = 0.08234*umolar    # Ca activation dissociation costant
 C_T = 2.0*umolar        # Total cell free Calcium concentration
 rho_A = 0.185           # Ratio between ER volume and cytosol
 O_2 = 0.2/umolar/second    # IP3R binding rate for Ca inhibition
-K_P = 0.1*umolar        # SERCA calcium affinity
+K_P = 0.05*umolar        # SERCA calcium affinity
 
 # -- IP3 methabolism --
 #degradation
@@ -51,18 +50,23 @@ K_3K = 1.0*umolar         # IP3 affinity of IP3-3K, muM
 K_D = 0.5*umolar          # Ca affinity of IP3-3K, muM
 
 #PLC_delta production 
-O_delta = 0.2*umolar/second  # Maximal rate of IP3 production by PLC_delta
+O_delta = 0.6*umolar/second  # Maximal rate of IP3 production by PLC_delta
 kappa_delta = 1.5*umolar  # Inhibition constant of PLC_delta activity
-K_delta = 0.3*umolar      # Ca affinity of PLC_delta
+K_delta = 0.1*umolar      # Ca affinity of PLC_delta
 
 #PLC_beta production, agonist(glutammate) dependent
-O_beta = 5*umolar/second   # Maximal rate of IP3 production by PLC_beta
+O_beta = 3.2*umolar/second   # Maximal rate of IP3 production by PLC_beta
 K_KC = 0.5*umolar       # Ca affinity of PKC
 
 # -- Gamma_A - fraction of activated astrocyte (Gprotein receptors) --
 O_N = 0.3/umolar/second    # Agonist binding rate
 Omega_N =0.5/second        # Maximal inactivation rate
 zeta = 10                  # Maximal reduction of receptor affinity by PKC
+
+# -- IP_3 diffusion (astrocyte coupling) --
+F_ex = 2.0*umolar/second       # GJC IP_3 permeability
+I_Theta = 0.3*umolar         # Threshold gradient for IP_3 diffusion
+omega_I = 0.05*umolar        # Scaling factor of diffusion
 
 # -- Gliotrasmitter --
 C_Theta = 0.5*umolar        # Ca^2+ threshold for exocytosis
@@ -108,13 +112,17 @@ dGamma_A/dt = O_N * Y_S * (1 - Gamma_A) -
             Omega_N*(1 + zeta * C/(C + K_KC)) * Gamma_A : 1
 
 # IP_3 dynamics (1):
-dI/dt = J_beta + J_delta - J_3K - J_5P       : mmolar
+dI/dt = J_beta + J_delta - J_3K - J_5P + J_coup       : mmolar
 
 J_beta = O_beta * Gamma_A                         : mmolar/second
 J_delta = O_delta/(1 + I/kappa_delta) *
                         C**2/(C**2 + K_delta**2) : mmolar/second
 J_3K = O_3K * C**4/(C**4 + K_D**4) * I/(I + K_3K) : mmolar/second
 J_5P = Omega_5P*I                                 : mmolar/second
+delta_I_bias = I - I_bias : mmolar
+J_coup = -F_ex/2*(1 + tanh((abs(delta_I_bias) - I_Theta)/omega_I)) *
+                sign(delta_I_bias)                        : mmolar/second
+I_bias : mmolar
 
 # Calcium dynamics (2):
 dC/dt = J_r + J_l - J_p: mmolar
@@ -142,13 +150,14 @@ Y_S     : mmolar
 
 astro_release = """
 G_A += rho_e*G_T*U_A*x_A
+x_A -= U_A *  x_A
 """
 
 astrocyte = NeuronGroup(N_a*N_syn, model=astro_eqs, method='rk4',
-                        threshold='C>C_Theta', refractory='C>C_Theta', reset='G_A += rho_e*G_T*U_A*x_A')
+                        threshold='C>C_Theta', refractory='C>C_Theta', reset=astro_release)
 astrocyte.x_A = 1.0
 astrocyte.h = 0.9
-astrocyte.I = 0.4*umolar
+# astrocyte.I = 0.4*umolar
 
 #Closed-loop
 ecs_syn_to_astro = Synapses(synapses, astrocyte, 
