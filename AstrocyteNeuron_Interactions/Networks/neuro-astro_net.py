@@ -11,13 +11,13 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 from brian2 import *
-from AstrocyteNeuron_Interactions.Brian2_utils.connectivity import connectivity_plot
-
+from AstrocyteNeuron_Interactions.Brian2_utils.connectivity import connectivity_plot,connectivity_EIring
+from AstrocyteNeuron_Interactions import makedir
 ## PARAMETERS ###################################################################
 # --  General parameters --
-N_e = 3200                    # Number of excitatory neurons
-N_i = 800                    # Number of inhibitory neurons
-N_a = 3200                    # Number of astrocytes
+N_e = 320                    # Number of excitatory neurons
+N_i = 80                    # Number of inhibitory neurons
+N_a = 320                    # Number of astrocytes
 
 # -- Some metrics parameters needed to establish proper connections --
 size = 3.75*mmeter           # Length and width of the square lattice
@@ -303,7 +303,10 @@ print(f'astrocyte grid: {N_rows_astro}x{N_rows_astro} dist={grid_dist/umetre} um
 
 ## SAVE IMPORTANT VALUES #########################################################################
 name = f'Neuro-Astro_network/Network:Ne={N_e}_Ni={N_i}_Na={N_a}'
-os.mkdir(name)
+makedir.smart_makedir(name)
+
+# Duration
+np.save(f'{name}/duration',duration)
 
 # Raster plot
 np.save(f'{name}/spikes_exc_mon.t',spikes_exc_mon.t)
@@ -322,21 +325,30 @@ np.save(f'{name}/var_astro_mon.C',var_astro_mon.C)
 np.save(f'{name}/var_astro_mon.h',var_astro_mon.h)
 np.save(f'{name}/var_astro_mon.x_A',var_astro_mon.x_A)
 np.save(f'{name}/var_astro_mon.G_A',var_astro_mon.G_A)
-
 ###################################################################################################
 
 ## PLOTS #########################################################################################
-fig1, ax1 = plt.subplots(nrows=1, ncols=1, sharex=True, figsize=(12, 14),
-                         num=f'Raster plot: Ne={N_e} Ni={N_i}, Na={N_a}')
+fig1, ax1 = plt.subplots(nrows=2, ncols=1, sharex=True, gridspec_kw={'height_ratios': [3, 1]},
+                        figsize=(12, 14), num=f'Raster plot: Ne={N_e} Ni={N_i}, Na={N_a}')
 step = 1
-ax1.plot(spikes_exc_mon.t[np.array(spikes_exc_mon.i)%step==0], 
+ax1[0].plot(spikes_exc_mon.t[np.array(spikes_exc_mon.i)%step==0]/ms, 
             spikes_exc_mon.i[np.array(spikes_exc_mon.i)%step==0], '|', color='C3')
-ax1.plot(spikes_inh_mon.t[np.array(spikes_inh_mon.i)%step==0], 
+ax1[0].plot(spikes_inh_mon.t[np.array(spikes_inh_mon.i)%step==0]/ms, 
             spikes_inh_mon.i[np.array(spikes_inh_mon.i)%step==0]+N_e, '|', color='C0',)
-ax1.plot(astro_mon.t[np.array(astro_mon.i)%step==0], 
+ax1[0].plot(astro_mon.t[np.array(astro_mon.i)%step==0]/ms, 
             astro_mon.i[np.array(astro_mon.i)%step==0]+(N_e+N_i),'|' , color='green')
-ax1.set_xlabel('time (s)')
-ax1.set_ylabel('cell index')
+ax1[0].set_xlabel('time (s)')
+ax1[0].set_ylabel('cell index')
+
+hist_step = 1
+bin_size = (duration/ms)/((duration/ms)//hist_step)*ms
+spk_count, bin_edges = np.histogram(np.r_[spikes_exc_mon.t/ms,spikes_inh_mon.t/ms], 
+                                    int(duration/ms)//hist_step)
+rate = double(spk_count)/(N_e+N_i)/bin_size
+ax1[1].plot(bin_edges[:-1], rate, '-', color='k')
+ax1[1].set_ylabel('rate (Hz)')
+ax1[1].set_xlabel('time (ms)')
+ax1[1].grid(linestyle='dotted')
 
 fig2, ax2 = plt.subplots(nrows=7, ncols=1, sharex=True, figsize=(14, 14), num='astrocyte dynamics')
 index_plot = 0
@@ -369,23 +381,24 @@ ax2[6].plot(var_astro_mon.t[:], var_astro_mon.x_A[index_plot], color='C8')
 ax2[6].set_ylabel(r'$x_A$')
 ax2[6].grid(linestyle='dotted')
 
+connectivity_EIring(exc_syn, inh_syn, size=5, lw=0.05, split=True)
 # Connectivity_plot(exc_syn, source='Exc', target='Exc+Inh', color_s='red', color_t='indigo', size=10, name='exc syn')
 # Connectivity_plot(inh_syn, source='Inh', target='Exc+Inh', color_s='C0', color_t='indigo', size=10)
 # Connectivity_plot(ecs_astro_to_syn, source='Astro', target='Exc syn', color_s='green', color_t='red', size=10, name='stro_to_syn')
 # Connectivity_plot(ecs_syn_to_astro, source='Exc syn', target='Astro', color_s='red', color_t='green', size=10, name='syn_to_astro')
 
-plt.figure(num='N_e grid')
-plt.scatter(exc_neurons.x/mmeter, exc_neurons.y/mmeter)
-plt.scatter(exc_syn.x_pre/mmeter, exc_syn.y_pre/mmetre, label='pre')
-plt.legend()
+# plt.figure(num='N_e grid')
+# plt.scatter(exc_neurons.x/mmeter, exc_neurons.y/mmeter)
+# plt.scatter(exc_syn.x_pre/mmeter, exc_syn.y_pre/mmetre, label='pre')
+# plt.legend()
 
-plt.figure(num='N_e grid_1')
-plt.scatter(exc_neurons.x/mmeter, exc_neurons.y/mmeter)
-plt.scatter(exc_syn.x_post/mmeter, exc_syn.y_post/mmetre, label='post')
-plt.legend()
+# plt.figure(num='N_e grid_1')
+# plt.scatter(exc_neurons.x/mmeter, exc_neurons.y/mmeter)
+# plt.scatter(exc_syn.x_post/mmeter, exc_syn.y_post/mmetre, label='post')
+# plt.legend()
 
-plt.figure(num='Astro grid')
-plt.scatter(astrocyte.x/mmeter, astrocyte.y/mmeter)
-plt.legend()
+# plt.figure(num='Astro grid')
+# plt.scatter(astrocyte.x/mmeter, astrocyte.y/mmeter)
+# plt.legend()
 
 plt.show()
