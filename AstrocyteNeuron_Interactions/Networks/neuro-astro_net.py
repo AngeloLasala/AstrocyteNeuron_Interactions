@@ -15,9 +15,9 @@ from AstrocyteNeuron_Interactions.Brian2_utils.connectivity import connectivity_
 from AstrocyteNeuron_Interactions import makedir
 ## PARAMETERS ###################################################################
 # --  General parameters --
-N_e = 320                    # Number of excitatory neurons
-N_i = 80                    # Number of inhibitory neurons
-N_a = 320                    # Number of astrocytes
+N_e = 3200                    # Number of excitatory neurons
+N_i = 800                     # Number of inhibitory neurons
+N_a = 3200                    # Number of astrocytes
 
 # -- Some metrics parameters needed to establish proper connections --
 size = 3.75*mmeter           # Length and width of the square lattice
@@ -381,7 +381,7 @@ ax2[6].plot(var_astro_mon.t[:], var_astro_mon.x_A[index_plot], color='C8')
 ax2[6].set_ylabel(r'$x_A$')
 ax2[6].grid(linestyle='dotted')
 
-connectivity_EIring(exc_syn, inh_syn, size=5, lw=0.05, split=True)
+# connectivity_EIring(exc_syn, inh_syn, size=5, lw=0.05, split=True)
 # Connectivity_plot(exc_syn, source='Exc', target='Exc+Inh', color_s='red', color_t='indigo', size=10, name='exc syn')
 # Connectivity_plot(inh_syn, source='Inh', target='Exc+Inh', color_s='C0', color_t='indigo', size=10)
 # Connectivity_plot(ecs_astro_to_syn, source='Astro', target='Exc syn', color_s='green', color_t='red', size=10, name='stro_to_syn')
