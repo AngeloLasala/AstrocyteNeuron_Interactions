@@ -9,11 +9,11 @@ from random import randrange
 from brian2 import *
 from AstrocyteNeuron_Interactions.Brian2_utils.connectivity import connectivity_plot
 
-# Parameters
+## Parameters ########################################################################
+
+# Network size
 N_e = 3200                #Total number of excitatory neurons
 N_i = 800                #Total number of inhibitory neurons
-duration = 1.0*second  # Total simulation time
-seed(19958)
 
 #Neurons parameters
 E_l = -60*mV           # Leak reversal potential
@@ -34,6 +34,12 @@ w_i = 1.0*nS           # Inhibitory synaptic conductance
 U_0 = 0.6              # Synaptic release probability at rest
 Omega_d = 2.0/second   # Synaptic depression rate
 Omega_f = 3.33/second  # Synaptic facilitation rate
+#############################################################################################
+
+## MODEL   ##################################################################################
+
+duration = 1.0*second  # Total simulation time
+seed(19958)
 
 #Neurons
 neuron_eqs = """
@@ -63,14 +69,8 @@ u_S += U_0*(1-u_S)
 r_S = u_S*x_S
 x_S -= r_S
 """
-
-exc="""
-g_e_post+=w_e*r_S
-"""
-
-inh="""
-g_i_post+=w_i*r_S
-"""
+exc="g_e_post+=w_e*r_S"
+inh="g_i_post+=w_i*r_S"
 
 exc_syn = Synapses(exc_neurons, neurons, model= syn_model, on_pre=action+exc)
 inh_syn = Synapses(inh_neurons, neurons, model= syn_model, on_pre=action+inh)
@@ -80,8 +80,9 @@ inh_syn.connect(p=0.2)
 
 exc_syn.x_S = 1
 inh_syn.x_S = 1
+#############################################################################################
 
-# MONITOR 
+## RUN and MONITOR  ######################################################################### 
 spikes_exc_mon = SpikeMonitor(exc_neurons)
 spikes_inh_mon = SpikeMonitor(inh_neurons)
 
@@ -92,9 +93,7 @@ state_exc_mon = StateMonitor(exc_neurons, ['v', 'g_e', 'g_i'], record=index)
 syn_exc_mon = StateMonitor(exc_syn, ['u_S','x_S'], record=exc_syn[index, :]) 
 syn_inh_mon = StateMonitor(inh_syn, ['u_S','x_S'], record=inh_syn[index, :])
 #record=exc_syn[index, :], outgoing synapses from neurons labeled by index
-
 spikes_mon = SpikeMonitor(neurons)
-
 
 run(duration, report='text')
 print(f'exc neuron number: {index}')
@@ -106,6 +105,7 @@ print(inh_syn[index, :])
 print()
 print(syn_exc_mon.u_S)
 print('\n\n')
+#########################################################################################################
 
 # Plots  ################################################################################################
 fig1, ax1 = plt.subplots(nrows=3, ncols=1, sharex=True, 
@@ -135,14 +135,26 @@ ax1[2].set_ylabel(r'$u_S$, $x_S$')
 ax1[2].grid(linestyle='dotted')
 ax1[2].legend(loc = 'upper right')
 
-fig2, ax2 = plt.subplots(nrows=1, ncols=1, 
-                         num=f'Raster plot, Ne:{N_e} Ni:{N_i}, Iex={I_ex/pA}', figsize=(8,8))
+fig2, ax2 = plt.subplots(nrows=2, ncols=1, sharex=True, gridspec_kw={'height_ratios': [3, 1]},
+                         num=f'Raster plot, Ne:{N_e} Ni:{N_i}, Iex={I_ex/pA}', figsize=(8,10))
 
-ax2.scatter(spikes_exc_mon.t[:], spikes_exc_mon.i[:], color='C3', marker='|')
-ax2.scatter(spikes_inh_mon.t[:], spikes_inh_mon.i[:]+N_e, color='C0', marker='|')
-ax2.set_xlabel('time (s)')
-ax2.set_ylabel('neuron index')
-ax2.set_title('Raster plot')
+ax2[0].scatter(spikes_exc_mon.t[:]/ms, spikes_exc_mon.i[:], color='C3', marker='|')
+ax2[0].scatter(spikes_inh_mon.t[:]/ms, spikes_inh_mon.i[:]+N_e, color='C0', marker='|')
+ax2[0].set_ylabel('neuron index')
+ax2[0].set_title('Raster plot')
+
+hist_step = 1
+bin_size = (duration/ms)/((duration/ms)//hist_step)*ms
+spk_count, bin_edges = np.histogram(np.r_[spikes_exc_mon.t/ms,spikes_inh_mon.t/ms], 
+                                    int(duration/ms)//hist_step)
+# POPULATION ACTIVITY, ISTANTANEUS FIRING RATE
+# numero di spikes emesso in un breve istante di tempo 
+# meiato su tutta la popolazione
+rate = double(spk_count)/(N_e+N_i)/bin_size
+ax2[1].plot(bin_edges[:-1], rate, '-', color='k')
+ax2[1].set_ylabel('rate (Hz)')
+ax2[1].set_xlabel('time (ms)')
+ax2[1].grid(linestyle='dotted')
 
 # Connectivity_plot(exc_syn, source='Exc', target='Exc+Inh', color_s='red', color_t='indigo', size=10)
 # Connectivity_plot(inh_syn, source='Inh', target='Exc+Inh', color_s='C0', color_t='indigo', size=10)
