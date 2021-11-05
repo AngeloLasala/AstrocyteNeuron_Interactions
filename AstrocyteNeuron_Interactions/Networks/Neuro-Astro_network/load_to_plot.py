@@ -20,7 +20,10 @@ N_i = args.Ni
 N_a = args.Na
 C_Theta = 0.5*umolar
 
-name=f'Network:Ne={N_e}_Ni={N_i}_Na={N_a}'+'_prof'
+name=f'Network:Ne={N_e}_Ni={N_i}_Na={N_a}'
+
+duration = np.load(f'{name}/duration.npy')*second
+print(duration)
 
 t_exc = np.load(f'{name}/spikes_exc_mon.t.npy')
 exc_neurons_i = np.load(f'{name}/spikes_exc_mon.i.npy')
@@ -42,19 +45,30 @@ G_A = np.load(f'{name}/var_astro_mon.G_A.npy')
 
 ## PLOTS ##############################################
 
-fig1, ax1 = plt.subplots(nrows=1, ncols=1, sharex=True, figsize=(12, 14), num=f'Raster plot: Ne={N_e}_Ni={N_i}_Na={N_a}')
-step = 10
-ax1.plot(t_exc[exc_neurons_i%step==0], 
+fig1, ax1 = plt.subplots(nrows=2, ncols=1, sharex=True, gridspec_kw={'height_ratios': [3, 1]},
+                        figsize=(12, 14), num=f'Raster plot: Ne={N_e}_Ni={N_i}_Na={N_a}')
+step = 1
+ax1[0].plot(t_exc[exc_neurons_i%step==0]/ms, 
          exc_neurons_i[exc_neurons_i%step==0], '|', color='C3')
-ax1.plot(t_inh[inh_neurons_i%step==0], 
+ax1[0].plot(t_inh[inh_neurons_i%step==0]/ms, 
          inh_neurons_i[inh_neurons_i%step==0]+N_e, '|', color='C0',)
-ax1.plot(t_astro[astro_i%step==0], 
+ax1[0].plot(t_astro[astro_i%step==0]/ms, 
          astro_i[astro_i%step==0]+(N_e+N_i),'|' , color='green')
-ax1.set_xlabel('time (s)')
-ax1.set_ylabel('cell index')
+ax1[0].set_ylabel('cell index')
+
+hist_step = 1
+bin_size = (duration/ms)/((duration/ms)//hist_step)*ms
+
+spk_count, bin_edges = np.histogram(np.r_[t_exc/ms,t_inh/ms], 
+                                    int(duration/ms)//hist_step)
+rate = double(spk_count)/(N_e+N_i)/bin_size
+ax1[1].plot(bin_edges[:-1], rate, '-', color='k')
+ax1[1].set_ylabel('rate (Hz)')
+ax1[1].set_xlabel('time (ms)')
+ax1[1].grid(linestyle='dotted')
 
 fig2, ax2 = plt.subplots(nrows=7, ncols=1, sharex=True, figsize=(14, 14), num='astrocyte dynamics')
-index_plot_list = [5400-4000]
+index_plot_list = [54-40]
 for index_plot in index_plot_list:
     ax2[0].plot(t[:], Y_S[index_plot]/umolar, color='C3')
     ax2[0].set_ylabel(r'$Y_S$ ($\mu$M)')
