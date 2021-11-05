@@ -156,7 +156,7 @@ ax2[1].set_ylabel('rate (Hz)')
 ax2[1].set_xlabel('time (ms)')
 ax2[1].grid(linestyle='dotted')
 
-connectivity_EIring(exc_syn, inh_syn)
+# connectivity_EIring(exc_syn, inh_syn)
 # connectivity_plot(exc_syn, source='Exc', target='Exc+Inh', color_s='red', color_t='indigo', size=10)
 # connectivity_plot(inh_syn, source='Inh', target='Exc+Inh', color_s='C0', color_t='indigo', size=10)
 
