@@ -87,7 +87,7 @@ def connectivity_ring(Syn, r=10, color='C0', size=20):
         plt.plot([xx[i],xx[j]], [yy[i],yy[j]], lw=0.4, color=color) 
     plt.scatter(xx,yy, color=color, s=size)
 
-def connectivity_EIring(Syn_exc, Syn_inh, r=1, step=1, color='C0', size=10):
+def connectivity_EIring(Syn_exc, Syn_inh, r=1, step=1, lw=0.2, size=10, split=False):
     """
     Network connectivity of a Exitatory-Inhibitory Neural Network in a ring fashion.
     Neurons are defined in a unique NeuronGroup objet with N_e+N_I elements
@@ -111,12 +111,16 @@ def connectivity_EIring(Syn_exc, Syn_inh, r=1, step=1, color='C0', size=10):
         step therby the neurons are effectivly plot on th ring, usefull for a large network
         example: with Ne=400 Ni=100 step=10 the neurons ploted are [0,10,20,..]
         so only the 10% of the network is plotted. Default=1
-
-    color : array-like or list of colors or color (optional)
-        color of Source network. See matplotlib.color for more information about color.
     
+    lw : float (optional)
+        line width of connections. Default=0.2
+
     size : integer or float (optional)
         marker size. Default=20
+
+    split : bool
+        For a large network might happen thet hole connectivity is unclear so
+        it is usefull to split excitatory with inhibitory ones. Defaolt=False
     """
     N_e = len(Syn_exc.source) #exc neurons
     N_i = len(Syn_inh.source) #inh neurons
@@ -126,13 +130,29 @@ def connectivity_EIring(Syn_exc, Syn_inh, r=1, step=1, color='C0', size=10):
     xx = r*np.cos(theta)
     yy = r*np.sin(theta)
    
-    plt.figure(figsize=(10,10))
-    # for i,j in zip(Syn_exc.i,Syn_exc.j):
-    #     plt.plot([xx[:N_e][i],xx[j]], [yy[:N_e][i],yy[j]], lw=0.2, color='C3') 
-    for i,j in zip(Syn_inh.i,Syn_inh.j):
-        plt.plot([xx[N_e:][i],xx[j]], [yy[N_e:][i],yy[j]], lw=0.2, color='C0')
-    plt.scatter(xx[:N_e],yy[:N_e], color='C3',  marker='o', s=size)
-    plt.scatter(xx[N_e:],yy[N_e:], color='C0',  marker='o', s=size)
+    if split:
+        fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(17,8))
+
+        for i,j in zip(Syn_exc.i,Syn_exc.j):
+            ax[0].plot([xx[:N_e][i],xx[j]], [yy[:N_e][i],yy[j]], lw=lw, color='C3')
+        ax[0].scatter(xx[:N_e],yy[:N_e], color='C3',  marker='o', lw=lw, s=size)
+        ax[0].scatter(xx[N_e:],yy[N_e:], color='C0',  marker='o', lw=lw, s=size)
+        ax[0].title.set_text('Excitatory connections')
+
+        for i,j in zip(Syn_inh.i,Syn_inh.j):
+            ax[1].plot([xx[N_e:][i],xx[j]], [yy[N_e:][i],yy[j]], lw=lw, color='C0')
+        ax[1].scatter(xx[:N_e],yy[:N_e], color='C3',  marker='o', lw=lw, s=size)
+        ax[1].scatter(xx[N_e:],yy[N_e:], color='C0',  marker='o', lw=lw, s=size)
+        ax[1].title.set_text('Inhibitory connections')
+
+    else:
+        plt.figure(figsize=(10,10))
+        for i,j in zip(Syn_exc.i,Syn_exc.j):
+            plt.plot([xx[:N_e][i],xx[j]], [yy[:N_e][i],yy[j]], lw=lw, color='C3') 
+        for i,j in zip(Syn_inh.i,Syn_inh.j):
+            plt.plot([xx[N_e:][i],xx[j]], [yy[N_e:][i],yy[j]], lw=lw, color='C0')
+        plt.scatter(xx[:N_e],yy[:N_e], color='C3',  marker='o', s=size)
+        plt.scatter(xx[N_e:],yy[N_e:], color='C0',  marker='o', s=size)
 
 
 
@@ -175,6 +195,6 @@ if __name__ == "__main__":
     connectivity_plot(S2)
     connectivity_ring(S)
 
-    connectivity_EIring(exc_syn, inh_syn, step=1)
+    connectivity_EIring(exc_syn, inh_syn, step=1, split=True)
 
     plt.show()
