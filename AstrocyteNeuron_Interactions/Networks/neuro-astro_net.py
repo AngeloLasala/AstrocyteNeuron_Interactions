@@ -325,6 +325,23 @@ np.save(f'{name}/var_astro_mon.C',var_astro_mon.C)
 np.save(f'{name}/var_astro_mon.h',var_astro_mon.h)
 np.save(f'{name}/var_astro_mon.x_A',var_astro_mon.x_A)
 np.save(f'{name}/var_astro_mon.G_A',var_astro_mon.G_A)
+
+# Network Structure
+with open(f"Neuro-Astro_network/Network:Ne={N_e}_Ni={N_i}_Na={N_a}/network_structure.txt",
+         'w', encoding='utf-8') as file:
+        file.write(f"""NETWORK INFORMATION \n
+excitatory neurons = {N_e}
+inhibitory neurons = {N_i}
+excitatory synapses = {len(exc_syn.i)}
+inhibitory synapses = {len(inh_syn.i)}
+________________________________________\n
+astrocytes = {N_a}
+syn to astro connection = {len(ecs_syn_to_astro.i)}
+astro to syn connection = {len(ecs_astro_to_syn.i)}
+___________________________________________\n
+Spatial arrangement
+neurons grid:   {N_rows_exc}x{N_rows_exc} dist={grid_dist/umetre} um
+astrocyte grid: {N_rows_astro}x{N_rows_astro} dist={grid_dist/umetre} um""")
 ###################################################################################################
 
 ## PLOTS #########################################################################################
@@ -381,11 +398,14 @@ ax2[6].plot(var_astro_mon.t[:], var_astro_mon.x_A[index_plot], color='C8')
 ax2[6].set_ylabel(r'$x_A$')
 ax2[6].grid(linestyle='dotted')
 
-# connectivity_EIring(exc_syn, inh_syn, size=5, lw=0.05, split=True)
+connectivity_EIring(exc_syn, inh_syn, size=15, lw=0.5, split=False)
+# connectivity_EIring(ecs_astro_to_syn, ecs_syn_to_astro, size=15, lw=0.5, split=False)
 # Connectivity_plot(exc_syn, source='Exc', target='Exc+Inh', color_s='red', color_t='indigo', size=10, name='exc syn')
 # Connectivity_plot(inh_syn, source='Inh', target='Exc+Inh', color_s='C0', color_t='indigo', size=10)
-# Connectivity_plot(ecs_astro_to_syn, source='Astro', target='Exc syn', color_s='green', color_t='red', size=10, name='stro_to_syn')
-# Connectivity_plot(ecs_syn_to_astro, source='Exc syn', target='Astro', color_s='red', color_t='green', size=10, name='syn_to_astro')
+connectivity_plot(ecs_astro_to_syn, source='Astro', target='Exc syn',   
+                  color_s='green', color_t='red', size=0.5, lw=0.05, name='stro_to_syn')
+connectivity_plot(ecs_syn_to_astro, source='Exc syn', target='Astro',  
+                  color_s='red', color_t='green', size=0.5, lw=0.05, name='syn_to_astro')
 
 # plt.figure(num='N_e grid')
 # plt.scatter(exc_neurons.x/mmeter, exc_neurons.y/mmeter)
