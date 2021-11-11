@@ -7,8 +7,8 @@ inhibitory synapses = 640084
 ________________________________________
 
 astrocytes = 3200
-syn to astro connection = 640273
-astro to syn connection = 640273
+syn to astro connection = 375199
+astro to syn connection = 375199
 ___________________________________________
 
 Spatial arrangement
