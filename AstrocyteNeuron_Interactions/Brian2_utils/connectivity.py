@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from brian2 import *
 
 def connectivity_plot(Syn, name='Source_to_Target', source='Source', target='Target', 
-                    color_s='k', color_t='k', size=35):
+                    color_s='k', color_t='k', size=35, lw=0.4):
     """
     Easy rapresentation of network connectivity
 
@@ -44,18 +44,18 @@ def connectivity_plot(Syn, name='Source_to_Target', source='Source', target='Tar
     ax1 = fig.add_subplot(1,2,1)
     ax2 = fig.add_subplot(1,2,2)
 
-    ax1.scatter(np.zeros(Ns), np.arange(Ns), marker='o',s=size, color=color_s) 
+    ax1.scatter(np.zeros(Ns), np.arange(Ns), marker='o',s=size,  color=color_s) 
     ax1.scatter(np.ones(Nt), np.arange(Nt), marker='o', s=size, color=color_t)
     for i,j in zip(Syn.i,Syn.j):
-        ax1.plot([0,1], [i,j], lw=0.4, color=color_s)
+        ax1.plot([0,1], [i,j], lw=lw, color=color_s)
     ax1.set_xticks([0,1])
     ax1.set_xticklabels([source, target])
-    ax1.set_ylabel('Neuron index')
+    ax1.set_ylabel('cell index')
     ax1.set_title('Connectivity')
 
     ax2.scatter(Syn.i, Syn.j, marker='o', s=size, color='k')
-    ax2.set_xlabel('Source neuron index')
-    ax2.set_ylabel('Target neuron index')
+    ax2.set_xlabel(source+' index')
+    ax2.set_ylabel(target+' index')
     ax2.set_title('Source vs Target connectivity')
 
 def connectivity_ring(Syn, r=10, color='C0', size=20):
