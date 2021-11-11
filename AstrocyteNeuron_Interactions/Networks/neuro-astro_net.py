@@ -125,14 +125,14 @@ N_rows_exc = int(sqrt(N_e))
 N_cols_exc = N_e/N_rows_exc
 grid_dist = (size / N_cols_exc)
 #square grid
-# xx = np.arange(N_rows_exc)
-# yy = np.arange(N_cols_exc)
-# XX,YY = np.meshgrid(xx,yy)
+xx = np.arange(N_rows_exc)
+yy = np.arange(N_cols_exc)
+XX,YY = np.meshgrid(xx,yy)
 
-# exc_neurons.x = XX.flatten()[:N_e]*grid_dist
-# exc_neurons.y = YY.flatten()[:N_e]*grid_dist
-exc_neurons.x = '(i // N_rows_exc)*grid_dist - N_rows_exc/2.0*grid_dist'
-exc_neurons.y = '(i % N_rows_exc)*grid_dist - N_cols_exc/2.0*grid_dist'
+exc_neurons.x = XX.flatten()[:N_e]*grid_dist
+exc_neurons.y = YY.flatten()[:N_e]*grid_dist
+# exc_neurons.x = '(i // N_rows_exc)*grid_dist - N_rows_exc/2.0*grid_dist'
+# exc_neurons.y = '(i % N_rows_exc)*grid_dist - N_cols_exc/2.0*grid_dist'
 
 # Random initial membrane potential values and conductances
 neurons.v = 'E_l + rand()*(V_th-E_l)'
@@ -232,14 +232,14 @@ astrocyte = NeuronGroup(N_a, astro_eqs,
 
 # Arrange excitatory neurons in a grid
 #square grid
-# x_astro = np.arange(N_rows_astro)
-# y_astro = np.arange(N_cols_astro)
-# XX_A,YY_A = np.meshgrid(x_astro,y_astro)
+x_astro = np.arange(N_rows_astro)
+y_astro = np.arange(N_cols_astro)
+XX_A,YY_A = np.meshgrid(x_astro,y_astro)
 
-# astrocyte.x = XX_A.flatten()[:N_a]*grid_dist
-# astrocyte.y = YY_A.flatten()[:N_a]*grid_dist
-astrocyte.x = '(i // N_rows_astro)*grid_dist - N_rows_astro/2.0*grid_dist'
-astrocyte.y = '(i % N_rows_astro)*grid_dist - N_cols_astro/2.0*grid_dist'
+astrocyte.x = XX_A.flatten()[:N_a]*grid_dist
+astrocyte.y = YY_A.flatten()[:N_a]*grid_dist
+# astrocyte.x = '(i // N_rows_astro)*grid_dist - N_rows_astro/2.0*grid_dist'
+# astrocyte.y = '(i % N_rows_astro)*grid_dist - N_cols_astro/2.0*grid_dist'
 
 
 astrocyte.C =0.01*umolar
@@ -302,7 +302,7 @@ print(f'astrocyte grid: {N_rows_astro}x{N_rows_astro} dist={grid_dist/umetre} um
 ##################################################################################################
 
 ## SAVE IMPORTANT VALUES #########################################################################
-name = f'Neuro-Astro_network/Network:Ne={N_e}_Ni={N_i}_Na={N_a}'
+name = f'Neuro-Astro_network/Network:Ne={N_e}_Ni={N_i}_Na={N_a}_mygrid'
 makedir.smart_makedir(name)
 
 # Duration
@@ -398,14 +398,14 @@ ax2[6].plot(var_astro_mon.t[:], var_astro_mon.x_A[index_plot], color='C8')
 ax2[6].set_ylabel(r'$x_A$')
 ax2[6].grid(linestyle='dotted')
 
-connectivity_EIring(exc_syn, inh_syn, size=15, lw=0.5, split=False)
+# connectivity_EIring(exc_syn, inh_syn, size=15, lw=0.5, split=False)
 # connectivity_EIring(ecs_astro_to_syn, ecs_syn_to_astro, size=15, lw=0.5, split=False)
-# Connectivity_plot(exc_syn, source='Exc', target='Exc+Inh', color_s='red', color_t='indigo', size=10, name='exc syn')
+# connectivity_plot(exc_syn, source='Exc', target='Exc+Inh', color_s='red', color_t='indigo', size=10, name='exc syn')
 # Connectivity_plot(inh_syn, source='Inh', target='Exc+Inh', color_s='C0', color_t='indigo', size=10)
-connectivity_plot(ecs_astro_to_syn, source='Astro', target='Exc syn',   
-                  color_s='green', color_t='red', size=0.5, lw=0.05, name='stro_to_syn')
-connectivity_plot(ecs_syn_to_astro, source='Exc syn', target='Astro',  
-                  color_s='red', color_t='green', size=0.5, lw=0.05, name='syn_to_astro')
+# connectivity_plot(ecs_astro_to_syn, source='Astro', target='Exc syn',   
+#                   color_s='green', color_t='red', size=15, lw=0.5, name='stro_to_syn')
+# connectivity_plot(ecs_syn_to_astro, source='Exc syn', target='Astro',  
+#                   color_s='red', color_t='green', size=15, lw=0.5, name='syn_to_astro')
 
 # plt.figure(num='N_e grid')
 # plt.scatter(exc_neurons.x/mmeter, exc_neurons.y/mmeter)
