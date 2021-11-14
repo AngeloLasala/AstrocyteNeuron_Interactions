@@ -97,12 +97,12 @@ alpha = 0.0                  # Gliotransmission nature
 ################################################################################
 # Define HF stimulus
 ################################################################################
-stimulus = TimedArray([1.0, 1.2, 1.0, 1.0], dt=2*second)
+stimulus = TimedArray([1.0, 1.0, 1.0], dt=2*second)
 
 ################################################################################
 # Simulation time (based on the stimulus)
 ################################################################################
-duration = 8*second          # Total simulation time
+duration = 6*second          # Total simulation time
 
 ################################################################################
 # Model definition
@@ -300,7 +300,7 @@ print(f'astrocytes = {N_a}')
 print(f'syn to astro connection = {len(ecs_syn_to_astro.i)}')
 print(f'astro to syn connection = {len(ecs_astro_to_syn.i)}\n\n')
 
-name = f'Neuro-Astro_network/Network:Ne={N_e}_Ni={N_i}_Na={N_a}'+'_prof'
+name = f'Neuro-Astro_network/Network_profgrid_{I_ex/pA}'
 os.mkdir(name)
 
 # Raster plot

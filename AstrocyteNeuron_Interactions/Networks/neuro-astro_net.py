@@ -97,8 +97,8 @@ defaultclock.dt = 0.1*ms
 seed(28371)  # to get identical figures for repeated runs
 
 dt_stim = 2*second
-stimulus = TimedArray([1.0,1.2,1.0,1.0], dt=dt_stim)
-duration = 4*dt_stim
+stimulus = TimedArray([1.0,1.0,1.0], dt=dt_stim)
+duration = 3*dt_stim
 #################################################################################
 
 ## NETWORK #####################################################################
@@ -125,14 +125,14 @@ N_rows_exc = int(sqrt(N_e))
 N_cols_exc = N_e/N_rows_exc
 grid_dist = (size / N_cols_exc)
 #square grid
-xx = np.arange(N_rows_exc)
-yy = np.arange(N_cols_exc)
-XX,YY = np.meshgrid(xx,yy)
+# xx = np.arange(N_rows_exc)
+# yy = np.arange(N_cols_exc)
+# XX,YY = np.meshgrid(xx,yy)
 
-exc_neurons.x = XX.flatten()[:N_e]*grid_dist
-exc_neurons.y = YY.flatten()[:N_e]*grid_dist
-# exc_neurons.x = '(i // N_rows_exc)*grid_dist - N_rows_exc/2.0*grid_dist'
-# exc_neurons.y = '(i % N_rows_exc)*grid_dist - N_cols_exc/2.0*grid_dist'
+# exc_neurons.x = XX.flatten()[:N_e]*grid_dist
+# exc_neurons.y = YY.flatten()[:N_e]*grid_dist
+exc_neurons.x = '(i // N_rows_exc)*grid_dist - N_rows_exc/2.0*grid_dist'
+exc_neurons.y = '(i % N_rows_exc)*grid_dist - N_cols_exc/2.0*grid_dist'
 
 # Random initial membrane potential values and conductances
 neurons.v = 'E_l + rand()*(V_th-E_l)'
@@ -232,14 +232,14 @@ astrocyte = NeuronGroup(N_a, astro_eqs,
 
 # Arrange excitatory neurons in a grid
 #square grid
-x_astro = np.arange(N_rows_astro)
-y_astro = np.arange(N_cols_astro)
-XX_A,YY_A = np.meshgrid(x_astro,y_astro)
+# x_astro = np.arange(N_rows_astro)
+# y_astro = np.arange(N_cols_astro)
+# XX_A,YY_A = np.meshgrid(x_astro,y_astro)
 
-astrocyte.x = XX_A.flatten()[:N_a]*grid_dist
-astrocyte.y = YY_A.flatten()[:N_a]*grid_dist
-# astrocyte.x = '(i // N_rows_astro)*grid_dist - N_rows_astro/2.0*grid_dist'
-# astrocyte.y = '(i % N_rows_astro)*grid_dist - N_cols_astro/2.0*grid_dist'
+# astrocyte.x = XX_A.flatten()[:N_a]*grid_dist
+# astrocyte.y = YY_A.flatten()[:N_a]*grid_dist
+astrocyte.x = '(i // N_rows_astro)*grid_dist - N_rows_astro/2.0*grid_dist'
+astrocyte.y = '(i % N_rows_astro)*grid_dist - N_cols_astro/2.0*grid_dist'
 
 
 astrocyte.C =0.01*umolar
@@ -259,6 +259,9 @@ print(ecs_astro_to_syn.j[:])
 #EXC_SYNAPSES TO ASTRO
 ecs_syn_to_astro = Synapses(exc_syn, astrocyte, 'Y_S_post = Y_S_pre/N_incoming : mmolar (summed)')
 ecs_syn_to_astro.connect('astrocyte_index_pre == j')
+print('Syn to astro')
+print(ecs_syn_to_astro.i[:])
+print(ecs_syn_to_astro.j[:])
 
 # Diffusion between astrocytes
 astro_to_astro_eqs = """
@@ -286,7 +289,7 @@ var_astro_mon = StateMonitor(astrocyte, ['C','I','h','Gamma_A','Y_S','G_A','x_A'
 run(duration, report='text')
 print(exc_syn)
 
-print('\n NETWORK INFORMATION')
+print('NETWORK INFORMATION')
 print(f'excitatory neurons = {N_e}')
 print(f'inhibitory neurons = {N_i}')
 print(f'excitatory synapses = {len(exc_syn.i)}')
@@ -302,7 +305,7 @@ print(f'astrocyte grid: {N_rows_astro}x{N_rows_astro} dist={grid_dist/umetre} um
 ##################################################################################################
 
 ## SAVE IMPORTANT VALUES #########################################################################
-name = f'Neuro-Astro_network/Network:Ne={N_e}_Ni={N_i}_Na={N_a}_mygrid'
+name = f'Neuro-Astro_network/Network_profgrid0.5_100'
 makedir.smart_makedir(name)
 
 # Duration
@@ -326,8 +329,13 @@ np.save(f'{name}/var_astro_mon.h',var_astro_mon.h)
 np.save(f'{name}/var_astro_mon.x_A',var_astro_mon.x_A)
 np.save(f'{name}/var_astro_mon.G_A',var_astro_mon.G_A)
 
+# Synaptic astrocyte connection
+np.save(f'{name}/ecs_astro_to_syn.i',ecs_astro_to_syn.i)
+np.save(f'{name}/ecs_astro_to_syn.j',ecs_astro_to_syn.j)
+
+
 # Network Structure
-with open(f"Neuro-Astro_network/Network:Ne={N_e}_Ni={N_i}_Na={N_a}/network_structure.txt",
+with open(f"{name}/network_structure.txt",
          'w', encoding='utf-8') as file:
         file.write(f"""NETWORK INFORMATION \n
 excitatory neurons = {N_e}
