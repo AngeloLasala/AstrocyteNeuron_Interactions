@@ -1,7 +1,7 @@
 """
 Coupling neurons and astrocytes network
 
-Randomly connected COBA network  with excitatory synapses modulated
+Randomly connected COBA network with excitatory synapses modulated
 by release-increasing gliotransmission from a connected network of astrocytes.
 
 - "Modelling neuro-glia interactions with the Brian2 simulator" Stimberg et al (2017)
@@ -15,9 +15,9 @@ from AstrocyteNeuron_Interactions.Brian2_utils.connectivity import connectivity_
 from AstrocyteNeuron_Interactions import makedir
 ## PARAMETERS ###################################################################
 # --  General parameters --
-N_e = 3200                    # Number of excitatory neurons
-N_i = 800                     # Number of inhibitory neurons
-N_a = 3200                    # Number of astrocytes
+N_e = 32                    # Number of excitatory neurons
+N_i = 8                     # Number of inhibitory neurons
+N_a = 32                    # Number of astrocytes
 
 # -- Some metrics parameters needed to establish proper connections --
 size = 3.75*mmeter           # Length and width of the square lattice
@@ -94,18 +94,21 @@ alpha = 0.0                  # Gliotransmission nature
 
 ## TIME PARAMETERS ##############################################################
 defaultclock.dt = 0.1*ms
+duration = 6*second
 seed(28371)  # to get identical figures for repeated runs
 
-dt_stim = 2*second
-stimulus = TimedArray([1.0,1.0,1.0], dt=dt_stim)
-duration = 3*dt_stim
+# Poisson heterogeneity for external input 
+# for each neurons are drown 'duration/dt'random number from
+# Poisson distribuction with mean equals to I_ex
+stimulus = TimedArray(np.random.poisson(I_ex/pA, (int(duration/defaultclock.dt),N_e+N_i)),
+                      dt=defaultclock.dt)
 #################################################################################
 
 ## NETWORK #####################################################################
 ## NEURONS 
 neuron_eqs = """
 # Neurons dynamics
-dv/dt = (g_l*(E_l-v) + g_e*(E_e-v) + g_i*(E_i-v) + I_ex*stimulus(t))/C_m : volt (unless refractory)
+dv/dt = (g_l*(E_l-v) + g_e*(E_e-v) + g_i*(E_i-v) + stimulus(t,i%(N_e+N_i))*pA)/C_m : volt (unless refractory)
 dg_e/dt = -g_e/tau_e : siemens  # post-synaptic excitatory conductance
 dg_i/dt = -g_i/tau_i : siemens  # post-synaptic inhibitory conductance
 

@@ -19,7 +19,7 @@ V_r = E_l                    # Reset potential
 
 
 N_poisson=1
-N_e=40
+N_e=20
 N_i=10
 
 duration = 2*second
@@ -46,8 +46,8 @@ monitor = StateMonitor(neurons, ['v','I_test'], record=True)
 run(duration, report='text')
 
 plt.figure()
-plt.plot(monitor.t[:], monitor.I_test[0])
-plt.plot(monitor.t[:], monitor.I_test[4])
+for i in range(N_e):
+    plt.plot(monitor.t[:], monitor.I_test[i])
 
 plt.figure()
 plt.plot(monitor.t[:], monitor.v[0])
