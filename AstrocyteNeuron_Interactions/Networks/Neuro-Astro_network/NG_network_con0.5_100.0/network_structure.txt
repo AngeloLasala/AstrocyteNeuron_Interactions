@@ -1,0 +1,16 @@
+NETWORK INFORMATION 
+
+excitatory neurons = 3200
+inhibitory neurons = 800
+excitatory synapses = 640302
+inhibitory synapses = 639345
+________________________________________
+
+astrocytes = 3200
+syn to astro connection = 375194
+astro to syn connection = 375194
+___________________________________________
+
+Spatial arrangement
+neurons grid:   56x56 dist=66.96428571428572 um
+astrocyte grid: 56x56 dist=66.96428571428572 um

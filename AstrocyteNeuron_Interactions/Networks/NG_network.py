@@ -15,15 +15,13 @@ from AstrocyteNeuron_Interactions import makedir
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(
-        description='Dynamic analysis of Li Rinzel model')
-    parser.add_argument("-K3", type=float,
-                        help="""K3 parameter descriminates Amplitude Modulation (AM) to Frequency Modelation (FM):
-                                 K3=0.1 AM; K3=0.051 FM""")
-    parser.add_argument("-I", type=float,
-                        help="""I parameter determines single dynamic behaviour: suggest range [0.1-1.5]""")
+    parser = argparse.ArgumentParser(description='Neuron-Glia (NG) network')
+    parser.add_argument("-ph", action='store_false', help="Poisson Heterogeneity for external stimulus, default=True")
+    parser.add_argument("-grid", action='store_false', help="Square grid with only positive value, default=True")
+ 
     parser.add_argument('-excitability', action='store_false', help="""Different type of excitability, default=True""")
     args = parser.parse_args()
+
     ## PARAMETERS ###################################################################
     # --  General parameters --
     N_e = 3200                    # Number of excitatory neurons
@@ -43,7 +41,7 @@ if __name__ == '__main__':
     tau_e = 5*ms                 # Excitatory synaptic time constant
     tau_i = 10*ms                # Inhibitory synaptic time constant
     tau_r = 5*ms                 # Refractory period
-    I_ex = 100*pA                # External current
+    I_ex = 105*pA                # External current
     V_th = -50*mV                # Firing threshold
     V_r = E_l                    # Reset potential
 
@@ -111,16 +109,19 @@ if __name__ == '__main__':
     # Poisson heterogeneity for external input 
     # for each neurons are drown 'duration/dt'random number from
     # Poisson distribuction with mean equals to I_ex
-    stimulus = TimedArray(np.random.poisson(I_ex/pA, (int(duration/defaultclock.dt),N_e+N_i)),
-                        dt=defaultclock.dt)
+    # if args.ph:
+    #     stimulus = TimedArray(np.random.poisson(I_ex/pA, (int(duration/defaultclock.dt),N_e+N_i)),
+    #                         dt=defaultclock.dt)
+    # else:
+    #     stimulus = TimedArray(np.ones((1,N_e+N_i))*I_ex/pA, dt=duration)
     #################################################################################
 
     ## NETWORK #####################################################################
     ## NEURONS 
     neuron_eqs = """
     # Neurons dynamics
-    I_stimulus = stimulus(t,i%(N_e+N_i))*pA : ampere
-    dv/dt = (g_l*(E_l-v) + g_e*(E_e-v) + g_i*(E_i-v) + I_stimulus)/C_m : volt (unless refractory)
+    # I_stimulus = stimulus(t,i%(N_e+N_i))*pA: ampere
+    dv/dt = (g_l*(E_l-v) + g_e*(E_e-v) + g_i*(E_i-v))/C_m : volt (unless refractory)
     dg_e/dt = -g_e/tau_e : siemens  # post-synaptic excitatory conductance
     dg_i/dt = -g_i/tau_i : siemens  # post-synaptic inhibitory conductance
 
@@ -128,9 +129,12 @@ if __name__ == '__main__':
     x : meter (constant)
     y : meter (constant)
     """
-
+    dtt=defaultclock.dt
     neurons = NeuronGroup(N_e+N_i, model=neuron_eqs, method='euler',
                         threshold='v>V_th', reset='v=V_r', refractory='tau_r')
+    poisson = PoissonGroup(N_e+N_i, 1/dtt)
+    synapses = Synapses(poisson, neurons, on_pre='v += I_ex/C_m*dtt')
+    synapses.connect(j='i')
 
     exc_neurons = neurons[:N_e]
     inh_neurons = neurons[N_e:]
@@ -140,14 +144,16 @@ if __name__ == '__main__':
     N_cols_exc = N_e/N_rows_exc
     grid_dist = (size / N_cols_exc)
     #square grid
-    xx = np.arange(N_rows_exc)
-    yy = np.arange(N_cols_exc)
-    XX,YY = np.meshgrid(xx,yy)
+    if args.grid:
+        xx = np.arange(N_rows_exc)
+        yy = np.arange(N_cols_exc)
+        XX,YY = np.meshgrid(xx,yy)
 
-    exc_neurons.x = XX.flatten()[:N_e]*grid_dist
-    exc_neurons.y = YY.flatten()[:N_e]*grid_dist
-    # exc_neurons.x = '(i // N_rows_exc)*grid_dist - N_rows_exc/2.0*grid_dist'
-    # exc_neurons.y = '(i % N_rows_exc)*grid_dist - N_cols_exc/2.0*grid_dist'
+        exc_neurons.x = XX.flatten()[:N_e]*grid_dist
+        exc_neurons.y = YY.flatten()[:N_e]*grid_dist
+    else:
+        exc_neurons.x = '(i // N_rows_exc)*grid_dist - N_rows_exc/2.0*grid_dist'
+        exc_neurons.y = '(i % N_rows_exc)*grid_dist - N_cols_exc/2.0*grid_dist'
 
     # Random initial membrane potential values and conductances
     neurons.v = 'E_l + rand()*(V_th-E_l)'
@@ -247,14 +253,16 @@ if __name__ == '__main__':
 
     # Arrange excitatory neurons in a grid
     #square grid
-    x_astro = np.arange(N_rows_astro)
-    y_astro = np.arange(N_cols_astro)
-    XX_A,YY_A = np.meshgrid(x_astro,y_astro)
+    if args.grid:
+        x_astro = np.arange(N_rows_astro)
+        y_astro = np.arange(N_cols_astro)
+        XX_A,YY_A = np.meshgrid(x_astro,y_astro)
 
-    astrocyte.x = XX_A.flatten()[:N_a]*grid_dist
-    astrocyte.y = YY_A.flatten()[:N_a]*grid_dist
-    # astrocyte.x = '(i // N_rows_astro)*grid_dist - N_rows_astro/2.0*grid_dist'
-    # astrocyte.y = '(i % N_rows_astro)*grid_dist - N_cols_astro/2.0*grid_dist'
+        astrocyte.x = XX_A.flatten()[:N_a]*grid_dist
+        astrocyte.y = YY_A.flatten()[:N_a]*grid_dist
+    else:
+        astrocyte.x = '(i // N_rows_astro)*grid_dist - N_rows_astro/2.0*grid_dist'
+        astrocyte.y = '(i % N_rows_astro)*grid_dist - N_cols_astro/2.0*grid_dist'
 
 
     astrocyte.C =0.01*umolar
@@ -297,7 +305,7 @@ if __name__ == '__main__':
     spikes_exc_mon = SpikeMonitor(exc_neurons)
     spikes_inh_mon = SpikeMonitor(inh_neurons)
     astro_mon = SpikeMonitor(astrocyte)
-    neurons_mon = StateMonitor(neurons, ['v','I_stimulus'], record=range(10))
+    neurons_mon = StateMonitor(neurons, ['v'], record=range(10))
     var_astro_mon = StateMonitor(astrocyte, ['C','I','h','Gamma_A','Y_S','G_A','x_A'], record=True)
     ###########################################################################################
 
@@ -321,7 +329,7 @@ if __name__ == '__main__':
     ##################################################################################################
 
     ## SAVE IMPORTANT VALUES #########################################################################
-    name = f'Neuro-Astro_network/NG_network_con1.0_{I_ex/pA}'
+    name = f'Neuro-Astro_network/NG_network_con1.0_{I_ex/pA}_ph'
     makedir.smart_makedir(name)
 
     # Duration
@@ -337,7 +345,7 @@ if __name__ == '__main__':
 
     # Neurons variables
     np.save(f'{name}/neurons_mon.v',neurons_mon.v)
-    np.save(f'{name}/neurons_mon.I_stimulus',neurons_mon.I_stimulus)
+    # np.save(f'{name}/neurons_mon.I_stimulus',neurons_mon.I_stimulus)
 
 
     # Astrocte variables 
@@ -441,13 +449,13 @@ if __name__ == '__main__':
     # plt.scatter(exc_syn.x_pre/mmeter, exc_syn.y_pre/mmetre, label='pre')
     # plt.legend()
 
-    # plt.figure(num='N_e grid_1')
-    # plt.scatter(exc_neurons.x/mmeter, exc_neurons.y/mmeter)
-    # plt.scatter(exc_syn.x_post/mmeter, exc_syn.y_post/mmetre, label='post')
-    # plt.legend()
+    plt.figure(num='N_e grid_1')
+    plt.scatter(exc_neurons.x/mmeter, exc_neurons.y/mmeter)
+    plt.scatter(exc_syn.x_post/mmeter, exc_syn.y_post/mmetre, label='post')
+    plt.legend()
 
-    # plt.figure(num='Astro grid')
-    # plt.scatter(astrocyte.x/mmeter, astrocyte.y/mmeter)
-    # plt.legend()
+    plt.figure(num='Astro grid')
+    plt.scatter(astrocyte.x/mmeter, astrocyte.y/mmeter)
+    plt.legend()
 
     plt.show()

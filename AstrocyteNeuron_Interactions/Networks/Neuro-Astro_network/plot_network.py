@@ -15,7 +15,7 @@ N_i = 800
 N_a = 3200
 C_Theta = 0.5*umolar
 
-name=f'Network_mygrid_100.0'
+name=f'NG_network_con1.0_120.0_ph'
 
 duration = np.load(f'{name}/duration.npy')*second
 
@@ -34,6 +34,9 @@ C = np.load(f'{name}/var_astro_mon.C.npy')
 h = np.load(f'{name}/var_astro_mon.h.npy')
 x_A = np.load(f'{name}/var_astro_mon.x_A.npy')
 G_A = np.load(f'{name}/var_astro_mon.G_A.npy')
+
+# I_stimulus = np.load(f'{name}/neurons_mon.I_stimulus.npy')
+v = np.load(f'{name}/neurons_mon.v.npy')
 
 astro_connected = np.load(f'{name}/ecs_astro_to_syn.i.npy')
 syn_connected = np.load(f'{name}/ecs_astro_to_syn.j.npy')
@@ -69,7 +72,7 @@ print(f'gliorelease connected astro std = {gliorelease_conn.std():.2f}')
 ## PLOTS ##############################################
 
 fig1, ax1 = plt.subplots(nrows=2, ncols=1, sharex=True, gridspec_kw={'height_ratios': [3, 1]},
-                        figsize=(12, 14), num=f'Raster plot: Ne={N_e}_Ni={N_i}_Na={N_a}')
+                        figsize=(12, 14), num=f'Raster plot file:{name}')
 step = 1
 ax1[0].plot(t_exc[exc_neurons_i%step==0]/ms, 
          exc_neurons_i[exc_neurons_i%step==0], '|', color='C3')
@@ -90,8 +93,9 @@ ax1[1].set_ylabel('rate (Hz)')
 ax1[1].set_xlabel('time (ms)')
 ax1[1].grid(linestyle='dotted')
 
-fig2, ax2 = plt.subplots(nrows=7, ncols=1, sharex=True, figsize=(14, 14), num='astrocyte dynamics')
-index_plot_list = astro_connected_unique[540:541] #only syn connected astrocytes
+fig2, ax2 = plt.subplots(nrows=4, ncols=1, sharex=True, figsize=(13, 9), 
+                        num=f'astrocyte dynamics file:{name}')
+index_plot_list = astro_connected_unique[540:560] #only syn connected astrocytes
 print(index_plot_list)
 for index_plot in index_plot_list:
     ax2[0].plot(t[:], Y_S[index_plot]/umolar, color='C3')
@@ -102,7 +106,7 @@ for index_plot in index_plot_list:
     ax2[1].set_ylabel(r'$\Gamma_A$ ')
     ax2[1].grid(linestyle='dotted')
 
-    ax2[2].plot(t[:], I[index_plot]/umolar, color='C5')
+    ax2[2].plot(t[:], I[index_plot]/umolar, color='C0')
     ax2[2].set_ylabel(r'$I$ ($\mu$M)')
     ax2[2].grid(linestyle='dotted')
 
@@ -111,20 +115,13 @@ for index_plot in index_plot_list:
     ax2[3].plot(t[:], np.full(t.shape[0], C_Theta/umolar), ls='dashed', color='black')
     ax2[3].grid(linestyle='dotted')
 
-    ax2[4].plot(t[:], h[index_plot], color='C6')
-    ax2[4].set_ylabel(r'$h$')
-    ax2[4].grid(linestyle='dotted')
-
-    ax2[5].plot(t[:], G_A[index_plot], color='C7')
-    ax2[5].set_ylabel(r'$G_A$')
-    ax2[5].grid(linestyle='dotted')
-
-    ax2[6].plot(t[:], x_A[index_plot], color='C8')
-    ax2[6].set_ylabel(r'$x_A$')
-    ax2[6].grid(linestyle='dotted')
-
-fig3, ax3 = plt.subplots(nrows=1, ncols=1, num='gliorelease hist - connected astro')
+fig3, ax3 = plt.subplots(nrows=1, ncols=1, 
+                        num=f'gliorelease hist - connected astro file:{name}')
 ax3.hist(gliorelease_conn, bins=20)
+
+fig4, ax4 = plt.subplots(nrows=1, ncols=1, 
+                        num=f'Poisson heterogeneity:{name}')
+for I_stim in I_stimulus: ax4.plot(np.linspace(0,2,60000), I_stim)
 
 plt.show()
 
