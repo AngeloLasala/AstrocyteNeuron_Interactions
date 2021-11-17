@@ -1,4 +1,5 @@
 """
+Poisson heterogeneity of external stimulus
 """
 import numpy as np
 import matplotlib.pyplot as plt
