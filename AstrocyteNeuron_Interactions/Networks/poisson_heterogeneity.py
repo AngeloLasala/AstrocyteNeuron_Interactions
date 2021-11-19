@@ -28,13 +28,14 @@ Omega_f = 3.33/second  # Synaptic facilitation rate
 ## Time evolution and Stimulus
 duration = 1*second
 dtt = 0.1*ms
-I_ext = 120*pA
+I_ex = [100,120]*pA
 #############################################################################################
 
 ## NETWORK I_ext=cost ######################################################################
-N_e = 100
+N_e = 2
 neuron_eqs = """
 # Neurons dynamics
+I_ext : ampere
 dv/dt = (g_l*(E_l-v)+I_ext)/C_m : volt (unless refractory)
 dg_e/dt = -g_e/tau_e : siemens  # post-synaptic excitatory conductance
 dg_i/dt = -g_i/tau_i : siemens  # post-synaptic inhibitory conductance
@@ -42,20 +43,29 @@ dg_i/dt = -g_i/tau_i : siemens  # post-synaptic inhibitory conductance
 neurons = NeuronGroup(N_e, model=neuron_eqs, method='euler',
                     threshold='v>V_th', reset='v=V_r', refractory='tau_r')
 neurons.v = -55*mV
+neurons.I_ext = I_ex
 
 monitor = StateMonitor(neurons, ['v'], record=True)
 monitor_spk = SpikeMonitor(neurons)
 
 net_cost = Network(neurons, monitor_spk)
 net_cost.run(duration, report='text')
-firing_rate_costant = monitor_spk.count[0]/duration
+fr_costant_0 = monitor_spk.count[0]/duration
+fr_costant_1 = monitor_spk.count[1]/duration
+
+plt.figure()
+plt.scatter(monitor_spk.t[:], monitor_spk.i[:], marker='|')
+
+plt.figure()
+plt.plot(monitor.t[:], monitor.v[0]/mV)
+plt.plot(monitor.t[:], monitor.v[1], color = 'C8')
 
 ## NETWORK I_ext=Poisson ##########################################################################
 N_e=300
 
 # Poisson input rates
-rate_num = 50                               # total numer of rate
-rate = np.linspace(10,800,rate_num)*Hz     # range
+rate_num = 30                              # total numer of rate
+rate = np.linspace(0,500,rate_num)*Hz     # range
 rate_in = np.tile(rate, (N_e,1)).T.flatten()   # reshaping: [0:N_e]=150, [N_e:2*N_e]=150*(300-150)/rate_in ...
 
 neuron_eqs = """
@@ -70,8 +80,18 @@ neurons.v = -55*mV
 
 poisson = PoissonGroup((N_e)*rate_num, rates=rate_in)
 
-stimulus_action="g_e_post+=abs(I_ext/v)"
-synapses = Synapses(poisson, neurons, on_pre=stimulus_action,
+syn_model = """
+du_S/dt = -Omega_f * u_S : 1 (event-driven)
+dx_S/dt = Omega_d * (1-x_S) : 1 (event-driven)
+"""
+action="""
+u_S += U_0*(1-u_S)
+r_S = u_S*x_S
+x_S -= r_S
+"""
+stimulus_action="g_e_post+=4000*w_e*r_S"
+
+synapses = Synapses(poisson, neurons, model=syn_model, on_pre=action+stimulus_action,
 					method='exact')
 synapses.connect(j='i')
 
@@ -95,15 +115,20 @@ firing_rates = np.array(firing_rates)
 
 
 ## PLOTS ###########################################################################################
+
+plt.figure()
+plt.scatter(monitor_spk.t[:], monitor_spk.i[:], marker='|')
+
 fig1,ax1 = plt.subplots(nrows=1, ncols=1, sharex=True,
-                         num=f'rate_out vs rate_in I_ext={I_ext/pA}')
-ax1.axhline(firing_rate_costant/Hz, ls='dashed', color='black')
-for i in range(len(rate)):
-    ax1.errorbar(rate, firing_rates[:,0], firing_rates[:,1],
-    fmt='o', markersize=2, lw=0.4)
+                         num=f'Characteristic curve rate_out vs rate_in')
+ax1.axhline(fr_costant_0/Hz, ls='dashed', color='black', label=r'$I_{ex}$'+f' {I_ex[0]/pA}')
+ax1.axhline(fr_costant_1/Hz, ls='dotted', color='black', label=r'$I_{ex}$'+f' {I_ex[1]/pA}')
+ax1.errorbar(rate, firing_rates[:,0], firing_rates[:,1],
+             fmt='o', markersize=2, lw=0.4, color='C9')
 ax1.set_xlabel(r'$\nu_{Poisson}$ $(Hz)$ ')
 ax1.set_ylabel(r'$\nu_{out}$ $(Hz)$ ')
 ax1.grid(linestyle='dotted')
+ax1.legend()
 plt.show()
 
 ####################################################################################################
