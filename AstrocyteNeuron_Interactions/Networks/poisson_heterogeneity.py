@@ -45,27 +45,21 @@ neurons = NeuronGroup(N_e, model=neuron_eqs, method='euler',
 neurons.v = -55*mV
 neurons.I_ext = I_ex
 
-monitor = StateMonitor(neurons, ['v'], record=True)
 monitor_spk = SpikeMonitor(neurons)
 
 net_cost = Network(neurons, monitor_spk)
 net_cost.run(duration, report='text')
+
 fr_costant_0 = monitor_spk.count[0]/duration
 fr_costant_1 = monitor_spk.count[1]/duration
 
-plt.figure()
-plt.scatter(monitor_spk.t[:], monitor_spk.i[:], marker='|')
-
-plt.figure()
-plt.plot(monitor.t[:], monitor.v[0]/mV)
-plt.plot(monitor.t[:], monitor.v[1], color = 'C8')
 
 ## NETWORK I_ext=Poisson ##########################################################################
 N_e=300
 
 # Poisson input rates
-rate_num = 30                              # total numer of rate
-rate = np.linspace(0,500,rate_num)*Hz     # range
+rate_num = 70                              # total numer of rate
+rate = np.linspace(0,400,rate_num)*Hz     # range
 rate_in = np.tile(rate, (N_e,1)).T.flatten()   # reshaping: [0:N_e]=150, [N_e:2*N_e]=150*(300-150)/rate_in ...
 
 neuron_eqs = """
@@ -89,7 +83,7 @@ u_S += U_0*(1-u_S)
 r_S = u_S*x_S
 x_S -= r_S
 """
-stimulus_action="g_e_post+=4000*w_e*r_S"
+stimulus_action="g_e_post+=8000*w_e*r_S"
 
 synapses = Synapses(poisson, neurons, model=syn_model, on_pre=action+stimulus_action,
 					method='exact')
@@ -115,10 +109,8 @@ firing_rates = np.array(firing_rates)
 
 
 ## PLOTS ###########################################################################################
-
-plt.figure()
-plt.scatter(monitor_spk.t[:], monitor_spk.i[:], marker='|')
-
+# plt.figure()
+# plt.scatter(monitor_spk.t[:], monitor_spk.i[:], marker='|')
 fig1,ax1 = plt.subplots(nrows=1, ncols=1, sharex=True,
                          num=f'Characteristic curve rate_out vs rate_in')
 ax1.axhline(fr_costant_0/Hz, ls='dashed', color='black', label=r'$I_{ex}$'+f' {I_ex[0]/pA}')
