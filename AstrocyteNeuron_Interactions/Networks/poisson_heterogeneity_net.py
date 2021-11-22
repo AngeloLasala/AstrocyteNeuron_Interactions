@@ -112,13 +112,13 @@ ax[1].grid(linestyle='dotted')
 # the gaol is to find the f_poisson such that network's firing rate is equals to the previous case with I_ext
 # costant. We assume the synapses of this external input is uquals to the internal ones but, because of 
 # the size network, a scaling on synaptic streght w_e is needed
-scaling = 8000
+scaling = 1000
 w_e_stm = scaling * w_e
 
 # Poisson input rates
-rate_num = 15          # number of rates
-stats_num = 1          # how manu time compute network values for each rate 
-rate_in_list = np.linspace(0.1, 30, rate_num)*Hz     # list of rates
+rate_num = 1          # number of rates
+stats_num = 30          # how manu time compute network values for each rate 
+rate_in_list = np.linspace(0.34, 7, rate_num)*Hz     # list of rates
 rate_range= np.tile(rate_in_list,(stats_num,1)).T.flatten()   # repeated list for mean and std
 
 neuron_eqs_stm = """
