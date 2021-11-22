@@ -55,8 +55,10 @@ fr_costant_1 = monitor_spk.count[1]/duration
 
 
 ## NETWORK I_ext=Poisson ##########################################################################
-N_e=300
+N_e = 300  # numer over wich compute mean adn std for each rate input
 
+scaling = 8000
+w_e_stm = scaling * w_e
 # Poisson input rates
 rate_num = 70                              # total numer of rate
 rate = np.linspace(0,400,rate_num)*Hz     # range
@@ -83,7 +85,7 @@ u_S += U_0*(1-u_S)
 r_S = u_S*x_S
 x_S -= r_S
 """
-stimulus_action="g_e_post+=8000*w_e*r_S"
+stimulus_action="g_e_post+=w_e_stm*r_S"
 
 synapses = Synapses(poisson, neurons, model=syn_model, on_pre=action+stimulus_action,
 					method='exact')
@@ -112,7 +114,7 @@ firing_rates = np.array(firing_rates)
 # plt.figure()
 # plt.scatter(monitor_spk.t[:], monitor_spk.i[:], marker='|')
 fig1,ax1 = plt.subplots(nrows=1, ncols=1, sharex=True,
-                         num=f'Characteristic curve rate_out vs rate_in')
+                         num=f'Characteristic curve rate_out vs rate_in, scaling:{scaling}')
 ax1.axhline(fr_costant_0/Hz, ls='dashed', color='black', label=r'$I_{ex}$'+f' {I_ex[0]/pA}')
 ax1.axhline(fr_costant_1/Hz, ls='dotted', color='black', label=r'$I_{ex}$'+f' {I_ex[1]/pA}')
 ax1.errorbar(rate, firing_rates[:,0], firing_rates[:,1],
