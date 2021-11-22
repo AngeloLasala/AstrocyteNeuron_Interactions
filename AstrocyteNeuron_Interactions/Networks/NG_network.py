@@ -24,9 +24,9 @@ if __name__ == '__main__':
 
     ## PARAMETERS ###################################################################
     # --  General parameters --
-    N_e = 3200                    # Number of excitatory neurons
-    N_i = 800                     # Number of inhibitory neurons
-    N_a = 3200                    # Number of astrocytes
+    N_e = 320                    # Number of excitatory neurons
+    N_i = 80                     # Number of inhibitory neurons
+    N_a = 320                    # Number of astrocytes
 
     # -- Some metrics parameters needed to establish proper connections --
     size = 3.75*mmeter           # Length and width of the square lattice
@@ -41,7 +41,7 @@ if __name__ == '__main__':
     tau_e = 5*ms                 # Excitatory synaptic time constant
     tau_i = 10*ms                # Inhibitory synaptic time constant
     tau_r = 5*ms                 # Refractory period
-    I_ex = 105*pA                # External current
+    I_ex = 120*pA                # External current
     V_th = -50*mV                # Firing threshold
     V_r = E_l                    # Reset potential
 
@@ -120,7 +120,6 @@ if __name__ == '__main__':
     ## NEURONS 
     neuron_eqs = """
     # Neurons dynamics
-    # I_stimulus = stimulus(t,i%(N_e+N_i))*pA: ampere
     dv/dt = (g_l*(E_l-v) + g_e*(E_e-v) + g_i*(E_i-v))/C_m : volt (unless refractory)
     dg_e/dt = -g_e/tau_e : siemens  # post-synaptic excitatory conductance
     dg_i/dt = -g_i/tau_i : siemens  # post-synaptic inhibitory conductance
@@ -129,12 +128,13 @@ if __name__ == '__main__':
     x : meter (constant)
     y : meter (constant)
     """
-    dtt=defaultclock.dt
     neurons = NeuronGroup(N_e+N_i, model=neuron_eqs, method='euler',
                         threshold='v>V_th', reset='v=V_r', refractory='tau_r')
-    poisson = PoissonGroup(N_e+N_i, 1/dtt)
-    synapses = Synapses(poisson, neurons, on_pre='v += I_ex/C_m*dtt')
-    synapses.connect(j='i')
+    # Poisson rate 
+    if I_ex==120*pA: rate_in = 213*Hz
+    poisson = PoissonGroup(N_e+N_i, rate_in)
+    stm_syn = Synapses(poisson, neurons, on_pre="g_e_post+=abs(I_ex/v)")
+    stm_syn.connect(j='i')
 
     exc_neurons = neurons[:N_e]
     inh_neurons = neurons[N_e:]
