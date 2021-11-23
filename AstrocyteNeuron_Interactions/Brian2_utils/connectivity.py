@@ -56,7 +56,7 @@ def connectivity_plot(Syn, name='Source_to_Target', source='Source', target='Tar
     ax2.scatter(Syn.i, Syn.j, marker='o', s=size, color='k')
     ax2.set_xlabel(source+' index')
     ax2.set_ylabel(target+' index')
-    ax2.set_title('Source vs Target connectivity')
+    ax2.set_title(f'{source} vs {target} connectivity')
 
 def connectivity_ring(Syn, r=10, color='C0', size=20):
     """
