@@ -35,7 +35,7 @@ Omega_f = 3.33/second  # Synaptic facilitation rate
 
 ## Time evolution and Stimulus
 duration = 1*second
-I_ex = 100*pA   #default 100*pA
+I_ex = 120*pA   #default 100*pA
 
 seed(19958)
 #############################################################################################
@@ -55,7 +55,7 @@ neurons.g_i = 'rand()*w_i'
 exc_neurons = neurons[:N_e]
 inh_neurons = neurons[N_e:]
 
-# Synapses
+Synapses
 syn_model = """
 du_S/dt = -Omega_f * u_S : 1 (event-driven)
 dx_S/dt = Omega_d * (1-x_S) : 1 (event-driven)
@@ -95,7 +95,7 @@ fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True, gridspec_kw={'height_ratio
 ax[0].scatter(monitor_spk.t[:]/ms, monitor_spk.i[:], marker='|')
 ax[0].set_ylabel('neuron index')
 
-hist_step = 1
+hist_step = 10
 bin_size = (duration/ms)/((duration/ms)//hist_step)*ms
 spk_count, bin_edges = np.histogram(monitor_spk.t[:]/ms, int(duration/ms)//hist_step)
 # POPULATION ACTIVITY, ISTANTANEUS FIRING RATE
@@ -110,62 +110,67 @@ ax[1].grid(linestyle='dotted')
 # ## NETWORK I_ext=Poisson ##########################################################################
 # each neurons in the network is connected with an external neuron with poisson firing rate
 # the gaol is to find the f_poisson such that network's firing rate is equals to the previous case with I_ext
-# costant. We assume the synapses of this external input is uquals to the internal ones but, because of 
-# the size network, a scaling on synaptic streght w_e is needed
-scaling = 500
-w_e_stm = scaling * w_e
+# costant. 
+# We assume the synapses of this external input is uquals to the internal ones (same parameters)
+# abut without any kind of plasticity dynamics.
 
 # Poisson input rates
-rate_num = 1          # number of rates
-stats_num = 5          # how manu time compute network values for each rate 
-rate_in_list = np.linspace(0.4, 7, rate_num)*Hz     # list of rates
-rate_range= np.tile(rate_in_list,(stats_num,1)).T.flatten()   # repeated list for mean and std
-
-neuron_eqs_stm = """
-dv/dt = (g_l*(E_l-v) + g_e*(E_e-v) + g_i*(E_i-v))/C_m : volt (unless refractory)
-dg_e/dt = -g_e/tau_e : siemens
-dg_i/dt = -g_i/tau_i : siemens
+N_poisson = 1     
+rate_num = 1    # number of v_poisson
+stats_num = 1  # how many time each v_poisson is shown to the network for statistic  
+# 100pA -> 7826Hz
+# 120pA -> 9304Hz           
+rate_in_list = np.linspace(9300,12000,rate_num)*Hz            # list of v_poisson
+rate_range= np.tile(rate_in_list,(stats_num,1)).T.flatten()   # repeated list for mean and std            
+      
+neuron_eqs_p = """
+# Neurons dynamics
+I_syn_ext = w_e * (E_e-v) * X_ext : ampere
+dv/dt = (g_l*(E_l-v) + g_e*(E_e-v) + g_i*(E_i-v) + I_syn_ext)/C_m : volt (unless refractory)
+dg_e/dt = -g_e/tau_e :      siemens  # post-synaptic excitatory conductance
+dg_i/dt = -g_i/tau_i :      siemens  # post-synaptic inhibitory conductance
+dX_ext/dt = -X_ext/tau_e :  1        # post-synaptic external input
 """
-neurons = NeuronGroup(N_e+N_i, model=neuron_eqs_stm, method='euler',
-                    threshold='v>V_th', reset='v=V_r', refractory='tau_r')
-
-neurons.v = 'E_l + rand()*(V_th-E_l)'
-neurons.g_e = 'rand()*w_e'
-neurons.g_i = 'rand()*w_i'
-
-exc_neurons = neurons[:N_e]
-inh_neurons = neurons[N_e:]
-
-poisson = PoissonGroup(N_e+N_i, rates='rate_in')
-
-# Synapses
-stm_action = "g_e_post+=w_e_stm*r_S"
-stm_syn = Synapses(poisson, neurons, model=syn_model, on_pre=action+stm_action, method='exact')
-stm_syn.connect(j='i')
-
-exc_syn = Synapses(exc_neurons, neurons, model= syn_model, on_pre=action+exc, method='exact')
-inh_syn = Synapses(inh_neurons, neurons, model= syn_model, on_pre=action+inh, method='exact')
-exc_syn.connect(p=0.05)
-inh_syn.connect(p=0.2)
-
-stm_syn.x_S = 1
-exc_syn.x_S = 1
-inh_syn.x_S = 1
-
-monitor = StateMonitor(neurons, ['v','g_e','g_i'], record=range(5))
-monitor_spk = SpikeMonitor(neurons)
-
-store()
-firing_rates_poisson = []
+firing_rates = []
 for rate_in in rate_range:
-    restore()
-    run(duration, report='text')
-    print(f'rate_in = {rate_in}')
-    print(f'fr_poisson = {monitor_spk.count[:].sum()/duration}')
-    firing_rates_poisson.append(monitor_spk.count[:].sum()/duration)
-print('______________________')
+	# Neurons
+	neurons = NeuronGroup(N_e+N_i, model=neuron_eqs_p, method='euler',
+						threshold='v>V_th', reset='v=V_r', refractory='tau_r')
 
-fr_p = np.array(firing_rates_poisson)
+	neurons.v = 'E_l + rand()*(V_th-E_l)'
+	neurons.g_e = 'rand()*w_e'
+	neurons.g_i = 'rand()*w_i'
+
+	exc_neurons = neurons[:N_e]
+	inh_neurons = neurons[N_e:]
+
+	# Synapses
+	exc_syn = Synapses(exc_neurons, neurons, model= syn_model, on_pre=action+exc, method='exact')
+	inh_syn = Synapses(inh_neurons, neurons, model= syn_model, on_pre=action+inh, method='exact')
+	exc_syn.connect(p=0.05)
+	inh_syn.connect(p=0.2)
+
+	exc_syn.x_S = 1
+	inh_syn.x_S = 1
+
+	# Poisson input
+	poisson = PoissonInput(neurons, 'X_ext', 1 , rate=rate_in, weight='1')
+
+	# Monitor
+	monitor_spk = SpikeMonitor(neurons)
+	monitor = StateMonitor(neurons, ['v','g_e','g_i','I_syn_ext'], record=range(20))
+
+	net_poisson = Network(neurons, poisson, exc_syn, inh_syn, monitor, monitor_spk)
+	net_poisson.run(duration, report='text')
+
+	firing_rate_poisson = monitor_spk.count[:].sum()/duration
+	print(f'v_poisson : {poisson.rate}')
+	print(f'firing rate I_ex=poisson {firing_rate_poisson}')
+	print('___________________________________')
+	firing_rates.append(firing_rate_poisson)
+
+# Mean and std for each v_poisson
+fr_p = np.array(firing_rates)
 fr_poisson_plot = []
 for i in range(rate_num):
     print(f'poisson rate_in: {rate_in_list[i]}')
@@ -177,23 +182,26 @@ for i in range(rate_num):
 
 fr_poisson_plot = np.array(fr_poisson_plot)
 
-
-## PLOTS  #########################################################################################
-fig1, ax1 = plt.subplots(nrows=2, ncols=1, sharex=True,
-                         num=f'variables dynamics Poisson input, rate:{rate_in_list[-1]}Hz, scaling:{scaling}')
-ax1[0].plot(monitor.t[:], monitor.g_e[0]/nS)
-ax1[0].set_ylabel(r'$g_e$ (nS)')
-ax1[1].plot(monitor.t[:], monitor.v[0]/mV)
-ax1[1].set_ylabel(r'$v$ (mV)')
+## Plots ##################################################################################
+fig1, ax1 = plt.subplots(nrows=1, ncols=1, sharex=True,
+                         num=f'Caratteristic curve v_out-v_poiss')
+ax1.axhline(1500, ls='dashed', color='black', label=r'$I_{ex}$'+f'=[100,120] pA')
+ax1.axhline(6680, ls='dashed', color='black')
+ax1.errorbar(rate_in_list, fr_poisson_plot[:,0], fr_poisson_plot[:,1]*3,
+            fmt='o', markersize=3, lw=1, color='C9')
+ax1.set_xlabel(r'$\nu_{Poisson}$ $(Hz)$ ')
+ax1.set_ylabel(r'$\nu_{out}$ $(Hz)$ ')
+ax1.grid(linestyle='dotted')
+ax1.legend()
 
 fig2, ax2 = plt.subplots(nrows=2, ncols=1, sharex=True, gridspec_kw={'height_ratios': [3, 1]},
-                         num=f'Raster plot Poisson input, rate:{rate_in_list[-1]}Hz, scaling:{scaling}', 
+                         num=f'Raster plot Poisson input, rate:{rate_in_list[-1]}Hz', 
                          figsize=(8,10))
 
 ax2[0].scatter(monitor_spk.t[:]/ms, monitor_spk.i[:], marker='|')
 ax2[0].set_ylabel('neuron index')
 
-hist_step = 1
+hist_step = 10
 bin_size = (duration/ms)/((duration/ms)//hist_step)*ms
 spk_count, bin_edges = np.histogram(monitor_spk.t[:]/ms, int(duration/ms)//hist_step)
 # POPULATION ACTIVITY, ISTANTANEUS FIRING RATE
@@ -202,26 +210,23 @@ spk_count, bin_edges = np.histogram(monitor_spk.t[:]/ms, int(duration/ms)//hist_
 rate = double(spk_count)/(N_e+N_i)/bin_size
 ax2[1].plot(bin_edges[:-1], rate, '-', color='k')
 ax2[1].set_ylabel('rate (Hz)')
-ax2[1].set_xlabel('time (ms)')
+ax2[1].set_xlabel('time (s)')
 ax2[1].grid(linestyle='dotted')
 
-fig3, ax3 = plt.subplots(nrows=1, ncols=1, sharex=True,
-                         num=f'Caratteristic curve v_out-v_poiss, scaling:{scaling}')
-ax3.axhline(firing_rate_costant/Hz, ls='dashed', color='black', label=r'$I_{ex}$'+f' {I_ex/pA}')
-ax3.errorbar(rate_in_list, fr_poisson_plot[:,0], fr_poisson_plot[:,1],
-            fmt='o', markersize=3, lw=1, color='C9')
-ax3.set_xlabel(r'$\nu_{Poisson}$ $(Hz)$ ')
-ax3.set_ylabel(r'$\nu_{out}$ $(Hz)$ ')
-ax3.grid(linestyle='dotted')
-ax3.legend()
-
-fig4, ax4 = plt.subplots(nrows=3, ncols=1, sharex=True, 
-                        num=f'Neuronal variable dynamics')
-ax4[0].plot(monitor.t[:], monitor.v[0]/mV)
-ax4[1].plot(monitor.t[:], monitor.g_e[0]/nS)
-ax4[2].plot(monitor.t[:], monitor.g_i[0]/nS)
+fig3, ax3 = plt.subplots(nrows=4, ncols=1, sharex=True,
+                         num=f'variables dynamics Poisson input, rate:{rate_in_list[-1]}Hz')
+ax3[0].plot(monitor.t[:]/second, monitor.I_syn_ext[5]/pA)
+ax3[0].set_ylabel(r'$I_{ext}$ (pA)')
+ax3[0].grid(linestyle='dotted')
+ax3[1].plot(monitor.t[:]/second, monitor.g_e[5]/nS)
+ax3[1].set_ylabel(r'$g_e$ (nS)')
+ax3[1].grid(linestyle='dotted')
+ax3[2].plot(monitor.t[:]/second, monitor.g_i[5]/nS)
+ax3[2].set_ylabel(r'$g_i$ (nS)')
+ax3[2].grid(linestyle='dotted')
+ax3[3].plot(monitor.t[:]/second, monitor.v[5]/mV)
+ax3[3].set_ylabel(r'$v$ (mV)')
+ax3[3].grid(linestyle='dotted')
+ax3[3].set_xlabel('time (s)')
 
 plt.show()
-####################################################################################################
-
-                

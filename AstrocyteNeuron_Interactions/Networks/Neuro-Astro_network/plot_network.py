@@ -9,13 +9,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from brian2 import *
 
-
 N_e = 3200
 N_i = 800
 N_a = 3200
 C_Theta = 0.5*umolar
 
-name=f'NG_network_con1.0_120.0_ph'
+name=f'prova_con0.5_100_ph'
 
 duration = np.load(f'{name}/duration.npy')*second
 
@@ -36,7 +35,10 @@ x_A = np.load(f'{name}/var_astro_mon.x_A.npy')
 G_A = np.load(f'{name}/var_astro_mon.G_A.npy')
 
 # I_stimulus = np.load(f'{name}/neurons_mon.I_stimulus.npy')
-v = np.load(f'{name}/neurons_mon.v.npy')
+mon_v = np.load(f'{name}/neurons_mon.v.npy')
+mon_g_e = np.load(f'{name}/neurons_mon.g_e.npy')
+mon_g_i = np.load(f'{name}/neurons_mon.g_i.npy')
+mon_t = np.load(f'{name}/neurons_mon.t.npy')
 
 astro_connected = np.load(f'{name}/ecs_astro_to_syn.i.npy')
 syn_connected = np.load(f'{name}/ecs_astro_to_syn.j.npy')
@@ -54,16 +56,16 @@ gliorelease_conn = np.array(t_astro[release_connected_astro][:,0])
 print(f'gliorelease connected astro mean = {gliorelease_conn.mean():.2f}')
 print(f'gliorelease connected astro std = {gliorelease_conn.std():.2f}')
 
-# # from raster plot and histogram of connected astrocyte emerge a second
-# # gruop of connected astrocyte with different gliorelease timing
-# gliorelease_second = np.unique(np.array([i for i in t_astro if i<2.75 and i>2.65]))
-# print(gliorelease_second)
-# gliorelease_second_pos =[]
-# for j in gliorelease_second:
-#     for i in np.where(t_astro==j)[0]: 
-#         gliorelease_second_pos.append(i)
-# # synaptically connected astrocytes fire in [2.6-2.8]s
-# astro_connected_second = np.array(gliorelease_second_pos)
+# from raster plot and histogram of connected astrocyte emerge a second
+# gruop of connected astrocyte with different gliorelease timing
+gliorelease_second = np.unique(np.array([i for i in t_astro if i<2.75 and i>2.65]))
+print(gliorelease_second)
+gliorelease_second_pos =[]
+for j in gliorelease_second:
+    for i in np.where(t_astro==j)[0]: 
+        gliorelease_second_pos.append(i)
+# synaptically connected astrocytes fire in [2.6-2.8]s
+astro_connected_second = np.array(gliorelease_second_pos)
 
 
 
@@ -82,7 +84,7 @@ ax1[0].plot(t_astro[astro_i%step==0]/ms,
          astro_i[astro_i%step==0]+(N_e+N_i),'|' , color='green')
 ax1[0].set_ylabel('cell index')
 
-hist_step = 1
+hist_step = 6
 bin_size = (duration/ms)/((duration/ms)//hist_step)*ms
 
 spk_count, bin_edges = np.histogram(np.r_[t_exc/ms,t_inh/ms], 
@@ -119,9 +121,11 @@ fig3, ax3 = plt.subplots(nrows=1, ncols=1,
                         num=f'gliorelease hist - connected astro file:{name}')
 ax3.hist(gliorelease_conn, bins=20)
 
-fig4, ax4 = plt.subplots(nrows=1, ncols=1, 
-                        num=f'Poisson heterogeneity:{name}')
-for I_stim in I_stimulus: ax4.plot(np.linspace(0,2,60000), I_stim)
+fig4, ax4 = plt.subplots(nrows=3, ncols=1, sharex=True, 
+                        num=f'Neuronal variable dynamics')
+ax4[0].plot(mon_t, mon_v[95]/mV)
+ax4[1].plot(mon_t, mon_g_e[95]/nS)
+ax4[2].plot(mon_t, mon_g_i[95]/nS)
 
 plt.show()
 

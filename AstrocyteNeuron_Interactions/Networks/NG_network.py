@@ -14,19 +14,17 @@ from AstrocyteNeuron_Interactions.Brian2_utils.connectivity import connectivity_
 from AstrocyteNeuron_Interactions import makedir
 
 if __name__ == '__main__':
-
     parser = argparse.ArgumentParser(description='Neuron-Glia (NG) network')
     parser.add_argument("-ph", action='store_false', help="Poisson Heterogeneity for external stimulus, default=True")
     parser.add_argument("-grid", action='store_false', help="Square grid with only positive value, default=True")
- 
-    parser.add_argument('-excitability', action='store_false', help="""Different type of excitability, default=True""")
+    parser.add_argument("-cp", action='store_true', help="Connectivity plots, default=False")
     args = parser.parse_args()
 
     ## PARAMETERS ###################################################################
     # --  General parameters --
-    N_e = 320                    # Number of excitatory neurons
-    N_i = 80                     # Number of inhibitory neurons
-    N_a = 320                    # Number of astrocytes
+    N_e = 3200                    # Number of excitatory neurons
+    N_i = 800                     # Number of inhibitory neurons
+    N_a = 3200                    # Number of astrocytes
 
     # -- Some metrics parameters needed to establish proper connections --
     size = 3.75*mmeter           # Length and width of the square lattice
@@ -41,7 +39,7 @@ if __name__ == '__main__':
     tau_e = 5*ms                 # Excitatory synaptic time constant
     tau_i = 10*ms                # Inhibitory synaptic time constant
     tau_r = 5*ms                 # Refractory period
-    I_ex = 120*pA                # External current
+    I_ex = 100*pA                # External current
     V_th = -50*mV                # Firing threshold
     V_r = E_l                    # Reset potential
 
@@ -106,21 +104,13 @@ if __name__ == '__main__':
     duration = 6*second
     seed(28371)  # to get identical figures for repeated runs
 
-    # Poisson heterogeneity for external input 
-    # for each neurons are drown 'duration/dt'random number from
-    # Poisson distribuction with mean equals to I_ex
-    # if args.ph:
-    #     stimulus = TimedArray(np.random.poisson(I_ex/pA, (int(duration/defaultclock.dt),N_e+N_i)),
-    #                         dt=defaultclock.dt)
-    # else:
-    #     stimulus = TimedArray(np.ones((1,N_e+N_i))*I_ex/pA, dt=duration)
     #################################################################################
 
     ## NETWORK #####################################################################
     ## NEURONS 
     neuron_eqs = """
     # Neurons dynamics
-    dv/dt = (g_l*(E_l-v) + g_e*(E_e-v) + g_i*(E_i-v))/C_m : volt (unless refractory)
+    dv/dt = (g_l*(E_l-v) + g_e*(E_e-v) + g_i*(E_i-v)+I_ex)/C_m : volt (unless refractory)
     dg_e/dt = -g_e/tau_e : siemens  # post-synaptic excitatory conductance
     dg_i/dt = -g_i/tau_i : siemens  # post-synaptic inhibitory conductance
 
@@ -130,12 +120,7 @@ if __name__ == '__main__':
     """
     neurons = NeuronGroup(N_e+N_i, model=neuron_eqs, method='euler',
                         threshold='v>V_th', reset='v=V_r', refractory='tau_r')
-    # Poisson rate 
-    if I_ex==120*pA: rate_in = 213*Hz
-    poisson = PoissonGroup(N_e+N_i, rate_in)
-    stm_syn = Synapses(poisson, neurons, on_pre="g_e_post+=abs(I_ex/v)")
-    stm_syn.connect(j='i')
-
+   
     exc_neurons = neurons[:N_e]
     inh_neurons = neurons[N_e:]
 
@@ -189,9 +174,32 @@ if __name__ == '__main__':
     exc_syn.connect(True, p=0.05)
     exc_syn.x_S = 1.0
 
-    inh_syn = Synapses(inh_neurons, neurons, model= syn_model, on_pre=syn_action+inh_act, method='linear')
+    inh_syn = Synapses(inh_neurons, neurons, model=syn_model, on_pre=syn_action+inh_act, method='linear')
     inh_syn.connect(True, p=0.2)
     inh_syn.x_S = 1.0
+
+    # External input - Poisson heterogeneity 
+    if I_ex==120*pA: rate_in = 1.78*Hz
+    if I_ex==100*pA: rate_in = 0.4*Hz
+    
+    scaling = 500
+    w_e_stm = scaling * w_e
+
+    poisson = PoissonGroup(N_e+N_i, rates=rate_in)
+    syn_model_stm = """
+    du_S/dt = -Omega_f * u_S : 1 (event-driven)
+    dx_S/dt = Omega_d * (1-x_S) : 1 (event-driven)
+    """
+    U_0_stm = 0.6  # Synaptic release probability at rest
+    syn_action_stm = """
+    u_S += U_0_stm*(1-u_S)
+    r_S = u_S*x_S
+    x_S -= r_S
+    """
+    stm_action = "g_e_post+=w_e_stm*r_S"
+    stm_syn = Synapses(poisson, neurons, model=syn_model_stm, on_pre=syn_action_stm+stm_action, method='linear')
+    stm_syn.connect(j='i')
+    stm_syn.x_S = 1
 
     # Connect excitatory synapses to an astrocyte depending on the position of the
     # post-synaptic neuron
@@ -275,16 +283,16 @@ if __name__ == '__main__':
     # ASTRO TO EXC_SYNAPSES
     ecs_astro_to_syn = Synapses(astrocyte, exc_syn, 'G_A_post = G_A_pre : mmolar (summed)')
     ecs_astro_to_syn.connect('i == astrocyte_index_post')
-    print('Astro to Syn conn')
-    print(ecs_astro_to_syn.i[:])
-    print(ecs_astro_to_syn.j[:])
+    # print('Astro to Syn conn')
+    # print(ecs_astro_to_syn.i[:])
+    # print(ecs_astro_to_syn.j[:])
 
     #EXC_SYNAPSES TO ASTRO
     ecs_syn_to_astro = Synapses(exc_syn, astrocyte, 'Y_S_post = Y_S_pre/N_incoming : mmolar (summed)')
     ecs_syn_to_astro.connect('astrocyte_index_pre == j')
-    print('Syn to astro')
-    print(ecs_syn_to_astro.i[:])
-    print(ecs_syn_to_astro.j[:])
+    # print('Syn to astro')
+    # print(ecs_syn_to_astro.i[:])
+    # print(ecs_syn_to_astro.j[:])
 
     # Diffusion between astrocytes
     astro_to_astro_eqs = """
@@ -305,7 +313,7 @@ if __name__ == '__main__':
     spikes_exc_mon = SpikeMonitor(exc_neurons)
     spikes_inh_mon = SpikeMonitor(inh_neurons)
     astro_mon = SpikeMonitor(astrocyte)
-    neurons_mon = StateMonitor(neurons, ['v'], record=range(10))
+    neurons_mon = StateMonitor(neurons, ['v','g_e','g_i'], record=range(100))
     var_astro_mon = StateMonitor(astrocyte, ['C','I','h','Gamma_A','Y_S','G_A','x_A'], record=True)
     ###########################################################################################
 
@@ -330,6 +338,7 @@ if __name__ == '__main__':
 
     ## SAVE IMPORTANT VALUES #########################################################################
     name = f'Neuro-Astro_network/NG_network_con1.0_{I_ex/pA}_ph'
+    name = 'Neuro-Astro_network/prova1'
     makedir.smart_makedir(name)
 
     # Duration
@@ -345,8 +354,10 @@ if __name__ == '__main__':
 
     # Neurons variables
     np.save(f'{name}/neurons_mon.v',neurons_mon.v)
+    np.save(f'{name}/neurons_mon.g_e',neurons_mon.g_e)
+    np.save(f'{name}/neurons_mon.g_i',neurons_mon.g_i)
+    np.save(f'{name}/neurons_mon.t',neurons_mon.t)
     # np.save(f'{name}/neurons_mon.I_stimulus',neurons_mon.I_stimulus)
-
 
     # Astrocte variables 
     np.save(f'{name}/var_astro_mon.t',var_astro_mon.t)
@@ -358,11 +369,16 @@ if __name__ == '__main__':
     np.save(f'{name}/var_astro_mon.x_A',var_astro_mon.x_A)
     np.save(f'{name}/var_astro_mon.G_A',var_astro_mon.G_A)
 
-    # Synaptic astrocyte connection
+    # Connection
+    np.save(f'{name}/exc_syn.i',exc_syn.i)
+    np.save(f'{name}/exc_syn.j',exc_syn.j)
+    np.save(f'{name}/inh_syn.i',inh_syn.i)
+    np.save(f'{name}/inh_syn.j',inh_syn.j)
     np.save(f'{name}/ecs_astro_to_syn.i',ecs_astro_to_syn.i)
     np.save(f'{name}/ecs_astro_to_syn.j',ecs_astro_to_syn.j)
-
-
+    np.save(f'{name}/ecs_syn_to_astro.i',ecs_syn_to_astro.i)
+    np.save(f'{name}/ecs_syn_to_astro.j',ecs_syn_to_astro.j)
+    
     # Network Structure
     with open(f"{name}/network_structure.txt",
             'w', encoding='utf-8') as file:
@@ -435,27 +451,33 @@ if __name__ == '__main__':
     ax2[6].set_ylabel(r'$x_A$')
     ax2[6].grid(linestyle='dotted')
 
-    # connectivity_EIring(exc_syn, inh_syn, size=15, lw=0.5, split=False)
-    # connectivity_EIring(ecs_astro_to_syn, ecs_syn_to_astro, size=15, lw=0.5, split=False)
-    # connectivity_plot(exc_syn, source='Exc', target='Exc+Inh', color_s='red', color_t='indigo', size=10, name='exc syn')
-    # Connectivity_plot(inh_syn, source='Inh', target='Exc+Inh', color_s='C0', color_t='indigo', size=10)
-    # connectivity_plot(ecs_astro_to_syn, source='Astro', target='Exc syn',   
-    #                   color_s='green', color_t='red', size=15, lw=0.5, name='stro_to_syn')
-    # connectivity_plot(ecs_syn_to_astro, source='Exc syn', target='Astro',  
-    #                   color_s='red', color_t='green', size=15, lw=0.5, name='syn_to_astro')
+    ## Connectivity plot
+    if args.cp:
+        connectivity_plot(exc_syn, source='Exc', target='Exc+Inh',  name='Exitatory connection',
+                          color_s='red', color_t='indigo', size=5, lw=0.3)
+        connectivity_plot(inh_syn, source='Inh', target='Exc+Inh', name='Inhibitory connection',
+                          color_s='C0', color_t='indigo', size=5, lw=0.3)
+        connectivity_plot(stm_syn, source='Stim', target='Exc+Inh', name='Stimulus connection',
+                          color_s='C5', color_t='indigo', size=5, lw=0.3)                
+        connectivity_plot(ecs_astro_to_syn, source='Astro', target='Exc syn',name='Astro_to_syn',   
+                          color_s='green', color_t='red', size=5, lw=0.3)
+        connectivity_plot(ecs_syn_to_astro, source='Exc syn', target='Astro', name='Syn_to_Astro',  
+                          color_s='red', color_t='green', size=5, lw=0.3)
+        connectivity_plot(astro_to_astro, source='Astro', target='Astro', name='Astro_to_Astro',
+                          color_s='green', color_t='green', size=5, lw=0.3)
 
     # plt.figure(num='N_e grid')
     # plt.scatter(exc_neurons.x/mmeter, exc_neurons.y/mmeter)
     # plt.scatter(exc_syn.x_pre/mmeter, exc_syn.y_pre/mmetre, label='pre')
     # plt.legend()
 
-    plt.figure(num='N_e grid_1')
-    plt.scatter(exc_neurons.x/mmeter, exc_neurons.y/mmeter)
-    plt.scatter(exc_syn.x_post/mmeter, exc_syn.y_post/mmetre, label='post')
-    plt.legend()
+    # plt.figure(num='N_e grid_1')
+    # plt.scatter(exc_neurons.x/mmeter, exc_neurons.y/mmeter)
+    # plt.scatter(exc_syn.x_post/mmeter, exc_syn.y_post/mmetre, label='post')
+    # plt.legend()
 
-    plt.figure(num='Astro grid')
-    plt.scatter(astrocyte.x/mmeter, astrocyte.y/mmeter)
-    plt.legend()
+    # plt.figure(num='Astro grid')
+    # plt.scatter(astrocyte.x/mmeter, astrocyte.y/mmeter)
+    # plt.legend()
 
     plt.show()
