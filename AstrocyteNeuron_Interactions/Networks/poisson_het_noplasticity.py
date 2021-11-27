@@ -107,7 +107,7 @@ fig1,ax1 = plt.subplots(nrows=1, ncols=1, sharex=True,
                          num=f'Characteristic curve rate_out vs rate_in, N_poisson={N_poisson}')
 ax1.axhline(fr_costant_0/Hz, ls='dashed', color='black', label=r'$I_{ex}$'+f' {I_ex[0]/pA}')
 ax1.axhline(fr_costant_1/Hz, ls='dotted', color='black', label=r'$I_{ex}$'+f' {I_ex[1]/pA}')
-ax1.errorbar(rate_in_list, firing_rates[:,0], firing_rates[:,1],
+ax1.errorbar(rate_in_list, firing_rates[:,0], firing_rates[:,1]/(stats_num-1**0.5),
              fmt='o', markersize=2, lw=0.4, color='C9')
 ax1.set_xlabel(r'$\nu_{Poisson}$ $(Hz)$ ')
 ax1.set_ylabel(r'$\nu_{out}$ $(Hz)$ ')
