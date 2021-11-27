@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from brian2 import *
 
+
 ## PARAMETERS ##########################################################################
 # -- Network size --
 N_e = 3200                #Total number of excitatory neurons
@@ -115,12 +116,12 @@ ax[1].grid(linestyle='dotted')
 # abut without any kind of plasticity dynamics.
 
 # Poisson input rates
-N_poisson = 1     
-rate_num = 1    # number of v_poisson
-stats_num = 1  # how many time each v_poisson is shown to the network for statistic  
+N_poisson = 160     
+rate_num = 30    # number of v_poisson
+stats_num = 10   # how many time each v_poisson is shown to the network for statistic  
 # 100pA -> 7826Hz
 # 120pA -> 9304Hz           
-rate_in_list = np.linspace(9300,12000,rate_num)*Hz            # list of v_poisson
+rate_in_list = np.linspace(37.5,70,rate_num)*Hz            # list of v_poisson
 rate_range= np.tile(rate_in_list,(stats_num,1)).T.flatten()   # repeated list for mean and std            
       
 neuron_eqs_p = """
@@ -154,7 +155,7 @@ for rate_in in rate_range:
 	inh_syn.x_S = 1
 
 	# Poisson input
-	poisson = PoissonInput(neurons, 'X_ext', 1 , rate=rate_in, weight='1')
+	poisson = PoissonInput(neurons, 'X_ext', N_poisson , rate=rate_in, weight='1')
 
 	# Monitor
 	monitor_spk = SpikeMonitor(neurons)
@@ -184,10 +185,10 @@ fr_poisson_plot = np.array(fr_poisson_plot)
 
 ## Plots ##################################################################################
 fig1, ax1 = plt.subplots(nrows=1, ncols=1, sharex=True,
-                         num=f'Caratteristic curve v_out-v_poiss')
+                         num=f'Caratteristic curve v_out-v_poiss, N_poisson={N_poisson}')
 ax1.axhline(1500, ls='dashed', color='black', label=r'$I_{ex}$'+f'=[100,120] pA')
 ax1.axhline(6680, ls='dashed', color='black')
-ax1.errorbar(rate_in_list, fr_poisson_plot[:,0], fr_poisson_plot[:,1]*3,
+ax1.errorbar(rate_in_list, fr_poisson_plot[:,0], fr_poisson_plot[:,1]/(stats_num-1**0.5),
             fmt='o', markersize=3, lw=1, color='C9')
 ax1.set_xlabel(r'$\nu_{Poisson}$ $(Hz)$ ')
 ax1.set_ylabel(r'$\nu_{out}$ $(Hz)$ ')
@@ -195,7 +196,7 @@ ax1.grid(linestyle='dotted')
 ax1.legend()
 
 fig2, ax2 = plt.subplots(nrows=2, ncols=1, sharex=True, gridspec_kw={'height_ratios': [3, 1]},
-                         num=f'Raster plot Poisson input, rate:{rate_in_list[-1]}Hz', 
+                         num=f'Raster plot Poisson input, N_poisson={N_poisson} rate:{rate_in_list[-1]}Hz', 
                          figsize=(8,10))
 
 ax2[0].scatter(monitor_spk.t[:]/ms, monitor_spk.i[:], marker='|')
@@ -214,7 +215,7 @@ ax2[1].set_xlabel('time (s)')
 ax2[1].grid(linestyle='dotted')
 
 fig3, ax3 = plt.subplots(nrows=4, ncols=1, sharex=True,
-                         num=f'variables dynamics Poisson input, rate:{rate_in_list[-1]}Hz')
+                         num=f'variables dynamics Poisson input, N_poisson={N_poisson} rate:{rate_in_list[-1]}Hz')
 ax3[0].plot(monitor.t[:]/second, monitor.I_syn_ext[5]/pA)
 ax3[0].set_ylabel(r'$I_{ext}$ (pA)')
 ax3[0].grid(linestyle='dotted')
