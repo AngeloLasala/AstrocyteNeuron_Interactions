@@ -59,11 +59,11 @@ fr_costant_1 = monitor_spk.count[1]/duration
 N_e = 300  # numer over wich compute mean adn std for each rate input
 
 # Poisson input rates
-N_poisson = 1     #how many inputs receive each neuron (rate_in = N_poisson*rate_poisson)
-rate_num = 1       
+N_poisson = 160     #how many inputs receive each neuron (rate_in = N_poisson*rate_poisson)
+rate_num = 50       
 # 100pA -> 7826Hz
 # 120pA -> 9304Hz                       
-rate_in_list = np.linspace(9300,12000,rate_num)*Hz       
+rate_in_list = np.linspace(37.5,200,rate_num)*Hz       
 
 neuron_eqs = """
 # Neurons dynamics
@@ -79,7 +79,7 @@ for rate_in in rate_in_list:
 						threshold='v>V_th', reset='v=V_r', refractory='tau_r')
 	neurons.v = 'E_l + rand()*(V_th-E_l)'
 
-	poisson = PoissonInput(neurons, 'X_ext', 1 , rate=rate_in, weight='1')
+	poisson = PoissonInput(neurons, 'X_ext', N_poisson , rate=rate_in, weight='1')
 
 	monitor_spk = SpikeMonitor(neurons)
 	monitor = StateMonitor(neurons, ['v','g_e','I_syn_ext'], record=True)
@@ -124,7 +124,7 @@ ax2.set_xlabel('time (s)')
 fig3, ax3 = plt.subplots(nrows=3, ncols=1, sharex=True,
                          num=f'variables dynamics Poisson input, N_poisson={N_poisson} rate:{rate_in_list[-1]}Hz')
 ax3[0].plot(monitor.t[:]/second, monitor.I_syn_ext[0]/pA)
-ax3[0].set_ylabel(r'$I_ext$ (pA)')
+ax3[0].set_ylabel(r'$I_{ext}$ (pA)')
 ax3[0].grid(linestyle='dotted')
 ax3[1].plot(monitor.t[:]/second, monitor.g_e[0]/nS)
 ax3[1].set_ylabel(r'$g_e$ (nS)')
