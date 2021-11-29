@@ -83,6 +83,8 @@ if __name__ == '__main__':
 	astro_to_syn_j = np.load(f'{name}/ecs_astro_to_syn.j.npy')
 	syn_to_astro_i = np.load(f'{name}/ecs_syn_to_astro.i.npy')
 	syn_to_astro_j = np.load(f'{name}/ecs_syn_to_astro.j.npy')
+	astro_to_astro_i = np.load(f'{name}/astro_to_astro.i.npy')
+	astro_to_astro_j = np.load(f'{name}/astro_to_astro.j.npy')
 	###########################################################################################
 	
 	neuron_index = args.n
@@ -123,19 +125,26 @@ if __name__ == '__main__':
 		print(f'the exc_syn {k} connects pre {exc_i[k]} with post {exc_j[k]}'+tripartite)
 	print('=============================================================================')
 	print('ASTROCYTE')
-	print(f'connected astrocytes: {np.unique(astro_to_syn_i)}')
+	print('Astro to Astro:')
+	astro_indeces = np.arange(N_a)
+	print(f'connected astrocytes: {len(np.unique(astro_to_syn_i))}')
+	print(f'free astrocytes: {astro_indeces[np.isin(astro_indeces,np.unique(astro_to_syn_i))==False]}')
+	print('')
+	print('Astro to Synapses:')
 	print(f'% connected astrocytes: {(np.unique(astro_to_syn_i).shape[0]/N_a)*100}%')
+
 	print('')
 	astro_index = args.a
-	print(f'astrocyte: {astro_index}')
-	print(f'connected syn: {len(astro_to_syn_j[np.where(astro_to_syn_i==astro_index)])}')
+	print(f'astrocyte {astro_index} is connected with')
+	print(f'synapses: {len(astro_to_syn_j[np.where(astro_to_syn_i==astro_index)])}')
 	n = from_astro_to_neuron(astro_index, astro_to_syn_i, astro_to_syn_j, exc_j)
-	print(f'connected neur: {len(n)} {n}')
+	print(f'neurons: {len(n)} index:{n}')
+	print(f'astrocytes: {astro_to_astro_j[numpy.where(astro_to_astro_i==astro_index)]}')
 
 	neur = [len(from_astro_to_neuron(k, astro_to_syn_i, astro_to_syn_j, exc_j)) 
 			for k in np.arange(N_a)]
 			
-	## Plots 
+	## Plots ################################################################################
 	fig1, ax1 = plt.subplots(nrows=1, ncols=1, num='astrocyte connection distibuction')
 	ax1.bar(np.arange(N_a),neur)
 	ax1.set_xlabel('astrocyte index')
