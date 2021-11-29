@@ -63,6 +63,7 @@ def from_astro_to_neuron(astro_index, astro_to_syn_i, astro_to_syn_j, syn_j):
 	
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Advanced connectivity connection')
+	parser.add_argument('file', type=str, help="file's name of network in 'Neuro_Astro_network' folder")
 	parser.add_argument('-n', type=int, default=0, help='Neuron index, defalut=0')
 	parser.add_argument('-a', type=int, default=0, help='Astrocyte index, defalut=0')
 	args = parser.parse_args()
@@ -71,7 +72,7 @@ if __name__ == '__main__':
 	N_i = 800
 	N_a = 3200
 
-	name=f'prova1'
+	name=args.file
 
 	## Load parameters
 	exc_i = np.load(f'{name}/exc_syn.i.npy')
