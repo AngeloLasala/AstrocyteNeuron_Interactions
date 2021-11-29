@@ -15,16 +15,15 @@ from AstrocyteNeuron_Interactions import makedir
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Neuron-Glia (NG) network')
-    parser.add_argument("-ph", action='store_false', help="Poisson Heterogeneity for external stimulus, default=True")
     parser.add_argument("-grid", action='store_false', help="Square grid with only positive value, default=True")
     parser.add_argument("-cp", action='store_true', help="Connectivity plots, default=False")
     args = parser.parse_args()
 
     ## PARAMETERS ###################################################################
     # --  General parameters --
-    N_e = 3200                    # Number of excitatory neurons
-    N_i = 800                     # Number of inhibitory neurons
-    N_a = 3200                    # Number of astrocytes
+    N_e = 320                    # Number of excitatory neurons
+    N_i = 80                     # Number of inhibitory neurons
+    N_a = 320                    # Number of astrocytes
 
     # -- Some metrics parameters needed to establish proper connections --
     size = 3.75*mmeter           # Length and width of the square lattice
@@ -39,7 +38,7 @@ if __name__ == '__main__':
     tau_e = 5*ms                 # Excitatory synaptic time constant
     tau_i = 10*ms                # Inhibitory synaptic time constant
     tau_r = 5*ms                 # Refractory period
-    I_ex = 100*pA                # External current
+    I_ex = 120*pA                # External current
     V_th = -50*mV                # Firing threshold
     V_r = E_l                    # Reset potential
 
@@ -110,9 +109,11 @@ if __name__ == '__main__':
     ## NEURONS 
     neuron_eqs = """
     # Neurons dynamics
-    dv/dt = (g_l*(E_l-v) + g_e*(E_e-v) + g_i*(E_i-v)+I_ex)/C_m : volt (unless refractory)
-    dg_e/dt = -g_e/tau_e : siemens  # post-synaptic excitatory conductance
-    dg_i/dt = -g_i/tau_i : siemens  # post-synaptic inhibitory conductance
+    I_syn_ext = w_e * (E_e-v) * X_ext : ampere
+    dv/dt = (g_l*(E_l-v) + g_e*(E_e-v) + g_i*(E_i-v) + I_syn_ext)/C_m : volt (unless refractory)
+    dg_e/dt = -g_e/tau_e :      siemens  # post-synaptic excitatory conductance
+    dg_i/dt = -g_i/tau_i :      siemens  # post-synaptic inhibitory conductance
+    dX_ext/dt = -X_ext/tau_e :  1        # post-synaptic external input
 
     # Neuron position in space
     x : meter (constant)
@@ -179,27 +180,10 @@ if __name__ == '__main__':
     inh_syn.x_S = 1.0
 
     # External input - Poisson heterogeneity 
-    if I_ex==120*pA: rate_in = 1.78*Hz
-    if I_ex==100*pA: rate_in = 0.4*Hz
+    if I_ex==120*pA: rate_in = 58*Hz
+    if I_ex==100*pA: rate_in = 48*Hz
     
-    scaling = 500
-    w_e_stm = scaling * w_e
-
-    poisson = PoissonGroup(N_e+N_i, rates=rate_in)
-    syn_model_stm = """
-    du_S/dt = -Omega_f * u_S : 1 (event-driven)
-    dx_S/dt = Omega_d * (1-x_S) : 1 (event-driven)
-    """
-    U_0_stm = 0.6  # Synaptic release probability at rest
-    syn_action_stm = """
-    u_S += U_0_stm*(1-u_S)
-    r_S = u_S*x_S
-    x_S -= r_S
-    """
-    stm_action = "g_e_post+=w_e_stm*r_S"
-    stm_syn = Synapses(poisson, neurons, model=syn_model_stm, on_pre=syn_action_stm+stm_action, method='linear')
-    stm_syn.connect(j='i')
-    stm_syn.x_S = 1
+    poisson = PoissonInput(neurons, 'X_ext', 160 , rate=rate_in, weight='1')
 
     # Connect excitatory synapses to an astrocyte depending on the position of the
     # post-synaptic neuron
@@ -338,7 +322,7 @@ if __name__ == '__main__':
 
     ## SAVE IMPORTANT VALUES #########################################################################
     name = f'Neuro-Astro_network/NG_network_con1.0_{I_ex/pA}_ph'
-    name = 'Neuro-Astro_network/prova1'
+    name = 'Neuro-Astro_network/prova_poisson'
     makedir.smart_makedir(name)
 
     # Duration
