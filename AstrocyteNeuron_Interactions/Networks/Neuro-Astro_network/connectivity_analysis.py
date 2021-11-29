@@ -123,6 +123,9 @@ if __name__ == '__main__':
 		print(f'the exc_syn {k} connects pre {exc_i[k]} with post {exc_j[k]}'+tripartite)
 	print('=============================================================================')
 	print('ASTROCYTE')
+	print(f'connected astrocytes: {np.unique(astro_to_syn_i)}')
+	print(f'% connected astrocytes: {(np.unique(astro_to_syn_i).shape[0]/N_a)*100}%')
+	print('')
 	astro_index = args.a
 	print(f'astrocyte: {astro_index}')
 	print(f'connected syn: {len(astro_to_syn_j[np.where(astro_to_syn_i==astro_index)])}')
