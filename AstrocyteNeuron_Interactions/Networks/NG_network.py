@@ -21,9 +21,9 @@ if __name__ == '__main__':
 
     ## PARAMETERS ###################################################################
     # --  General parameters --
-    N_e = 320                    # Number of excitatory neurons
-    N_i = 80                     # Number of inhibitory neurons
-    N_a = 320                    # Number of astrocytes
+    N_e = 3200                    # Number of excitatory neurons
+    N_i = 800                     # Number of inhibitory neurons
+    N_a = 3200                    # Number of astrocytes
 
     # -- Some metrics parameters needed to establish proper connections --
     size = 3.75*mmeter           # Length and width of the square lattice
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     tau_e = 5*ms                 # Excitatory synaptic time constant
     tau_i = 10*ms                # Inhibitory synaptic time constant
     tau_r = 5*ms                 # Refractory period
-    I_ex = 120*pA                # External current
+    I_ex = 100*pA                # External current
     V_th = -50*mV                # Firing threshold
     V_r = E_l                    # Reset potential
 
@@ -267,16 +267,12 @@ if __name__ == '__main__':
     # ASTRO TO EXC_SYNAPSES
     ecs_astro_to_syn = Synapses(astrocyte, exc_syn, 'G_A_post = G_A_pre : mmolar (summed)')
     ecs_astro_to_syn.connect('i == astrocyte_index_post')
-    # print('Astro to Syn conn')
-    # print(ecs_astro_to_syn.i[:])
-    # print(ecs_astro_to_syn.j[:])
+    
 
     #EXC_SYNAPSES TO ASTRO
     ecs_syn_to_astro = Synapses(exc_syn, astrocyte, 'Y_S_post = Y_S_pre/N_incoming : mmolar (summed)')
     ecs_syn_to_astro.connect('astrocyte_index_pre == j')
-    # print('Syn to astro')
-    # print(ecs_syn_to_astro.i[:])
-    # print(ecs_syn_to_astro.j[:])
+    
 
     # Diffusion between astrocytes
     astro_to_astro_eqs = """
@@ -322,7 +318,7 @@ if __name__ == '__main__':
 
     ## SAVE IMPORTANT VALUES #########################################################################
     name = f'Neuro-Astro_network/NG_network_con1.0_{I_ex/pA}_ph'
-    name = 'Neuro-Astro_network/prova_poisson'
+    name = 'Neuro-Astro_network/prova_completa'
     makedir.smart_makedir(name)
 
     # Duration
@@ -362,7 +358,9 @@ if __name__ == '__main__':
     np.save(f'{name}/ecs_astro_to_syn.j',ecs_astro_to_syn.j)
     np.save(f'{name}/ecs_syn_to_astro.i',ecs_syn_to_astro.i)
     np.save(f'{name}/ecs_syn_to_astro.j',ecs_syn_to_astro.j)
-    
+    np.save(f'{name}/astro_to_astro.i',astro_to_astro.i)
+    np.save(f'{name}/astro_to_astro.j',astro_to_astro.j)
+
     # Network Structure
     with open(f"{name}/network_structure.txt",
             'w', encoding='utf-8') as file:
@@ -377,8 +375,8 @@ if __name__ == '__main__':
     astro to syn connection = {len(ecs_astro_to_syn.i)}
     ___________________________________________\n
     Spatial arrangement
-    neurons grid:   {N_rows_exc}x{N_rows_exc} dist={grid_dist/umetre} um
-    astrocyte grid: {N_rows_astro}x{N_rows_astro} dist={grid_dist/umetre} um""")
+    neurons grid:   {N_rows_exc}x{N_rows_exc} dist={grid_dist/umetre:.1f} um
+    astrocyte grid: {N_rows_astro}x{N_rows_astro} dist={grid_dist/umetre:.1f} um""")
     ###################################################################################################
 
     ## PLOTS #########################################################################################
@@ -394,8 +392,9 @@ if __name__ == '__main__':
     ax1[0].set_xlabel('time (s)')
     ax1[0].set_ylabel('cell index')
 
-    hist_step = 1
+    hist_step = 20
     bin_size = (duration/ms)/((duration/ms)//hist_step)*ms
+    print(f'bin size for hist: {bin_size}')
     spk_count, bin_edges = np.histogram(np.r_[spikes_exc_mon.t/ms,spikes_inh_mon.t/ms], 
                                         int(duration/ms)//hist_step)
     rate = double(spk_count)/(N_e+N_i)/bin_size
@@ -440,9 +439,7 @@ if __name__ == '__main__':
         connectivity_plot(exc_syn, source='Exc', target='Exc+Inh',  name='Exitatory connection',
                           color_s='red', color_t='indigo', size=5, lw=0.3)
         connectivity_plot(inh_syn, source='Inh', target='Exc+Inh', name='Inhibitory connection',
-                          color_s='C0', color_t='indigo', size=5, lw=0.3)
-        connectivity_plot(stm_syn, source='Stim', target='Exc+Inh', name='Stimulus connection',
-                          color_s='C5', color_t='indigo', size=5, lw=0.3)                
+                          color_s='C0', color_t='indigo', size=5, lw=0.3)                
         connectivity_plot(ecs_astro_to_syn, source='Astro', target='Exc syn',name='Astro_to_syn',   
                           color_s='green', color_t='red', size=5, lw=0.3)
         connectivity_plot(ecs_syn_to_astro, source='Exc syn', target='Astro', name='Syn_to_Astro',  
