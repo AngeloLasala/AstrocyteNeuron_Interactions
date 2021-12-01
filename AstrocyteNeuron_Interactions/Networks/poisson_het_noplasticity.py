@@ -28,12 +28,12 @@ Omega_f = 3.33/second  # Synaptic facilitation rate
 
 ## Time evolution and Stimulus
 duration = 1*second
-dtt = 0.1*ms
-I_ex = [100,120]*pA
+defaultclock.dt = 0.05*ms
+I_ex = [100,105,110,115,120]*pA
 #############################################################################################
 
 ## NETWORK I_ext=cost ######################################################################
-N_e = 2
+N_e = 5
 neuron_eqs = """
 # Neurons dynamics
 I_ext : ampere
@@ -53,7 +53,9 @@ net_cost.run(duration, report='text')
 
 fr_costant_0 = monitor_spk.count[0]/duration
 fr_costant_1 = monitor_spk.count[1]/duration
-
+fr_costant_2 = monitor_spk.count[2]/duration
+fr_costant_3 = monitor_spk.count[3]/duration
+fr_costant_4 = monitor_spk.count[4]/duration
 
 ## NETWORK I_ext=Poisson ##########################################################################
 N_e = 300  # numer over wich compute mean adn std for each rate input
@@ -63,7 +65,7 @@ N_poisson = 160     #how many inputs receive each neuron (rate_in = N_poisson*ra
 rate_num = 50       
 # 100pA -> 7826Hz
 # 120pA -> 9304Hz                       
-rate_in_list = np.linspace(37.5,200,rate_num)*Hz       
+rate_in_list = np.linspace(37.5,70,rate_num)*Hz       
 
 neuron_eqs = """
 # Neurons dynamics
@@ -105,9 +107,12 @@ firing_rates = np.array(firing_rates)
 # plt.scatter(monitor_spk.t[:], monitor_spk.i[:], marker='|')
 fig1,ax1 = plt.subplots(nrows=1, ncols=1, sharex=True,
                          num=f'Characteristic curve rate_out vs rate_in, N_poisson={N_poisson}')
-ax1.axhline(fr_costant_0/Hz, ls='dashed', color='black', label=r'$I_{ex}$'+f' {I_ex[0]/pA}')
-ax1.axhline(fr_costant_1/Hz, ls='dotted', color='black', label=r'$I_{ex}$'+f' {I_ex[1]/pA}')
-ax1.errorbar(rate_in_list, firing_rates[:,0], firing_rates[:,1]/(stats_num-1**0.5),
+ax1.axhline(fr_costant_0/Hz, ls='dashed', color='black', label=r'$I_{ex}$'+f' {I_ex/pA}')
+ax1.axhline(fr_costant_1/Hz, ls='dashed', color='black')
+ax1.axhline(fr_costant_2/Hz, ls='dashed', color='black')
+ax1.axhline(fr_costant_3/Hz, ls='dashed', color='black')
+ax1.axhline(fr_costant_4/Hz, ls='dashed', color='black')
+ax1.errorbar(rate_in_list, firing_rates[:,0], firing_rates[:,1]/((N_e-1)**0.5),
              fmt='o', markersize=2, lw=0.4, color='C9')
 ax1.set_xlabel(r'$\nu_{Poisson}$ $(Hz)$ ')
 ax1.set_ylabel(r'$\nu_{out}$ $(Hz)$ ')
