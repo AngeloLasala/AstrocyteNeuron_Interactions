@@ -99,7 +99,7 @@ if __name__ == '__main__':
     #################################################################################
 
     ## TIME PARAMETERS ##############################################################
-    defaultclock.dt = 0.1*ms
+    defaultclock.dt = 0.05*ms
     duration = 6*second
     seed(28371)  # to get identical figures for repeated runs
 
@@ -180,9 +180,12 @@ if __name__ == '__main__':
     inh_syn.x_S = 1.0
 
     # External input - Poisson heterogeneity 
-    if I_ex==120*pA: rate_in = 58*Hz
-    if I_ex==100*pA: rate_in = 48*Hz
-    
+    # rate_in values are comtuted from characteristic curve v_out vs v_poisson
+    # this values are stored in a dictionary where the keys are the I_ex
+    # I_ex = [100,105,110,115,120]
+    rate_in_table = {100.0:47.7, 105.0:51.2, 110.0:54.1, 115.0:56.1, 120.0:58.8}
+    rate_in = rate_in_table[I_ex/pA]*Hz
+    print(rate_in)
     poisson = PoissonInput(neurons, 'X_ext', 160 , rate=rate_in, weight='1')
 
     # Connect excitatory synapses to an astrocyte depending on the position of the
@@ -299,8 +302,6 @@ if __name__ == '__main__':
 
     ## RUN and NETWORK INFORMATION ###################################################################
     run(duration, report='text')
-    print(exc_syn)
-
     print('NETWORK INFORMATION')
     print(f'excitatory neurons = {N_e}')
     print(f'inhibitory neurons = {N_i}')
@@ -317,8 +318,12 @@ if __name__ == '__main__':
     ##################################################################################################
 
     ## SAVE IMPORTANT VALUES #########################################################################
-    name = f'Neuro-Astro_network/NG_network_con1.0_{I_ex/pA}_ph'
-    name = 'Neuro-Astro_network/prova_completa'
+    if args.grid: 
+        grid_name='mygrid'
+    else: 
+        grid_name='profgrid'
+    
+    name = f'Neuro-Astro_network/NG_network_{I_ex/pA}_ph_'+grid_name
     makedir.smart_makedir(name)
 
     # Duration
@@ -381,7 +386,7 @@ if __name__ == '__main__':
 
     ## PLOTS #########################################################################################
     fig1, ax1 = plt.subplots(nrows=2, ncols=1, sharex=True, gridspec_kw={'height_ratios': [3, 1]},
-                            figsize=(12, 14), num=f'Raster plot: Ne={N_e} Ni={N_i}, Na={N_a}')
+                            figsize=(12, 14), num=f'NG_network_{I_ex/pA}_ph_'+grid_name)
     step = 1
     ax1[0].plot(spikes_exc_mon.t[np.array(spikes_exc_mon.i)%step==0]/ms, 
                 spikes_exc_mon.i[np.array(spikes_exc_mon.i)%step==0], '|', color='C3')
@@ -434,6 +439,19 @@ if __name__ == '__main__':
     ax2[6].set_ylabel(r'$x_A$')
     ax2[6].grid(linestyle='dotted')
 
+    fig3, ax3 = plt.subplots(nrows=1, ncols=2, 
+                                num='Physical space', figsize=(15,7))
+
+    ax3[0].title.set_text('Neurons grid')
+    ax3[0].scatter(exc_neurons.x/mmeter, exc_neurons.y/mmeter, marker='o', color='red')
+    ax3[0].set_xlabel(r'x ($\mu$m)')
+    ax3[0].set_ylabel(r'y ($\mu$m)')
+
+    ax3[1].title.set_text('Astrocytes grid')
+    ax3[1].scatter(astrocyte.x/mmeter, astrocyte.y/mmeter, marker='o', color='green')
+    ax3[1].set_xlabel(r'x ($\mu$m)')
+    ax3[1].set_ylabel(r'y ($\mu$m)')
+    
     ## Connectivity plot
     if args.cp:
         connectivity_plot(exc_syn, source='Exc', target='Exc+Inh',  name='Exitatory connection',
