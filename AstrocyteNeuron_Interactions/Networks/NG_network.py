@@ -15,6 +15,7 @@ from AstrocyteNeuron_Interactions import makedir
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Neuron-Glia (NG) network')
+    parser.add_argument("I_ex", type=float, help="value of external input I_ex expressed in pA")
     parser.add_argument("-grid", action='store_false', help="Square grid with only positive value, default=True")
     parser.add_argument("-cp", action='store_true', help="Connectivity plots, default=False")
     args = parser.parse_args()
@@ -99,11 +100,15 @@ if __name__ == '__main__':
     #################################################################################
 
     ## TIME PARAMETERS ##############################################################
-    defaultclock.dt = 0.05*ms
+    defaultclock.dt = 0.1*ms
     duration = 6*second
     seed(28371)  # to get identical figures for repeated runs
-
     #################################################################################
+
+    ## CONTROL PARAMETERS ###########################################################
+    I_ex = args.I_ex*pA   
+
+    ################################################################################
 
     ## NETWORK #####################################################################
     ## NEURONS 
@@ -465,18 +470,5 @@ if __name__ == '__main__':
         connectivity_plot(astro_to_astro, source='Astro', target='Astro', name='Astro_to_Astro',
                           color_s='green', color_t='green', size=5, lw=0.3)
 
-    # plt.figure(num='N_e grid')
-    # plt.scatter(exc_neurons.x/mmeter, exc_neurons.y/mmeter)
-    # plt.scatter(exc_syn.x_pre/mmeter, exc_syn.y_pre/mmetre, label='pre')
-    # plt.legend()
 
-    # plt.figure(num='N_e grid_1')
-    # plt.scatter(exc_neurons.x/mmeter, exc_neurons.y/mmeter)
-    # plt.scatter(exc_syn.x_post/mmeter, exc_syn.y_post/mmetre, label='post')
-    # plt.legend()
-
-    # plt.figure(num='Astro grid')
-    # plt.scatter(astrocyte.x/mmeter, astrocyte.y/mmeter)
-    # plt.legend()
-
-    plt.show()
+    # plt.show()
