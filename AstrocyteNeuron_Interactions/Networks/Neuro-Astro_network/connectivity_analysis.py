@@ -125,12 +125,14 @@ if __name__ == '__main__':
 		print(f'the exc_syn {k} connects pre {exc_i[k]} with post {exc_j[k]}'+tripartite)
 	print('=============================================================================')
 	print('ASTROCYTE')
-	print('Astro to Astro:')
-	astro_indeces = np.arange(N_a)
-	print(f'connected astrocytes: {len(np.unique(astro_to_syn_i))}')
-	print(f'free astrocytes: {astro_indeces[np.isin(astro_indeces,np.unique(astro_to_syn_i))==False]}')
-	print('')
 	print('Astro to Synapses:')
+	astro_indeces = np.arange(N_a)
+	connected_astro = np.unique(astro_to_syn_i)
+	free_astro = astro_indeces[np.isin(astro_indeces,np.unique(astro_to_syn_i))==False]
+	print(f'connected astrocytes: {len(connected_astro)}')
+	print(f'free astrocytes: {free_astro}')
+	print('')
+	
 	print(f'% connected astrocytes: {(np.unique(astro_to_syn_i).shape[0]/N_a)*100}%')
 
 	print('')
