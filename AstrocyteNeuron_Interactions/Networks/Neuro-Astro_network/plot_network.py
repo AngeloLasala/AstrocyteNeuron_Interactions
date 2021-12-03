@@ -12,6 +12,7 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 from brian2 import *
+from network_analysis import transient
 
 parser = argparse.ArgumentParser(description='Advanced connectivity connection')
 parser.add_argument('file', type=str, help="file's name of network in 'Neuro_Astro_network' folder")
@@ -71,27 +72,30 @@ gliorelease_conn = np.array(t_astro[release_connected_astro][:,0])
 print(f'gliorelease connected astro mean = {gliorelease_conn.mean():.2f}')
 print(f'gliorelease connected astro std = {gliorelease_conn.std():.2f}')
 
-# from raster plot and histogram of connected astrocyte emerge a second
-# gruop of connected astrocyte with different gliorelease timing
-print(t_astro)
-print(astro_i)
-gliorelease_second = np.unique(np.array([i for i in t_astro if i<2.54 and i>2.44]))
-print(gliorelease_second)
-t_astro_second = [np.where(t_astro==j) for j in gliorelease_second]
-gliorelease_second_pos =[]
-for j in gliorelease_second:
-    for i in np.where(t_astro==j)[0]: 
-        gliorelease_second_pos.append(i)
-# synaptically connected astrocytes fire in [2.6-2.8]s
-astro_connected_second = np.array(gliorelease_second_pos)
-print(f'astro firing second spot: {astro_connected_second}')
+# # from raster plot and histogram of connected astrocyte emerge a second
+# # gruop of connected astrocyte with different gliorelease timing
+# print(t_astro)
+# print(astro_i)
+# gliorelease_second = np.unique(np.array([i for i in t_astro if i<2.54 and i>2.44]))
+# print(gliorelease_second)
+# t_astro_second = [np.where(t_astro==j) for j in gliorelease_second]
+# gliorelease_second_pos =[]
+# for j in gliorelease_second:
+#     for i in np.where(t_astro==j)[0]: 
+#         gliorelease_second_pos.append(i)
+# # synaptically connected astrocytes fire in [2.6-2.8]s
+# astro_connected_second = np.array(gliorelease_second_pos)
+# print(f'astro firing second spot: {astro_connected_second}')
 
 
-## PLOTS ##############################################
+## PLOTS ######################################################################################
+# transient time
+trans = transient(t*second, 300)
+print(f'transient: {trans}')
 
 fig1, ax1 = plt.subplots(nrows=2, ncols=1, sharex=True, gridspec_kw={'height_ratios': [3, 1]},
-                        figsize=(12, 14), num=f'Raster plot file:{name}')
-step = 1
+                        figsize=(12, 14), num=f'Raster plot')
+step = 4
 ax1[0].plot(t_exc[exc_neurons_i%step==0]/ms, 
          exc_neurons_i[exc_neurons_i%step==0], '|', color='C3')
 ax1[0].plot(t_inh[inh_neurons_i%step==0]/ms, 
@@ -111,51 +115,59 @@ ax1[1].set_ylabel('rate (Hz)')
 ax1[1].set_xlabel('time (ms)')
 ax1[1].grid(linestyle='dotted')
 
+plt.savefig(name+f'Raster plot.png')
+
 fig2, ax2 = plt.subplots(nrows=4, ncols=1, sharex=True, figsize=(13, 9), 
-                        num=f'astrocyte dynamics file:{name}')
+                        num=f'astrocyte dynamics')
 con_index = connected_astro[0:1] # synaptically connected astrocytes
 free_index = free_astro[0:1]     # not synaptically connected astrocytes
 
-ax2[0].plot(t[:], Y_S[con_index][0]/umolar, color='C3', label='synaptically connected')
-ax2[0].plot(t[:], Y_S[free_index][0]/umolar, color='C3', ls='dashed', label='free')
+ax2[0].plot(t[trans:], Y_S[con_index][0,trans:]/umolar, color='C3', label='synaptically connected')
+ax2[0].plot(t[trans:], Y_S[free_index][0,trans:]/umolar, color='C3', ls='dashed', label='free')
 ax2[0].set_ylabel(r'$Y_S$ ($\mu$M)')
 ax2[0].grid(linestyle='dotted')
 ax2[0].legend()
 
-ax2[1].plot(t[:], Gamma_A[con_index][0], color='C7', label='synaptically connected')
-ax2[1].plot(t[:], Gamma_A[free_index][0], color='C7', ls='dashed', label='free')
+ax2[1].plot(t[trans:], Gamma_A[con_index][0,trans:], color='C7', label='synaptically connected')
+ax2[1].plot(t[trans:], Gamma_A[free_index][0,trans:], color='C7', ls='dashed', label='free')
 ax2[1].set_ylabel(r'$\Gamma_A$ ')
 ax2[1].grid(linestyle='dotted')
 ax2[1].legend()
 
-ax2[2].plot(t[:], I[con_index][0]/umolar, color='C0', label='synaptically connected')
-ax2[2].plot(t[:], I[free_index][0]/umolar, color='C0', ls='dashed', label='free')
+ax2[2].plot(t[trans:], I[con_index][0,trans:]/umolar, color='C0', label='synaptically connected')
+ax2[2].plot(t[trans:], I[free_index][0,trans:]/umolar, color='C0', ls='dashed', label='free')
 ax2[2].set_ylabel(r'$I$ ($\mu$M)')
 ax2[2].grid(linestyle='dotted')
 ax2[2].legend()
 
-ax2[3].plot(t[:], C[con_index][0]/umolar, color='red', label='synaptically connected')
-ax2[3].plot(t[:], C[free_index][0]/umolar, color='red', ls='dashed', label='free')
+ax2[3].plot(t[trans:], C[con_index][0,trans:]/umolar, color='red', label='synaptically connected')
+ax2[3].plot(t[trans:], C[free_index][0,trans:]/umolar, color='red', ls='dashed', label='free')
 ax2[3].set_ylabel(r'$Ca^{2\plus}$ ($\mu$M)')
 ax2[3].set_xlabel('time (s)')
-ax2[3].plot(t[:], np.full(t.shape[0], C_Theta/umolar), ls='dashed', color='black')
+ax2[3].plot(t[trans:], np.full(t[trans:].shape[0], C_Theta/umolar), ls='dashed', color='black')
 ax2[3].grid(linestyle='dotted')
 ax2[3].legend()
 
+plt.savefig(name+f'astrocyte dynamics.png')
+
 fig3, ax3 = plt.subplots(nrows=1, ncols=1, 
-                        num=f'gliorelease hist - connected astro file:{name}')
+                        num=f'gliorelease hist - connected astro')
 ax3.hist(gliorelease_conn, bins=20)
 ax3.set_xlabel('time (s)')
 
+plt.savefig(name+f'gliorelease hist - connected astro.png')
+
 fig4, ax4 = plt.subplots(nrows=3, ncols=1, sharex=True, 
                         num=f'Neuronal variable dynamics')
-ax4[0].plot(mon_t, mon_v[95]/mV)
+ax4[0].plot(mon_t[trans:], mon_v[0,trans:]/mV)
 ax4[0].set_ylabel('v (mV)')
-ax4[1].plot(mon_t, mon_g_e[95]/nS)
+ax4[1].plot(mon_t[trans:], mon_g_e[0,trans:]/nS)
 ax4[1].set_ylabel(r'$g_e$ (nS)')
-ax4[2].plot(mon_t, mon_g_i[95]/nS)
+ax4[2].plot(mon_t[trans:], mon_g_i[0,trans:]/nS)
 ax4[2].set_ylabel(r'$g_i$ (nS)')
 ax4[2].set_xlabel('time (s)')
+
+plt.savefig(name+f'Neuronal variable dynamics.png')
 
 plt.show()
 
