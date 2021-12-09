@@ -265,9 +265,9 @@ if __name__ == '__main__':
         astrocyte.y = '(i % N_rows_astro)*grid_dist - N_cols_astro/2.0*grid_dist'
 
 
-    astrocyte.C =0.01*umolar
-    astrocyte.h = 0.9
-    astrocyte.I = 0.01*umolar
+    astrocyte.C ="0.005*umolar + rand()*(0.015-0.005)*umolar"
+    astrocyte.h = "0.85 + rand()*(0.95-0.85)"
+    astrocyte.I = "0.005*umolar + rand()*(0.015-0.005)*umolar"
     astrocyte.x_A = 1.0
 
     # bidirectional connection beetwith astrocyte and excitatory synapses
@@ -328,7 +328,7 @@ if __name__ == '__main__':
     else: 
         grid_name='profgrid'
     
-    name = f'Neuro-Astro_network/NG_network_{I_ex/pA}_ph_'+grid_name
+    name = f'Neuro-Astro_network/NG_network_{I_ex/pA}_ph_'+grid_name+'_ic'
     makedir.smart_makedir(name)
 
     # Duration
