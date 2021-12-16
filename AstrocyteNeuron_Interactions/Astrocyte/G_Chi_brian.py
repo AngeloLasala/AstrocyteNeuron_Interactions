@@ -183,16 +183,17 @@ dx_A/dt = Omega_A * (1 - x_A) : 1
 dG_A/dt = -Omega_e*G_A        : mmolar
 
 # Neurotransmitter concentration in the extracellular space:
-Y_S = Y_S_function(t)            : mmolar
-O_beta                        : mmolar/second
-Omega_C                       : 1/second
+Y_S = Y_S_function(t)  : mmolar
+O_beta                 : mmolar/second
+Omega_C                : 1/second
 """
-Y_S_function = TimedArray([50]*uM, dt=10*second)
+y_s_values = [10]*uM
+Y_S_function = TimedArray(y_s_values, dt=10*second)
 
 astrocyte_s = NeuronGroup(1, astro_eqs_s, 
 							threshold='C>C_Theta', refractory='C>C_Theta', reset=astro_release,
 							method='rk4', dt=1e-2*second)
-astrocyte_s.O_beta = 0.5*umolar/second
+astrocyte_s.O_beta = 0.005*umolar/second
 astrocyte_s.Omega_C = 6/second
 astrocyte_s.C ="0.005*umolar + rand()*(0.015-0.005)*umolar"
 astrocyte_s.h = "0.85 + rand()*(0.95-0.85)"
@@ -209,7 +210,7 @@ net_s.run(60*second, report='text')
 ## Plots #####################################################################################
 if omega_c:
 	fig1, ax1 = plt.subplots(nrows=1, ncols=1, 
-							num=f'GRE_Omega_C')
+							num=f'GRE_Omega_C, Y_S={y_s_values/umolar} um')
 						
 	ax1.errorbar(omega_c_range, gre_timing[:,0], gre_timing[:,1],
 				fmt='o', markersize=2.5, lw=0.6, color='C2')
@@ -233,7 +234,7 @@ if o_beta:
 	plt.savefig('G_ChI_images'+'/GRE_O_beta.png')
 
 fig2, ax2 = plt.subplots(nrows=4, ncols=1, sharex=True, figsize=(13, 9), 
-                        num=f'astrocyte dynamics')
+                        num=f'astrocyte dynamics, Y_S={y_s_values/umolar} um')
 
 ax2[0].plot(astro_mon_s.t[:], astro_mon_s.Y_S[0,:]/umolar, color='C3')
 ax2[0].set_ylabel(r'$Y_S$ ($\mu$M)')
