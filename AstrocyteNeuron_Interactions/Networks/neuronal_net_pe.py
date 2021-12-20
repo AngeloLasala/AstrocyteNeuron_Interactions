@@ -103,7 +103,7 @@ firing_rate_exc = PopulationRateMonitor(exc_neurons)
 firing_rate_inh = PopulationRateMonitor(inh_neurons)
 
 # select random excitatory neurons
-index = 705
+index = 488
 state_exc_mon = StateMonitor(exc_neurons, ['v', 'g_e', 'g_i', 'LFP', 'I_syn_ext'], record=True)
 syn_exc_mon = StateMonitor(exc_syn, ['u_S','x_S'], record=exc_syn[index, :]) 
 syn_inh_mon = StateMonitor(inh_syn, ['u_S','x_S'], record=inh_syn[index, :])
