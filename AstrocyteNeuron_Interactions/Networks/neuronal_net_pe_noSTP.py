@@ -1,6 +1,10 @@
 """
 Neuronal network simulation using Brian 2.
-Randomly connected networks with conductance-based synapses.
+Randomly connected networks with conductance-based synapses without any kind of plasticity.
+
+Plot and Save information: Computational time for each simulation is about 10 second, 
+for this reason I chose to save only firing rate and LFP in external folder to future analysis.
+If you want dynamical beahaviour of variable run this code, not 'plot_network.py'.
 
 - "Modeling euron-glia interaction with Brian 2 simulator", Stimberg et al (2017)
 """
@@ -44,8 +48,8 @@ Omega_f = 3.33/second  # Synaptic facilitation rate
 #############################################################################################
 
 ## MODEL   ##################################################################################
-defaultclock.dt = 0.1*ms
-duration = 1.5*second  # Total simulation time
+defaultclock.dt = 0.05*ms
+duration = 2.3*second  # Total simulation time
 seed(19958)
 
 #Neurons
@@ -57,7 +61,7 @@ dg_e/dt = -g_e/tau_e : siemens   # post-synaptic excitatory conductance
 dg_i/dt = -g_i/tau_i : siemens   # post-synaptic inhibitory conductance
 dX_ext/dt = -X_ext/tau_e :  1    # post-synaptic external input
 
-LFP = (abs(g_e*(E_e-v)) + abs(g_i*(E_i-v)))/g_l : volt
+LFP = (abs(g_e*(E_e-v)) + abs(g_i*(E_i-v)) + abs(I_syn_ext))/g_l : volt
 """
 neurons = NeuronGroup(N_e+N_i, model=neuron_eqs, method='rk4',
                      threshold='v>V_th', reset='v=V_r', refractory='tau_r')
@@ -108,8 +112,8 @@ trans = transient(state_exc_mon.t[:]/second*second, trans_time)
 ## Network variable
 
 LFP = state_exc_mon.LFP[:].sum(axis=0)
-fr_exc = firing_rate_exc.smooth_rate(window='gaussian', width=2*ms)
-fr_inh = firing_rate_inh.smooth_rate(window='gaussian', width=2*ms)
+fr_exc = firing_rate_exc.smooth_rate(window='gaussian', width=1*ms)
+fr_inh = firing_rate_inh.smooth_rate(window='gaussian', width=1*ms)
 
 fr_exc_trans = fr_exc[trans:]
 fr_exc_fft = fft(fr_exc_trans)
@@ -121,22 +125,17 @@ plt.plot(fr_exc_freq[:N//2], np.abs(fr_exc_fft[:N//2]**2))
 #########################################################################################################
 ## SAVE VARIABLES #######################################################################################
 
-name = f"Neural_network/Network_pe_v_in{rate_in}_noSTP"
+name = f"Neural_network/EI_net_noSTP/Network_pe_v_in{rate_in}"
 makedir.smart_makedir(name)
 
 # Time evolytion variable
 np.save(f'{name}/duration',duration)
 np.save(f'{name}/trans_time',trans_time)
-np.save(f'{name}/index',index)
 np.save(f'{name}/trans',trans)
 np.save(f'{name}/rate_in',rate_in)
 
 # Excitatory neurons variable
 np.save(f'{name}/state_exc_mon.t',state_exc_mon.t)
-np.save(f'{name}/state_exc_mon.I_syn_ext',state_exc_mon.I_syn_ext)
-np.save(f'{name}/state_exc_mon.v',state_exc_mon.v)
-np.save(f'{name}/state_exc_mon.g_i',state_exc_mon.g_i)
-np.save(f'{name}/state_exc_mon.g_e',state_exc_mon.g_e)
 np.save(f'{name}/state_exc_mon.LFP',state_exc_mon.LFP)
 
 # Population istantaneus firing rate
@@ -145,11 +144,6 @@ np.save(f'{name}/firing_rate_inh.t',firing_rate_inh.t)
 np.save(f'{name}/fr_exc',fr_exc)
 np.save(f'{name}/fr_inh',fr_inh)
 
-# Spike variable
-np.save(f'{name}/spikes_exc_mon.t',spikes_exc_mon.t)
-np.save(f'{name}/spikes_inh_mon.t',spikes_inh_mon.t)
-np.save(f'{name}/spikes_exc_mon.i',spikes_exc_mon.i)
-np.save(f'{name}/spikes_inh_mon.i',spikes_inh_mon.i)
 #########################################################################################################
 
 # Plots  ################################################################################################
