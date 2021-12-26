@@ -163,7 +163,6 @@ if args.p:
 		if (spk>trans_time*ms): ax1[1].axvline(x=spk/ms, ymin=0.15, ymax=0.95 )
 	ax1[1].set_ylim(bottom=-60.8, top=0.1)
 	ax1[1].set_ylabel('Membran potential (V)')
-	ax1[1].set_title('Neurons dynamics')
 	ax1[1].grid(linestyle='dotted')
 	ax1[1].legend(loc = 'upper right')
 
