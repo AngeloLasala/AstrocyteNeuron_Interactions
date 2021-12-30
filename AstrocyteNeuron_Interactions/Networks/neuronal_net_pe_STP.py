@@ -101,6 +101,7 @@ spikes_exc_mon = SpikeMonitor(exc_neurons)
 spikes_inh_mon = SpikeMonitor(inh_neurons)
 firing_rate_exc = PopulationRateMonitor(exc_neurons)
 firing_rate_inh = PopulationRateMonitor(inh_neurons)
+firing_rate = PopulationRateMonitor(neurons)
 
 # select random excitatory neurons
 index = 488
@@ -128,15 +129,18 @@ trans = transient(state_exc_mon.t[:]/second*second, trans_time)
 LFP = state_exc_mon.LFP[:].sum(axis=0)
 fr_exc = firing_rate_exc.smooth_rate(window='gaussian', width=1*ms)
 fr_inh = firing_rate_inh.smooth_rate(window='gaussian', width=1*ms)
+fr = firing_rate.smooth_rate(window="gaussian", width=1*ms)
 
-fr_exc_trans = fr_exc[trans:]
-fr_exc_fft = fft(fr_exc_trans)
-N = len(fr_exc_trans)
-fr_exc_freq = fftfreq(N,defaultclock.dt)
+fr_trans = fr[trans:]
+fr_fft = fft(fr_trans)
+N = len(fr_trans)
+fr_freq = fftfreq(N,defaultclock.dt)
 
 plt.figure()
-plt.plot(fr_exc_freq[:N//2], np.abs(fr_exc_fft[:N//2]**2))
-#########################################################################################################
+plt.plot(firing_rate.t[:], fr[:])
+
+plt.figure()
+plt.plot(fr_freq[:N//2], np.abs(fr_fft[:N//2]))#########################################################################################################
 ## SAVE VARIABLES #######################################################################################
 
 name = f"Neural_network/EI_net_STP/Network_pe_v_in{rate_in}"
@@ -157,6 +161,8 @@ np.save(f'{name}/firing_rate_exc.t',firing_rate_exc.t)
 np.save(f'{name}/firing_rate_inh.t',firing_rate_inh.t)
 np.save(f'{name}/fr_exc',fr_exc)
 np.save(f'{name}/fr_inh',fr_inh)
+np.save(f'{name}/firing_rate',fr)
+
 #########################################################################################################
 
 # Plots  ################################################################################################
@@ -191,6 +197,8 @@ if args.p:
 	ax1[3].set_ylabel(r'$u_S$, $x_S$')
 	ax1[3].grid(linestyle='dotted')
 	ax1[3].legend(loc = 'upper right')
+
+	plt.savefig(name+f'/exc variable dynamic, v_in={rate_in/Hz} (STP).png')
 
 	fig2, ax2 = plt.subplots(nrows=4, ncols=1, sharex=True, gridspec_kw={'height_ratios': [2,0.6,0.6,1]},
 							num=f'Raster plot, v_in={rate_in/Hz}', figsize=(8,10))
