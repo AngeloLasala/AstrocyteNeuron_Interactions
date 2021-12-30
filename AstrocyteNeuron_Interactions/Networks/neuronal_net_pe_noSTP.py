@@ -19,6 +19,7 @@ from AstrocyteNeuron_Interactions import makedir
 parser = argparse.ArgumentParser(description='EI network with costantexternal input (Poisson)')
 parser.add_argument('r', type=float, help="rate input of external poisson proces")
 parser.add_argument('-p', action='store_true', help="show paramount plots, default=False")
+parser.add_argument('-b', action='store_true', help="EI balance, default=False")
 args = parser.parse_args()
 ## Parameters ########################################################################
 
@@ -83,8 +84,13 @@ inh="g_i_post+=w_i"
 exc_syn = Synapses(exc_neurons, neurons, model="", on_pre=exc)
 inh_syn = Synapses(inh_neurons, neurons, model="", on_pre=inh)
 
-exc_syn.connect(p=0.05)
-inh_syn.connect(p=0.2)
+
+if args.b:
+	exc_syn.connect(p=0.05)
+	inh_syn.connect(p=0.01)
+else:
+	exc_syn.connect(p=0.05)
+	inh_syn.connect(p=0.2)
 
 #############################################################################################
 
@@ -93,6 +99,7 @@ spikes_exc_mon = SpikeMonitor(exc_neurons)
 spikes_inh_mon = SpikeMonitor(inh_neurons)
 firing_rate_exc = PopulationRateMonitor(exc_neurons)
 firing_rate_inh = PopulationRateMonitor(inh_neurons)
+firing_rate = PopulationRateMonitor(neurons)
 
 # select random excitatory neurons
 index = 488
@@ -114,18 +121,23 @@ trans = transient(state_exc_mon.t[:]/second*second, trans_time)
 LFP = state_exc_mon.LFP[:].sum(axis=0)
 fr_exc = firing_rate_exc.smooth_rate(window='gaussian', width=1*ms)
 fr_inh = firing_rate_inh.smooth_rate(window='gaussian', width=1*ms)
+fr = firing_rate.smooth_rate(window="gaussian", width=1*ms)
 
-fr_exc_trans = fr_exc[trans:]
-fr_exc_fft = fft(fr_exc_trans)
-N = len(fr_exc_trans)
-fr_exc_freq = fftfreq(N,defaultclock.dt)
+fr_trans = fr[trans:]
+fr_fft = fft(fr_trans)
+N = len(fr_trans)
+fr_freq = fftfreq(N,defaultclock.dt)
 
 plt.figure()
-plt.plot(fr_exc_freq[:N//2], np.abs(fr_exc_fft[:N//2]**2))
+plt.plot(firing_rate.t[:], fr[:])
+
+plt.figure()
+plt.plot(fr_freq[:N//2], np.abs(fr_fft[:N//2]))
 #########################################################################################################
 ## SAVE VARIABLES #######################################################################################
 
 name = f"Neural_network/EI_net_noSTP/Network_pe_v_in{rate_in}"
+if args.b: name = f"Neural_network/EI_net_noSTP_balancenoSTP/Network_pe_v_in{rate_in}"
 makedir.smart_makedir(name)
 
 # Time evolytion variable
@@ -143,6 +155,7 @@ np.save(f'{name}/firing_rate_exc.t',firing_rate_exc.t)
 np.save(f'{name}/firing_rate_inh.t',firing_rate_inh.t)
 np.save(f'{name}/fr_exc',fr_exc)
 np.save(f'{name}/fr_inh',fr_inh)
+np.save(f'{name}/firing_rate',fr)
 
 #########################################################################################################
 
@@ -172,24 +185,32 @@ if args.p:
 	ax1[2].grid(linestyle='dotted')
 	ax1[2].legend(loc = 'upper right')
 
+	plt.savefig(name+f'/exc variable dynamic, v_in={rate_in/Hz} (no STP).png')
+
 	fig2, ax2 = plt.subplots(nrows=4, ncols=1, sharex=True, gridspec_kw={'height_ratios': [2,0.6,0.6,1]},
 							num=f'Raster plot, v_in={rate_in/Hz} (no STP)', figsize=(8,10))
 
 	ax2[0].scatter(spikes_exc_mon.t[:]/second, spikes_exc_mon.i[:], color='C3', marker='|')
 	ax2[0].scatter(spikes_inh_mon.t[:]/second, spikes_inh_mon.i[:]+N_e, color='C0', marker='|')
 	ax2[0].set_ylabel('neuron index')
+	ax2[0].set_xlim([0.3,2.3])
 	ax2[0].set_title('Raster plot')
 
 	ax2[1].plot(firing_rate_exc.t[trans:]/second, fr_exc[trans:], color='C3')
 	ax2[2].plot(firing_rate_inh.t[trans:]/second, fr_inh[trans:], color='C0')
 	ax2[1].set_ylabel('rate (Hz)')
 	ax2[2].set_ylabel('rate (Hz)')
+	ax2[1].set_xlim([0.25,2.4])
+	ax2[2].set_xlim([0.25,2.4])
 	ax2[1].grid(linestyle='dotted')
 	ax2[2].grid(linestyle='dotted')
 
 	ax2[3].plot(state_exc_mon.t[trans:]/second, LFP[trans:], color='C5')
 	ax2[3].set_ylabel('LFP (mV)')
 	ax2[3].set_xlabel('time (s)')
+	ax2[3].set_xlim([0.25,2.4])
 	ax2[3].grid(linestyle='dotted')
+
+	plt.savefig(name+f'/Raster plot, v_in={rate_in/Hz} (no STP).png')
 
 	plt.show()
