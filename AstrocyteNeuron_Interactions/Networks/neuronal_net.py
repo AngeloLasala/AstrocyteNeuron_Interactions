@@ -47,7 +47,7 @@ neuron_eqs = """
 dv/dt = (g_l*(E_l-v) + g_e*(E_e-v) + g_i*(E_i-v) + I_ex)/C_m : volt (unless refractory)
 dg_e/dt = -g_e/tau_e : siemens
 dg_i/dt = -g_i/tau_i : siemens
-LFP = (abs(g_e*(E_e-v)) + abs(g_i*(E_i-v))) : ampere
+LFP = (abs(g_e*(E_e-v)) + abs(g_i*(E_i-v)) + I_ex)/g_l : volt
 """
 neurons = NeuronGroup(N_e+N_i, model=neuron_eqs, method='rk4',
                      threshold='v>V_th', reset='v=V_r', refractory='tau_r')
@@ -75,7 +75,7 @@ inh="g_i_post+=w_i*r_S"
 exc_syn = Synapses(exc_neurons, neurons, model= syn_model, on_pre=action+exc)
 inh_syn = Synapses(inh_neurons, neurons, model= syn_model, on_pre=action+inh)
 
-exc_syn.connect(p=0.05)
+exc_syn.connect(p=0.2)
 inh_syn.connect(p=0.2)
 
 exc_syn.x_S = 1
