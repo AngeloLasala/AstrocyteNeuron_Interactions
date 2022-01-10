@@ -12,9 +12,12 @@ from brian2 import *
 from Neuro_Astro_network.network_analysis import transient
 from AstrocyteNeuron_Interactions import makedir
 
+# set_device('cpp_standalone', directory=None)  #1% gain 
+
 parser = argparse.ArgumentParser(description='EI network with costantexternal input (Poisson)')
 parser.add_argument('r', type=float, help="rate input of external poisson proces")
 parser.add_argument('-p', action='store_true', help="show paramount plots, default=False")
+parser.add_argument('-b', action='store_true', help="EI balance, default=False")
 args = parser.parse_args()
 ## Parameters ########################################################################
 
@@ -89,8 +92,13 @@ inh="g_i_post+=w_i*r_S"
 exc_syn = Synapses(exc_neurons, neurons, model= syn_model, on_pre=action+exc)
 inh_syn = Synapses(inh_neurons, neurons, model= syn_model, on_pre=action+inh)
 
-exc_syn.connect(p=0.05)
-inh_syn.connect(p=0.2)
+if args.b:
+	exc_syn.connect(p=0.05)
+	inh_syn.connect(p=0.01)
+else:
+	exc_syn.connect(p=0.05)
+	inh_syn.connect(p=0.2)
+
 
 exc_syn.x_S = 1
 inh_syn.x_S = 1
@@ -140,10 +148,13 @@ plt.figure()
 plt.plot(firing_rate.t[:], fr[:])
 
 plt.figure()
-plt.plot(fr_freq[:N//2], np.abs(fr_fft[:N//2]))#########################################################################################################
+plt.plot(fr_freq[:N//2], np.abs(fr_fft[:N//2]))
+
+#########################################################################################################
 ## SAVE VARIABLES #######################################################################################
 
 name = f"Neural_network/EI_net_STP/Network_pe_v_in{rate_in}"
+if args.b: name = f"Neural_network/EI_net_STP_balanceSTP/Network_pe_v_in{rate_in}"
 makedir.smart_makedir(name)
 
 # Time evolytion variable
