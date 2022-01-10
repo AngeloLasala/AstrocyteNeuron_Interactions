@@ -78,7 +78,7 @@ if __name__ == "__main__":
 	defaultclock.dt = 0.05*ms
 
 	v_in_range = [44.0, 47.7, 54.0, 58.8, 64.0, 74.0, 84.0]
-	# v_in_range = [42.0, 43.5, 44.0, 45.0, 47.7, 58.8]
+	v_in_range = [43.0, 43.5, 44.0, 47.7, 58.8]
 	for v_in in v_in_range:
 		name = name_folder+str(v_in)
 		print(name)
@@ -156,33 +156,33 @@ if __name__ == "__main__":
 			ax[1].grid(linestyle='dotted')
 			
 
-		## Average spiking activity
-		activity_exc_noSTP = []
-		activity_inh_noSTP = []
-		activity_exc_STP = []
-		activity_inh_STP = []
-		activity_LFP_noSTP = []
-		activity_LFP_STP = []
-		for v_in in v_in_range:
-			name_f_noSTP = 'EI_net_noSTP/'+'Network_pe_v_in'+str(v_in)
-			name_f_STP = 'EI_net_STP/'+'Network_pe_v_in'+str(v_in)
+		# ## Average spiking activity
+		# activity_exc_noSTP = []
+		# activity_inh_noSTP = []
+		# activity_exc_STP = []
+		# activity_inh_STP = []
+		# activity_LFP_noSTP = []
+		# activity_LFP_STP = []
+		# for v_in in v_in_range:
+		# 	name_f_noSTP = 'EI_net_noSTP/'+'Network_pe_v_in'+str(v_in)
+		# 	name_f_STP = 'EI_net_STP/'+'Network_pe_v_in'+str(v_in)
 
-			fr_exc_noSTP = np.load(f'{name_f_noSTP}/fr_exc.npy')
-			fr_inh_noSTP = np.load(f'{name_f_noSTP}/fr_inh.npy')
-			fr_exc_STP = np.load(f'{name_f_STP}/fr_exc.npy')
-			fr_inh_STP = np.load(f'{name_f_STP}/fr_inh.npy')
-			LFP_noSTP = np.load(f'{name_f_noSTP}/state_exc_mon.LFP.npy')
-			LFP_STP = np.load(f'{name_f_STP}/state_exc_mon.LFP.npy')
+		# 	fr_exc_noSTP = np.load(f'{name_f_noSTP}/fr_exc.npy')
+		# 	fr_inh_noSTP = np.load(f'{name_f_noSTP}/fr_inh.npy')
+		# 	fr_exc_STP = np.load(f'{name_f_STP}/fr_exc.npy')
+		# 	fr_inh_STP = np.load(f'{name_f_STP}/fr_inh.npy')
+		# 	LFP_noSTP = np.load(f'{name_f_noSTP}/state_exc_mon.LFP.npy')
+		# 	LFP_STP = np.load(f'{name_f_STP}/state_exc_mon.LFP.npy')
 
-			LFP_noSTP = LFP_noSTP.sum(axis=0)
-			LFP_STP = LFP_STP.sum(axis=0)
+		# 	LFP_noSTP = LFP_noSTP.sum(axis=0)
+		# 	LFP_STP = LFP_STP.sum(axis=0)
 
-			activity_exc_noSTP.append(fr_exc_noSTP.mean())
-			activity_inh_noSTP.append(fr_inh_noSTP.mean())
-			activity_exc_STP.append(fr_exc_STP.mean())
-			activity_inh_STP.append(fr_inh_STP.mean())
-			activity_LFP_noSTP.append(LFP_noSTP.mean())
-			activity_LFP_STP.append(LFP_STP.mean())
+		# 	activity_exc_noSTP.append(fr_exc_noSTP.mean())
+		# 	activity_inh_noSTP.append(fr_inh_noSTP.mean())
+		# 	activity_exc_STP.append(fr_exc_STP.mean())
+		# 	activity_inh_STP.append(fr_inh_STP.mean())
+		# 	activity_LFP_noSTP.append(LFP_noSTP.mean())
+		# 	activity_LFP_STP.append(LFP_STP.mean())
 		
 
 		# Plots  ################################################################################################
@@ -199,24 +199,24 @@ if __name__ == "__main__":
 			ax1[1].set_xlabel('time (s)')
 			ax1[1].grid(linestyle='dotted')
 
-			fig2, ax2 = plt.subplots(nrows=1, ncols=2, figsize=(12,6),
-									num=f'Average Population Activity')
+			# fig2, ax2 = plt.subplots(nrows=1, ncols=2, figsize=(12,6),
+			# 						num=f'Average Population Activity')
 
-			ax2[0].plot(v_in_range, activity_exc_noSTP, ls='', marker="$\u25EF$", color='C3', label="exc no STP")
-			ax2[0].plot(v_in_range, activity_inh_noSTP, ls='', marker="$\u25A1$", color='C0', label="inh no STP")
-			ax2[0].plot(v_in_range, activity_exc_STP, ls='', marker="o", color='C3', label="exc STP")
-			ax2[0].plot(v_in_range, activity_inh_STP, ls='', marker="s", color='C0', label="inh STP")
-			ax2[0].legend()
-			ax2[0].set_xlabel(r'$v_{input}$ (Hz)')
-			ax2[0].set_ylabel(r'Mean firing rate (Hz)')
-			ax2[0].grid(linestyle='dotted')
+			# ax2[0].plot(v_in_range, activity_exc_noSTP, ls='', marker="$\u25EF$", color='C3', label="exc no STP")
+			# ax2[0].plot(v_in_range, activity_inh_noSTP, ls='', marker="$\u25A1$", color='C0', label="inh no STP")
+			# ax2[0].plot(v_in_range, activity_exc_STP, ls='', marker="o", color='C3', label="exc STP")
+			# ax2[0].plot(v_in_range, activity_inh_STP, ls='', marker="s", color='C0', label="inh STP")
+			# ax2[0].legend()
+			# ax2[0].set_xlabel(r'$v_{input}$ (Hz)')
+			# ax2[0].set_ylabel(r'Mean firing rate (Hz)')
+			# ax2[0].grid(linestyle='dotted')
 
-			ax2[1].plot(v_in_range, activity_LFP_noSTP, ls='', marker="$\u25C7$", color='C5', label="LFP no STP")
-			ax2[1].plot(v_in_range, activity_LFP_STP, ls='', marker="$\u25C6$", color='C5', label="LFP STP")
-			ax2[1].legend()
-			ax2[1].set_xlabel(r'$v_{input}$ (Hz)')
-			ax2[1].set_ylabel(r'Mean LFP (mV)')
-			ax2[1].grid(linestyle='dotted')
+			# ax2[1].plot(v_in_range, activity_LFP_noSTP, ls='', marker="$\u25C7$", color='C5', label="LFP no STP")
+			# ax2[1].plot(v_in_range, activity_LFP_STP, ls='', marker="$\u25C6$", color='C5', label="LFP STP")
+			# ax2[1].legend()
+			# ax2[1].set_xlabel(r'$v_{input}$ (Hz)')
+			# ax2[1].set_ylabel(r'Mean LFP (mV)')
+			# ax2[1].grid(linestyle='dotted')
 
 			fig3, ax3 = plt.subplots(nrows=2, ncols=2, sharex=True, figsize=(10,7),
 									num=f'Spectral_Density, v_in={rate_in/Hz}')
