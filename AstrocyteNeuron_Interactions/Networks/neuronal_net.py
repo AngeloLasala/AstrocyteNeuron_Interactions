@@ -10,8 +10,8 @@ from random import randrange
 from brian2 import *
 from AstrocyteNeuron_Interactions.Brian2_utils.connectivity import connectivity_EIring
 
+set_device('cpp_standalone', directory=None) 
 ## Parameters ########################################################################
-
 # Network size
 N_e = 3200               #Total number of excitatory neurons
 N_i = 800                #Total number of inhibitory neurons
@@ -75,7 +75,7 @@ inh="g_i_post+=w_i*r_S"
 exc_syn = Synapses(exc_neurons, neurons, model= syn_model, on_pre=action+exc)
 inh_syn = Synapses(inh_neurons, neurons, model= syn_model, on_pre=action+inh)
 
-exc_syn.connect(p=0.2)
+exc_syn.connect(p=0.05)
 inh_syn.connect(p=0.2)
 
 exc_syn.x_S = 1
@@ -91,8 +91,8 @@ firing_rate_ihn = PopulationRateMonitor(inh_neurons)
 # select random excitatory neurons
 index = 362
 state_exc_mon = StateMonitor(exc_neurons, ['v', 'g_e', 'g_i', 'LFP'], record=True)
-syn_exc_mon = StateMonitor(exc_syn, ['u_S','x_S'], record=exc_syn[index, :]) 
-syn_inh_mon = StateMonitor(inh_syn, ['u_S','x_S'], record=inh_syn[index, :])
+syn_exc_mon = StateMonitor(exc_syn, ['u_S','x_S'], record='exc_syn[index,:]') 
+syn_inh_mon = StateMonitor(inh_syn, ['u_S','x_S'], record='inh_syn[index,:]')
 #record=exc_syn[index, :], outgoing synapses from neurons labeled by index
 
 
