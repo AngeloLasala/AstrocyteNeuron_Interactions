@@ -77,8 +77,9 @@ exc_neurons = neurons[:N_e]
 inh_neurons = neurons[N_e:]
 
 syn_model = """
-du_S/dt = -Omega_f * u_S : 1 (clock-driven)
-dx_S/dt = Omega_d * (1-x_S) : 1 (clock-driven)
+du_S/dt = -Omega_f * u_S : 1 (event-driven)
+dx_S/dt = Omega_d * (1-x_S) : 1 (event-driven)
+r_S : 1
 """
 
 action="""
@@ -112,10 +113,10 @@ firing_rate_inh = PopulationRateMonitor(inh_neurons)
 firing_rate = PopulationRateMonitor(neurons)
 
 # select random excitatory neurons
-index = 488
+index = 400
 state_exc_mon = StateMonitor(exc_neurons, ['v', 'g_e', 'g_i', 'LFP', 'I_syn_ext'], record=True)
-syn_exc_mon = StateMonitor(exc_syn, ['u_S','x_S'], record=exc_syn[index, :]) 
-syn_inh_mon = StateMonitor(inh_syn, ['u_S','x_S'], record=inh_syn[index, :])
+syn_exc_mon = StateMonitor(exc_syn, ['u_S','x_S', 'r_S'], record=exc_syn[index, :], when='after_synapses') 
+syn_inh_mon = StateMonitor(inh_syn, ['u_S','x_S', 'r_S'], record=inh_syn[index, :], when='after_synapses')
 #record=exc_syn[index, :], outgoing synapses from neurons labeled by index
 
 
@@ -128,12 +129,11 @@ print(f'exc neuron number: {index}')
 print(f'exc syn: {syn_exc_mon.u_S[:].shape}')
 print('\n')
 
-#Transient time
+# #Transient time
 trans_time = 300
 trans = transient(state_exc_mon.t[:]/second*second, trans_time)
 
-## Network variable
-
+# ## Network variable
 LFP = state_exc_mon.LFP[:].sum(axis=0)
 fr_exc = firing_rate_exc.smooth_rate(window='gaussian', width=1*ms)
 fr_inh = firing_rate_inh.smooth_rate(window='gaussian', width=1*ms)
@@ -167,6 +167,12 @@ np.save(f'{name}/rate_in',rate_in)
 np.save(f'{name}/state_exc_mon.t',state_exc_mon.t)
 np.save(f'{name}/state_exc_mon.LFP',state_exc_mon.LFP)
 
+# Synaptic variable
+np.save(f'{name}/syn_exc_mon.u_S',syn_exc_mon.u_S[0,trans:])
+np.save(f'{name}/syn_exc_mon.x_S',syn_exc_mon.x_S[0,trans:])
+np.save(f'{name}/syn_inh_mon.u_S',syn_inh_mon.u_S[0,trans:])
+np.save(f'{name}/syn_inh_mon.x_S',syn_inh_mon.x_S[0,trans:])
+
 # Population istantaneus firing rate
 np.save(f'{name}/firing_rate_exc.t',firing_rate_exc.t)
 np.save(f'{name}/firing_rate_inh.t',firing_rate_inh.t)
@@ -178,7 +184,7 @@ np.save(f'{name}/firing_rate',fr)
 
 # Plots  ################################################################################################
 if args.p:
-	fig1, ax1 = plt.subplots(nrows=4, ncols=1, sharex=True, 
+	fig1, ax1 = plt.subplots(nrows=5, ncols=1, sharex=True, 
 							num=f'exc variable dynamic, v_in={rate_in/Hz}',figsize=(9,10))
 
 	ax1[0].plot(state_exc_mon.t[trans:]/ms, state_exc_mon.I_syn_ext[index,trans:]/pA,
@@ -204,10 +210,24 @@ if args.p:
 
 	ax1[3].plot(syn_exc_mon.t[trans:]/ms, syn_exc_mon.u_S[0,trans:], label=f'{index}'+r' $u_S$', color='C1')
 	ax1[3].plot(syn_exc_mon.t[trans:]/ms, syn_exc_mon.x_S[0,trans:], label=f'{index}'+r' $x_S$', color='C4')
-	ax1[3].set_xlabel('time (ms)')
 	ax1[3].set_ylabel(r'$u_S$, $x_S$')
 	ax1[3].grid(linestyle='dotted')
 	ax1[3].legend(loc = 'upper right')
+
+	spk_position = []
+	for spk in spikes_exc_mon.t[spikes_exc_mon.i == index]/ms: 
+		spk_position.append(np.where(syn_exc_mon.t[:]/ms == spk)[0][0])  
+
+	print(spk_position)
+	print(syn_exc_mon.t[spk_position])
+	print(syn_exc_mon.r_S[0][spk_position])
+	print()
+
+	ax1[4].vlines(syn_exc_mon.t[spk_position]/ms, np.zeros(len(spk_position)),
+				syn_exc_mon.r_S[0][spk_position],color='C8')
+	ax1[4].set_xlabel('time (ms)')
+	ax1[4].set_ylabel(r'$r_S$')
+	ax1[4].grid(linestyle='dotted')
 
 	plt.savefig(name+f'/exc variable dynamic, v_in={rate_in/Hz} (STP).png')
 
