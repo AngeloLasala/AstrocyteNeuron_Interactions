@@ -10,7 +10,7 @@ from random import randrange
 from brian2 import *
 from AstrocyteNeuron_Interactions.Brian2_utils.connectivity import connectivity_EIring
 
-set_device('cpp_standalone', directory=None) 
+# set_device('cpp_standalone', directory=None) 
 ## Parameters ########################################################################
 # Network size
 N_e = 3200               #Total number of excitatory neurons
@@ -25,7 +25,7 @@ C_m = 198*pF           # Membrane capacitance
 tau_e = 5*ms           # Excitatory synaptic time constant
 tau_i = 10*ms          # Inhibitory synaptic time constant
 tau_r = 5*ms           # Refractory period
-I_ex = 110*pA          # External current
+I_ex = 150*pA          # External current
 V_th = -50*mV          # Firing threshold
 V_r = E_l              # Reset potential 
 
@@ -40,7 +40,7 @@ Omega_f = 3.33/second  # Synaptic facilitation rate
 ## MODEL   ##################################################################################
 defaultclock.dt = 0.1*ms
 duration = 1.0*second  # Total simulation time
-seed(19958)
+seed(11922)
 
 #Neurons
 neuron_eqs = """
@@ -62,6 +62,7 @@ inh_neurons = neurons[N_e:]
 syn_model = """
 du_S/dt = -Omega_f * u_S : 1 (clock-driven)
 dx_S/dt = Omega_d * (1-x_S) : 1 (clock-driven)
+r_S : 1
 """
 
 action="""
@@ -89,10 +90,10 @@ firing_rate_exc = PopulationRateMonitor(exc_neurons)
 firing_rate_ihn = PopulationRateMonitor(inh_neurons)
 
 # select random excitatory neurons
-index = 362
+index = 50
 state_exc_mon = StateMonitor(exc_neurons, ['v', 'g_e', 'g_i', 'LFP'], record=True)
-syn_exc_mon = StateMonitor(exc_syn, ['u_S','x_S'], record='exc_syn[index,:]') 
-syn_inh_mon = StateMonitor(inh_syn, ['u_S','x_S'], record='inh_syn[index,:]')
+syn_exc_mon = StateMonitor(exc_syn, ['u_S','x_S','r_S'], record=exc_syn[index,:], when='after_synapses') 
+syn_inh_mon = StateMonitor(inh_syn, ['u_S','x_S','r_S'], record=inh_syn[index,:], when='after_synapses')
 #record=exc_syn[index, :], outgoing synapses from neurons labeled by index
 
 
@@ -103,6 +104,7 @@ print(f'inh syn: {inh_syn.N[:]}')
 print()
 print(f'exc neuron number: {index}')
 print(f'exc syn: {syn_exc_mon.u_S[:].shape}')
+print(syn_exc_mon.u_S[:])
 print('\n')
 
 ## Network variable
@@ -119,10 +121,11 @@ plt.plot(fr_exc_freq[:N//2], np.abs(fr_exc_fft[:N//2]**2))
 
 
 
+
 #########################################################################################################
 
 # Plots  ################################################################################################
-fig1, ax1 = plt.subplots(nrows=3, ncols=1, sharex=True, 
+fig1, ax1 = plt.subplots(nrows=4, ncols=1, sharex=True, 
                          num=f'exc variable dynamic, I_ex={I_ex/pA}',figsize=(9,10))
 
 ax1[0].plot(state_exc_mon.t/ms, state_exc_mon.v[index,:]/mV, label=f'neuron {index}')
@@ -143,10 +146,26 @@ ax1[1].legend(loc = 'upper right')
 
 ax1[2].plot(syn_exc_mon.t/ms, syn_exc_mon.u_S[0], label=f'{index}'+r' $u_S$', color='C1')
 ax1[2].plot(syn_exc_mon.t/ms, syn_exc_mon.x_S[0], label=f'{index}'+r' $x_S$', color='C4')
-ax1[2].set_xlabel('time (ms)')
 ax1[2].set_ylabel(r'$u_S$, $x_S$')
 ax1[2].grid(linestyle='dotted')
 ax1[2].legend(loc = 'upper right')
+
+# Retrieves indexes of spikes in the synaptic monitor using the fact that we
+# are sampling spikes and synaptic variables by the same dt
+spk_position = []
+for spk in spikes_exc_mon.t[spikes_exc_mon.i == index]/ms: 
+    spk_position.append(np.where(syn_exc_mon.t[:]/ms == spk)[0][0])  
+
+print(spk_position)
+print(syn_exc_mon.t[spk_position])
+print(syn_exc_mon.r_S[0][spk_position])
+print()
+
+ax1[3].vlines(syn_exc_mon.t[spk_position]/ms, np.zeros(len(spk_position)),
+             syn_exc_mon.r_S[0][spk_position],color='C8')
+ax1[3].set_xlabel('time (ms)')
+ax1[3].set_ylabel(r'$r_S$')
+ax1[3].grid(linestyle='dotted')
 
 fig2, ax2 = plt.subplots(nrows=4, ncols=1, sharex=True, gridspec_kw={'height_ratios': [2,0.6,0.6,1]},
                          num=f'Raster plot, Ne:{N_e} Ni:{N_i}, Iex={I_ex/pA}', figsize=(8,10))
