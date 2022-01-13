@@ -14,6 +14,7 @@ from scipy.fft import fft, fftfreq
 from random import randrange
 from brian2 import *
 from Neuro_Astro_network.network_analysis import transient
+import constant_EI as k_EI
 from AstrocyteNeuron_Interactions import makedir
 
 parser = argparse.ArgumentParser(description='EI network with costantexternal input (Poisson)')
@@ -47,10 +48,11 @@ U_0 = 0.6              # Synaptic release probability at rest
 Omega_d = 2.0/second   # Synaptic depression rate
 Omega_f = 3.33/second  # Synaptic facilitation rate
 #############################################################################################
-
+print(k_EI.dt)
+print(k_EI.g)
 ## MODEL   ##################################################################################
-defaultclock.dt = 0.05*ms
-duration = 2.3*second  # Total simulation time
+defaultclock.dt = k_EI.dt*ms
+duration = k_EI.duration*second  # Total simulation time
 seed(19958)
 
 #Neurons
@@ -81,21 +83,19 @@ neurons.g_i = 'rand()*w_i'
 exc_neurons = neurons[:N_e]
 inh_neurons = neurons[N_e:]
 
-alpha = 1.0
+alpha = k_EI.alpha
 exc_neurons.w_ext = w_e
 inh_neurons.w_ext = alpha*w_e 
-print(exc_neurons.w_ext[0])
-print(inh_neurons.w_ext[0])
+
 
 exc="g_e_post+=w_e"
 inh="g_i_post+=w_i"
-
 exc_syn = Synapses(exc_neurons, neurons, model="", on_pre=exc)
 inh_syn = Synapses(inh_neurons, neurons, model="", on_pre=inh)
 
 # Balance degree 
-g = 0.2
-p_e = 0.05
+g = k_EI.g 
+p_e = k_EI.p_e
 p_i = p_e/g
 exc_syn.connect(p=p_e)
 inh_syn.connect(p=p_i)
@@ -110,17 +110,21 @@ firing_rate_inh = PopulationRateMonitor(inh_neurons)
 firing_rate = PopulationRateMonitor(neurons)
 
 # select random excitatory neurons
-index = 400
+index = k_EI.index
 state_exc_mon = StateMonitor(exc_neurons, ['v', 'g_e', 'g_i', 'LFP', 'I_syn_ext'], record=True)
 
 run(duration, report='text')
 print('NETWORK')
-print(f'exc syn: {exc_syn.N[:]}')
-print(f'inh syn: {inh_syn.N[:]}')
+print(f'alpha={alpha}')
+print(f'ext-exc={exc_neurons.w_ext[0]/nS}')
+print(f'ext-inh={inh_neurons.w_ext[0]/nS}')
+print(f'g={g}')
+print(f'p_e = {p_e} exc syn: {exc_syn.N[:]}')
+print(f'p_i = {p_i} inh syn: {inh_syn.N[:]}')
 print('\n')
 
 #Transient time
-trans_time = 300
+trans_time = k_EI.trans_time
 trans = transient(state_exc_mon.t[:]/second*second, trans_time)
 print(f'g_i: {state_exc_mon.g_i[index,trans:].mean()/nS}')
 print(f'g_e: {state_exc_mon.g_e[index,trans:].mean()/nS}')
@@ -143,7 +147,8 @@ plt.plot(firing_rate.t[:], fr[:])
 plt.figure()
 plt.plot(fr_freq[:N//2], np.abs(fr_fft[:N//2]))
 #########################################################################################################
-## SAVE VARIABLES #######################################################################################
+
+## SAVE VARIABLES AND NETWORK STRUCTURE FILE #######################################################################################
 
 name = f"Neural_network/EI_net_noSTP/Network_pe_v_in{rate_in}"
 if args.b: name = f"Neural_network/EI_net_noSTP_balancenoSTP/Network_pe_v_in{rate_in}"
@@ -167,6 +172,31 @@ np.save(f'{name}/firing_rate_inh.t',firing_rate_inh.t)
 np.save(f'{name}/fr_exc',fr_exc)
 np.save(f'{name}/fr_inh',fr_inh)
 np.save(f'{name}/firing_rate',fr)
+
+ # Network Structure
+with open(f"{name}/network_structure.txt",
+		'w', encoding='utf-8') as file:
+		file.write(f"""INFORMATION \n
+
+TIME EVOLUTION
+dt = {defaultclock.dt}
+duration = {duration}
+trans time = {trans_time}
+
+NETWORK
+excitatory neurons = {N_e}
+inhibitory neurons = {N_i}
+
+v_in = {args.r} Hz
+alpha = {alpha}  
+ext-inh = {inh_neurons.w_ext[0]/nS} nS
+ext-exc = {exc_neurons.w_ext[0]/nS} nS
+
+g = {g}
+p_e = {p_e} excitatory synapses = {exc_syn.N[:]}
+p_i = {p_i} inhibitory synapses = {exc_syn.N[:]}
+""")
+
 
 #########################################################################################################
 
