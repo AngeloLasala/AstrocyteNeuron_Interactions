@@ -178,9 +178,9 @@ with open(f"{name}/network_structure.txt",
 		file.write(f"""INFORMATION \n
 
 TIME EVOLUTION
-dt = {defaultclock.dt}
-duration = {duration}
-trans time = {trans_time}
+dt = {defaultclock.dt/ms} ms
+duration = {duration/s} s
+trans time = {trans_time/ms} s 
 
 NETWORK
 excitatory neurons = {N_e}
