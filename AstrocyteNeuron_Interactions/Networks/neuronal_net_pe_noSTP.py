@@ -20,7 +20,6 @@ from AstrocyteNeuron_Interactions import makedir
 parser = argparse.ArgumentParser(description='EI network with costantexternal input (Poisson)')
 parser.add_argument('r', type=float, help="rate input of external poisson proces")
 parser.add_argument('-p', action='store_true', help="show paramount plots, default=False")
-parser.add_argument('-b', action='store_true', help="EI balance, default=False")
 args = parser.parse_args()
 
 ## Parameters ########################################################################
