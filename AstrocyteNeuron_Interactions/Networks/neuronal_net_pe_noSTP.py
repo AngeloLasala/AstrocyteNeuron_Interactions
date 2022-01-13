@@ -21,8 +21,8 @@ parser.add_argument('r', type=float, help="rate input of external poisson proces
 parser.add_argument('-p', action='store_true', help="show paramount plots, default=False")
 parser.add_argument('-b', action='store_true', help="EI balance, default=False")
 args = parser.parse_args()
-## Parameters ########################################################################
 
+## Parameters ########################################################################
 # Network size
 N_e = 3200               #Total number of excitatory neurons
 N_i = 800                #Total number of inhibitory neurons
@@ -56,7 +56,10 @@ seed(19958)
 #Neurons
 neuron_eqs = """
 # External input from external synapses
-I_syn_ext = w_e * (E_e-v) * X_ext : ampere
+I_syn_ext = w_ext * (E_e-v) * X_ext : ampere
+w_ext : siemens                  # external conductance
+
+# LIF model with exponential synapses
 dv/dt = (g_l*(E_l-v) + g_e*(E_e-v) + g_i*(E_i-v) + I_syn_ext)/C_m : volt (unless refractory)
 dg_e/dt = -g_e/tau_e : siemens   # post-synaptic excitatory conductance
 dg_i/dt = -g_i/tau_i : siemens   # post-synaptic inhibitory conductance
@@ -78,19 +81,24 @@ neurons.g_i = 'rand()*w_i'
 exc_neurons = neurons[:N_e]
 inh_neurons = neurons[N_e:]
 
+alpha = 1.0
+exc_neurons.w_ext = w_e
+inh_neurons.w_ext = alpha*w_e 
+print(exc_neurons.w_ext[0])
+print(inh_neurons.w_ext[0])
+
 exc="g_e_post+=w_e"
 inh="g_i_post+=w_i"
 
 exc_syn = Synapses(exc_neurons, neurons, model="", on_pre=exc)
 inh_syn = Synapses(inh_neurons, neurons, model="", on_pre=inh)
 
-
-if args.b:
-	exc_syn.connect(p=0.05)
-	inh_syn.connect(p=0.01)
-else:
-	exc_syn.connect(p=0.05)
-	inh_syn.connect(p=0.2)
+# Balance degree 
+g = 0.2
+p_e = 0.05
+p_i = p_e/g
+exc_syn.connect(p=p_e)
+inh_syn.connect(p=p_i)
 
 #############################################################################################
 
@@ -102,19 +110,20 @@ firing_rate_inh = PopulationRateMonitor(inh_neurons)
 firing_rate = PopulationRateMonitor(neurons)
 
 # select random excitatory neurons
-index = 488
+index = 400
 state_exc_mon = StateMonitor(exc_neurons, ['v', 'g_e', 'g_i', 'LFP', 'I_syn_ext'], record=True)
 
 run(duration, report='text')
 print('NETWORK')
 print(f'exc syn: {exc_syn.N[:]}')
 print(f'inh syn: {inh_syn.N[:]}')
-print()
 print('\n')
 
 #Transient time
 trans_time = 300
 trans = transient(state_exc_mon.t[:]/second*second, trans_time)
+print(f'g_i: {state_exc_mon.g_i[index,trans:].mean()/nS}')
+print(f'g_e: {state_exc_mon.g_e[index,trans:].mean()/nS}')
 
 ## Network variable
 
@@ -149,6 +158,8 @@ np.save(f'{name}/rate_in',rate_in)
 # Excitatory neurons variable
 np.save(f'{name}/state_exc_mon.t',state_exc_mon.t)
 np.save(f'{name}/state_exc_mon.LFP',state_exc_mon.LFP)
+np.save(f'{name}/state_exc_mon.g_i',state_exc_mon.g_i)
+np.save(f'{name}/state_exc_mon.g_e',state_exc_mon.g_e)
 
 # Population istantaneus firing rate
 np.save(f'{name}/firing_rate_exc.t',firing_rate_exc.t)
