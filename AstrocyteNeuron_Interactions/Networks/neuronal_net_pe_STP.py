@@ -10,6 +10,7 @@ from scipy.fft import fft, fftfreq
 from random import randrange
 from brian2 import *
 from Neuro_Astro_network.network_analysis import transient
+import constant_EI as k_EI
 from AstrocyteNeuron_Interactions import makedir
 
 # set_device('cpp_standalone', directory=None)  #1% gain 
@@ -47,8 +48,8 @@ Omega_f = 3.33/second  # Synaptic facilitation rate
 #############################################################################################
 
 ## MODEL   ##################################################################################
-defaultclock.dt = 0.05*ms
-duration = 2.3*second  # Total simulation time
+defaultclock.dt = k_EI.dt*ms
+duration = k_EI.duration*second  # Total simulation time
 seed(19958)
 
 #Neurons
@@ -77,8 +78,8 @@ exc_neurons = neurons[:N_e]
 inh_neurons = neurons[N_e:]
 
 syn_model = """
-du_S/dt = -Omega_f * u_S : 1 (event-driven)
-dx_S/dt = Omega_d * (1-x_S) : 1 (event-driven)
+du_S/dt = -Omega_f * u_S : 1 (clock-driven)
+dx_S/dt = Omega_d * (1-x_S) : 1 (clock-driven)
 r_S : 1
 """
 
@@ -93,13 +94,12 @@ inh="g_i_post+=w_i*r_S"
 exc_syn = Synapses(exc_neurons, neurons, model= syn_model, on_pre=action+exc)
 inh_syn = Synapses(inh_neurons, neurons, model= syn_model, on_pre=action+inh)
 
-if args.b:
-	exc_syn.connect(p=0.05)
-	inh_syn.connect(p=0.01)
-else:
-	exc_syn.connect(p=0.05)
-	inh_syn.connect(p=0.2)
-
+# Balance degree 
+g = k_EI.g 
+p_e = k_EI.p_e
+p_i = p_e/g
+exc_syn.connect(p=p_e)
+inh_syn.connect(p=p_i)
 
 exc_syn.x_S = 1
 inh_syn.x_S = 1
@@ -113,7 +113,7 @@ firing_rate_inh = PopulationRateMonitor(inh_neurons)
 firing_rate = PopulationRateMonitor(neurons)
 
 # select random excitatory neurons
-index = 400
+index = k_EI.index
 state_exc_mon = StateMonitor(exc_neurons, ['v', 'g_e', 'g_i', 'LFP', 'I_syn_ext'], record=True)
 syn_exc_mon = StateMonitor(exc_syn, ['u_S','x_S', 'r_S'], record=exc_syn[index, :], when='after_synapses') 
 syn_inh_mon = StateMonitor(inh_syn, ['u_S','x_S', 'r_S'], record=inh_syn[index, :], when='after_synapses')
@@ -130,7 +130,7 @@ print(f'exc syn: {syn_exc_mon.u_S[:].shape}')
 print('\n')
 
 # #Transient time
-trans_time = 300
+trans_time = k_EI.trans_time
 trans = transient(state_exc_mon.t[:]/second*second, trans_time)
 
 # ## Network variable
@@ -151,8 +151,7 @@ plt.figure()
 plt.plot(fr_freq[:N//2], np.abs(fr_fft[:N//2]))
 
 #########################################################################################################
-## SAVE VARIABLES #######################################################################################
-
+## SAVE VARIABLES AND NETWORK STRUCTURE FILE #######################################################################################
 name = f"Neural_network/EI_net_STP/Network_pe_v_in{rate_in}"
 if args.b: name = f"Neural_network/EI_net_STP_balanceSTP/Network_pe_v_in{rate_in}"
 makedir.smart_makedir(name)
@@ -166,6 +165,8 @@ np.save(f'{name}/rate_in',rate_in)
 # Excitatory neurons variable
 np.save(f'{name}/state_exc_mon.t',state_exc_mon.t)
 np.save(f'{name}/state_exc_mon.LFP',state_exc_mon.LFP)
+np.save(f'{name}/state_exc_mon.g_i',state_exc_mon.g_i)
+np.save(f'{name}/state_exc_mon.g_e',state_exc_mon.g_e)
 
 # Synaptic variable
 np.save(f'{name}/syn_exc_mon.u_S',syn_exc_mon.u_S[0,trans:])
@@ -179,6 +180,27 @@ np.save(f'{name}/firing_rate_inh.t',firing_rate_inh.t)
 np.save(f'{name}/fr_exc',fr_exc)
 np.save(f'{name}/fr_inh',fr_inh)
 np.save(f'{name}/firing_rate',fr)
+
+# Network Structure
+with open(f"{name}/network_structure.txt",
+		'w', encoding='utf-8') as file:
+		file.write(f"""INFORMATION \n
+
+TIME EVOLUTION
+dt = {defaultclock.dt/ms} ms
+duration = {duration/second} s
+trans time = {trans_time/ms} ms 
+
+NETWORK
+excitatory neurons = {N_e}
+inhibitory neurons = {N_i}
+
+v_in = {args.r} Hz
+
+g = {g}
+p_e = {p_e} excitatory synapses = {exc_syn.N[:]}
+p_i = {p_i} inhibitory synapses = {exc_syn.N[:]}
+""")
 
 #########################################################################################################
 
@@ -251,4 +273,5 @@ if args.p:
 	ax2[3].set_xlabel('time (s)')
 	ax2[3].grid(linestyle='dotted')
 
+	plt.savefig(name+f'/Raster plot, v_in={rate_in/Hz} (STP).png')
 	plt.show()
