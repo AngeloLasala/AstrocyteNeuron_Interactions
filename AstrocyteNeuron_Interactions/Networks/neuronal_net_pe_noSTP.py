@@ -179,7 +179,7 @@ with open(f"{name}/network_structure.txt",
 
 TIME EVOLUTION
 dt = {defaultclock.dt/ms} ms
-duration = {duration/s} s
+duration = {duration/second} s
 trans time = {trans_time/ms} s 
 
 NETWORK
