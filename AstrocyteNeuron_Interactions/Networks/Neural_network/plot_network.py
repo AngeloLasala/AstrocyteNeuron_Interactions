@@ -78,7 +78,7 @@ if __name__ == "__main__":
 	defaultclock.dt = 0.05*ms
 
 	v_in_range = [44.0, 47.7, 54.0, 58.8, 64.0, 74.0, 84.0]
-	v_in_range = [43.0, 43.5, 44.0, 47.7, 58.8]
+	v_in_range = [64.0, 90.0]
 	for v_in in v_in_range:
 		name = name_folder+str(v_in)
 		print(name)
@@ -134,7 +134,7 @@ if __name__ == "__main__":
 
 		## Comparison between 47.7 and 58.8
 		fig, ax = plt.subplots(nrows=1, ncols=2 , figsize=(10,5), num=f'Compare spectrum ({plasticity})')
-		for v_in in [43.0, 43.5, 44.0]:
+		for v_in in [64.0, 90.0]:
 			name_1 = args.folder+'Network_pe_v_in'+str(v_in)
 
 			LFP_1 = np.load(f'{name_1}/state_exc_mon.LFP.npy')

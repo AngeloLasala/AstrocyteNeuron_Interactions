@@ -150,7 +150,7 @@ plt.plot(fr_freq[:N//2], np.abs(fr_fft[:N//2]))
 ## SAVE VARIABLES AND NETWORK STRUCTURE FILE #######################################################################################
 
 name = f"Neural_network/EI_net_noSTP/Network_pe_v_in{rate_in}"
-if args.b: name = f"Neural_network/EI_net_noSTP_balancenoSTP/Network_pe_v_in{rate_in}"
+if g==5.0: name = f"Neural_network/EI_net_noSTP_balancenoSTP/Network_pe_v_in{rate_in}"
 makedir.smart_makedir(name)
 
 # Time evolytion variable

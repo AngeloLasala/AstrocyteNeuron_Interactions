@@ -18,7 +18,6 @@ from AstrocyteNeuron_Interactions import makedir
 parser = argparse.ArgumentParser(description='EI network with costantexternal input (Poisson)')
 parser.add_argument('r', type=float, help="rate input of external poisson proces")
 parser.add_argument('-p', action='store_true', help="show paramount plots, default=False")
-parser.add_argument('-b', action='store_true', help="EI balance, default=False")
 args = parser.parse_args()
 ## Parameters ########################################################################
 
@@ -153,7 +152,7 @@ plt.plot(fr_freq[:N//2], np.abs(fr_fft[:N//2]))
 #########################################################################################################
 ## SAVE VARIABLES AND NETWORK STRUCTURE FILE #######################################################################################
 name = f"Neural_network/EI_net_STP/Network_pe_v_in{rate_in}"
-if args.b: name = f"Neural_network/EI_net_STP_balanceSTP/Network_pe_v_in{rate_in}"
+if g==5.0: name = f"Neural_network/EI_net_STP_balanceSTP/Network_pe_v_in{rate_in}"
 makedir.smart_makedir(name)
 
 # Time evolytion variable
