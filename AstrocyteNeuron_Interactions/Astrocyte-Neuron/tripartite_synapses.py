@@ -175,7 +175,7 @@ if __name__ == "__main__":
 	if args.by_hand :
 		pre_neurons = SpikeGeneratorGroup(1, np.zeros(len(spikes)), spikes)
 	else:
-		pre_neurons = PoissonGroup(1, rates=4*Hz)
+		pre_neurons = PoissonGroup(1, rates=3.5*Hz)
 
 	post_neurons = NeuronGroup(2, model="dg_e/dt = -g_e/tau_e : siemens # post-synaptic excitatory conductance",
 					method='rk4')
@@ -261,18 +261,6 @@ if __name__ == "__main__":
 		print(syn_mon.u_S)
 		print(astro_mon.t[:])
 	
-	## Facilitation - Paired Pulse Ratio (PPR)
-	spk_position = []
-	for spk in pre_AP.t[:]/ms:
-		spk_position.append(np.where(syn_mon.t[:]/ms == spk)[0][0])
-	
-	r_S_noglio = syn_mon.r_S[0][spk_position]
-	r_S_glio = syn_mon.r_S[1][spk_position]
-	
-	PPR_noglio = r_S_noglio[1:]/r_S_noglio[:-1]
-	PPR_glio = r_S_glio[1:]/r_S_glio[:-1]
-	print(PPR_noglio)
-	print(PPR_glio)	
 				
 	## Plots #########################################################################################
 	if args.p:
