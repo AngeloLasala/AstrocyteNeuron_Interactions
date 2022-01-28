@@ -174,11 +174,13 @@ ecs_syn_to_astro.connect(j='i if i<N_syn')
 ecs_astro_to_syn = Synapses(astrocyte, synapses,
                             model='G_A_post = G_A_pre : mmolar (summed)')
 ecs_astro_to_syn.connect(j='i if i<N_syn')
+
 ############################################################################################################
 
 # Monitor #################################################################################################
 syn_mon = StateMonitor(synapses, 'r_S', record=True)
 astro_mon = StateMonitor(astrocyte, 'G_A', record=True)
+astro_spk = SpikeMonitor(astrocyte)
 ###########################################################################################################
 
 # RUN ####################################################################################################
@@ -210,5 +212,9 @@ ax1[1].grid(linestyle='dotted')
 # connectivity_plot(synapses, source='pre_syn', target='post_syn', color_s='b', color_t='b', size=2,name='pre_to_post')
 # connectivity_plot(ecs_syn_to_astro, source='synapse', target='astrocyte', color_s='b', color_t='b', size=2,name='syn_to_astro')
 # connectivity_plot(ecs_astro_to_syn, source='astrocyte', target='synapse', color_s='b', color_t='b', size=2,name='astro_to_syn')
+fig2, ax2 = plt.subplots(nrows=1, ncols=1, sharex=True, 
+							     num='GRE raster plot')
+
+ax2.scatter(astro_spk.t[:]/second, astro_spk.i[:], marker='|')
 
 plt.show()
