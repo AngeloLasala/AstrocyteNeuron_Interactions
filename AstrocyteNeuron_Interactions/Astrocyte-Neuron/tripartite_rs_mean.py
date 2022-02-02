@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from brian2 import *
 from AstrocyteNeuron_Interactions import makedir
 
-set_device('cpp_standalone', directory='rubbish')  # Use fast "C++ standalone mode"
+set_device('cpp_standalone', directory=None)  # Use fast "C++ standalone mode"
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Tripartite synapses')
@@ -189,17 +189,16 @@ if __name__ == "__main__":
 	ecs_astro_to_syn.connect(j='i if i<2*N_syn')                      #closed-loop
 	# ecs_astro_to_syn.connect(j='i if i >= N_syn and i < 2*N_syn')   #open-loop
 
-	
-	
 
 	#Monitor
+	pre_AP = SpikeMonitor(pre_neurons)
 	syn_mon = StateMonitor(synapses, ['Y_S','Gamma_S','U_0','r_S'], record=np.arange(N_syn*(N_a+1)), when='after_synapses')
 	astro_mon = SpikeMonitor(astrocyte)
 	astro_var = StateMonitor(astrocyte, ['Gamma_A','I','C'], record=(5,70,100))
 
 	run(duration, report='text')
-	trans = 50000   #trans*dt=100000*0.1*ms=15s
-				
+	trans = 50000   #trans*dt=15000*0.1*ms=15s
+
 	## Plots #########################################################################################
 	if args.p:
 		fig1 = plt.figure(figsize=(13,7), num='Average release probability vs incoming presyn AP')
@@ -251,12 +250,12 @@ if __name__ == "__main__":
 		fig3, ax3 = plt.subplots(nrows=1, ncols=1,
 								num='Synaptic variable in r_s modulation')
 
-		ax3.plot(syn_mon.t[:]/second, syn_mon.Gamma_S[5], 
-				 label=r'$\nu_{in}$='+f'{rate_in[5]/Hz:.4f} Hz,'+r' $\langle Y_S \rangle$='+f'{syn_mon.Y_S[5].mean()/umolar:.2f} uM')
-		ax3.plot(syn_mon.t[:]/second, syn_mon.Gamma_S[70], 
-				 label=r'$\nu_{in}$='+f'{rate_in[70]/Hz:.4f} Hz, 'r' $\langle Y_S \rangle$='+f'{syn_mon.Y_S[70].mean()/umolar:.2f} uM')
-		ax3.plot(syn_mon.t[:]/second, syn_mon.Gamma_S[100], 
-				 label=r'$\nu_{in}$='+f'{rate_in[100]/Hz:.4f} Hz, 'r' $\langle Y_S \rangle$='+f'{syn_mon.Y_S[100].mean()/umolar:.2f} uM')
+		ax3.plot(syn_mon.t[trans:]/second, syn_mon.Gamma_S[5,trans:], 
+				 label=r'$\nu_{in}$='+f'{rate_in[5]/Hz:.4f} Hz,'+r' $\langle Y_S \rangle$='+f'{syn_mon.Y_S[5,trans:].mean()/umolar:.2f} uM')
+		ax3.plot(syn_mon.t[trans:]/second, syn_mon.Gamma_S[70,trans:], 
+				 label=r'$\nu_{in}$='+f'{rate_in[70]/Hz:.4f} Hz, 'r' $\langle Y_S \rangle$='+f'{syn_mon.Y_S[70,trans:].mean()/umolar:.2f} uM')
+		ax3.plot(syn_mon.t[trans:]/second, syn_mon.Gamma_S[100,trans:], 
+				 label=r'$\nu_{in}$='+f'{rate_in[100]/Hz:.4f} Hz, 'r' $\langle Y_S \rangle$='+f'{syn_mon.Y_S[100,trans:].mean()/umolar:.2f} uM')
 		ax3.grid(linestyle='dotted')
 		ax3.set_ylabel(r'$\Gamma_S$')
 		ax3.set_xlabel('time (second)')
