@@ -189,9 +189,7 @@ if __name__ == "__main__":
 	ecs_astro_to_syn.connect(j='i if i<2*N_syn')                      #closed-loop
 	# ecs_astro_to_syn.connect(j='i if i >= N_syn and i < 2*N_syn')   #open-loop
 
-
 	#Monitor
-	pre_AP = SpikeMonitor(pre_neurons)
 	syn_mon = StateMonitor(synapses, ['Y_S','Gamma_S','U_0','r_S'], record=np.arange(N_syn*(N_a+1)), when='after_synapses')
 	astro_mon = SpikeMonitor(astrocyte)
 	astro_var = StateMonitor(astrocyte, ['Gamma_A','I','C'], record=(5,70,100))
