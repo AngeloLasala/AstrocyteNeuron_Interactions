@@ -16,7 +16,6 @@ set_device('cpp_standalone', directory=None)  # Use fast "C++ standalone mode"
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Tripartite synapses')
 	parser.add_argument('-p', action='store_true', help="show paramount plots, default=False")
-	parser.add_argument('-by_hand', action='store_true', help="show paramount plots, default=False")
 	args = parser.parse_args()
 
 	## PARAMETERS ###################################################################
@@ -259,10 +258,6 @@ if __name__ == "__main__":
 		ax3.set_xlabel('time (second)')
 		ax3.legend()
 
-
-
-
-
 		fig4 = plt.figure(figsize=(13,7),num=f"Astrocite dynamics - no J_ext")
 
 		gs = fig1.add_gridspec(3,3)
@@ -286,7 +281,19 @@ if __name__ == "__main__":
 			ax4_3.grid(linestyle='dotted')
 			ax4_3.set_xlabel('time (ms)')
 
-		
+		fig5, ax5 = plt.subplots(nrows=1, ncols=1, 
+								num='Charateristic curve nu_A vs nu_S')
+		#GRE event rate (count/duration)
+		GRE_rates = []
+		for ii in range(N_syn):
+			GRE_rate = len(astro_mon.t[astro_mon.i==ii])/duration
+			GRE_rates.append(GRE_rate)
+
+		ax5.plot(rate_in/Hz, GRE_rates/Hz, color='C1')
+		ax5.set_xscale('log')
+		ax5.set_xlabel(r'$\nu_S$ (Hz)')
+		ax5.set_ylabel(r'$\nu_A$ (Hz)')
+		ax5.grid(linestyle='dotted')
 
 	device.delete()
 	plt.show()
