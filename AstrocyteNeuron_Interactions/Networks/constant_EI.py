@@ -12,7 +12,7 @@ index = 400
 # NETWORK STRUCTURE
 # how much the ext-inh synaptic strength is highr
 #  than ext-exc synaptic strength
-alpha = 1.0 
+alpha = 1.3
 
 # Recurrent balance degrees: g = pe/pi, IMPORTANT: I always fix pe
 # g = 5: recurrent balance
