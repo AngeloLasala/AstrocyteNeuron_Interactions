@@ -442,7 +442,7 @@ if __name__ == '__main__':
     ## PLOTS #########################################################################################
     if args.p:
         fig1, ax1 = plt.subplots(nrows=2, ncols=1, sharex=True, gridspec_kw={'height_ratios': [3, 1]},
-                                figsize=(12, 14), num=f'NG_network_{I_ex/pA}_ph_'+grid_name)
+                                figsize=(12, 14), num=f'NG_network_{rate_in/Hz:.1f}_ph_'+grid_name)
         step = 1
         ax1[0].plot(spikes_exc_mon.t[np.array(spikes_exc_mon.i)%step==0]/ms, 
                     spikes_exc_mon.i[np.array(spikes_exc_mon.i)%step==0], '|', color='C3')
