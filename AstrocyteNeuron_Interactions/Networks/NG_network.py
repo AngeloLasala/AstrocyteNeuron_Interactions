@@ -18,7 +18,7 @@ set_device('cpp_standalone', directory=None)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Neuron-Glia (NG) network')
-    parser.add_argument("I_ex", type=float, help="value of external input I_ex expressed in pA")
+    parser.add_argument("rate_in", type=float, help="value of external input rate expressed in pA")
     parser.add_argument("-grid", action='store_false', help="Square grid with only positive value, default=True")
     parser.add_argument("-cp", action='store_true', help="Connectivity plots, default=False")
     parser.add_argument("-p", action="store_true", help="Show all the plots, Default=False")
@@ -167,13 +167,12 @@ if __name__ == '__main__':
     # this values are stored in a dictionary where the keys are the I_ex
     # I_ex = [100,105,110,115,120]
     # 's' define the ext-inh connection, "fast spiking inh": s = 1.3
-    rate_in_table = {100.0:47.8, 105.0:45.0, 110.0:54.1, 115.0:56.1, 120.0:58.8}
-    rate_in = rate_in_table[I_ex/pA]*Hz
+    rate_in = args.rate_in*Hz
     print(rate_in)
     poisson = PoissonInput(neurons, 'X_ext', 160 , rate=rate_in, weight='1')
     s = k_NG.s
-    exc_neurons.w_ext = 0.05*nS
-    inh_neurons.w_ext = s*0.05*nS 
+    exc_neurons.w_ext = w_e*nS
+    inh_neurons.w_ext = s*w_e*nS 
     
     # SYNAPSE
     #Synapses
@@ -326,8 +325,9 @@ if __name__ == '__main__':
     firing_rate_exc = PopulationRateMonitor(exc_neurons)
     firing_rate_inh = PopulationRateMonitor(inh_neurons)
     astro_mon = SpikeMonitor(astrocyte)
-    neurons_mon = StateMonitor(neurons, ['v','g_e','g_i','I_exc', 'I_inh', 'I_syn_ext', 'LFP'], 
+    neurons_mon = StateMonitor(neurons, ['v','g_e','g_i','I_exc', 'I_inh', 'I_syn_ext'], 
                               record=[i for i in range(200)] + [i for i in range(N_e,N_e+200)])
+    mon_LFP = StateMonitor(exc_neurons, 'LFP', record=True)
     var_astro_mon = StateMonitor(astrocyte, ['C','I','h','Gamma_A','Y_S','G_A','x_A'], record=True)
     ###########################################################################################
 
@@ -382,13 +382,15 @@ if __name__ == '__main__':
     np.save(f'{name}/neurons_mon.I_exc',neurons_mon.I_exc)
     np.save(f'{name}/neurons_mon.I_inh',neurons_mon.I_inh)
     np.save(f'{name}/neurons_mon.I_syn_ext',neurons_mon.I_syn_ext)
-    np.save(f'{name}/neurons_mon.LFP',neurons_mon.LFP)
     np.save(f'{name}/neurons_mon.t',neurons_mon.t)
     np.save(f'{name}/firing_rate_exc.t',firing_rate_exc.t)
     np.save(f'{name}/firing_rate_exc.rate',firing_rate_exc.rate)
     np.save(f'{name}/firing_rate_inh.t',firing_rate_inh.t)
     np.save(f'{name}/firing_rate_inh.rate',firing_rate_inh.rate)
 
+    # LFP 
+    np.save(f'{name}/mon_LFP.LFP',mon_LFP.LFP)
+    
     # Astrocte variables 
     np.save(f'{name}/var_astro_mon.t',var_astro_mon.t)
     np.save(f'{name}/var_astro_mon.Y_S',var_astro_mon.Y_S)
