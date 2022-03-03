@@ -166,8 +166,8 @@ if __name__ == '__main__':
     print(rate_in)
     poisson = PoissonInput(neurons, 'X_ext', 160 , rate=rate_in, weight='1')
     s = k_NG.s
-    exc_neurons.w_ext = w_e*nS
-    inh_neurons.w_ext = s*w_e*nS 
+    exc_neurons.w_ext = w_e
+    inh_neurons.w_ext = s*w_e 
     
     # SYNAPSE
     #Synapses
