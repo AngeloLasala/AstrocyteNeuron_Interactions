@@ -108,11 +108,6 @@ if __name__ == '__main__':
     seed(28371)  # to get identical figures for repeated runs
     #################################################################################
 
-    ## CONTROL PARAMETERS ###########################################################
-    I_ex = args.I_ex*pA   
-
-    ################################################################################
-
     ## NETWORK #####################################################################
     ## NEURONS 
     neuron_eqs = """
@@ -390,7 +385,7 @@ if __name__ == '__main__':
 
     # LFP 
     np.save(f'{name}/mon_LFP.LFP',mon_LFP.LFP)
-    
+
     # Astrocte variables 
     np.save(f'{name}/var_astro_mon.t',var_astro_mon.t)
     np.save(f'{name}/var_astro_mon.Y_S',var_astro_mon.Y_S)
