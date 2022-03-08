@@ -191,7 +191,7 @@ if __name__ == "__main__":
 	#Monitor
 	syn_mon = StateMonitor(synapses, ['Y_S','Gamma_S','U_0','r_S'], record=np.arange(N_syn*(N_a+1)), when='after_synapses')
 	astro_mon = SpikeMonitor(astrocyte)
-	astro_var = StateMonitor(astrocyte, ['Gamma_A','I','C'], record=(5,70,100))
+	astro_var = StateMonitor(astrocyte, ['Gamma_A','I','C'], record=[i for i in range(100) if i%5==0])
 
 	run(duration, report='text')
 	trans = 50000   #trans*dt=15000*0.1*ms=15s
@@ -294,6 +294,17 @@ if __name__ == "__main__":
 		ax5.set_xlabel(r'$\nu_S$ (Hz)')
 		ax5.set_ylabel(r'$\nu_A$ (Hz)')
 		ax5.grid(linestyle='dotted')
+
+		fig6, ax6 = plt.subplots(nrows=1, ncols=2, figsize=(12,5),
+								num='Ca steady state and st of its oscillation')
+
+		ax6[0].axhline(C_Theta/umolar,0,duration/second, ls='dashed', color='black')
+		for i, i_rate in enumerate([i for i in range(100) if i%5==0]):
+			ax6[0].errorbar(rate_in[i_rate]/Hz, astro_var.C[i,20000:].mean()/umolar,
+							astro_var.C[i,20000:].std()/umolar, fmt='o', color='C1')
+		
+		ax6[1].plot(astro_var.t[20000:]/second, astro_var.C[1,20000:]/umolar)
+		ax6[1].plot(astro_var.t[20000:]/second, astro_var.C[14,20000:]/umolar)
 
 	device.delete()
 	plt.show()
