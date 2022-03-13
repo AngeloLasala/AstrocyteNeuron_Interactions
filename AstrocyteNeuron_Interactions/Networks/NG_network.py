@@ -15,20 +15,22 @@ from AstrocyteNeuron_Interactions.Brian2_utils.connectivity import connectivity_
 from AstrocyteNeuron_Interactions import makedir
 
 set_device('cpp_standalone', directory=None) 
+# prefs.codegen.target = 'cython'
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Neuron-Glia (NG) network')
+    parser = argparse.ArgumentParser(description='Neuron-Glia (NG) network, find NG_netwrok parameters in "constant_NG.py"')
     parser.add_argument("rate_in", type=float, help="value of external input rate expressed in pA")
-    parser.add_argument("-grid", action='store_false', help="Square grid with only positive value, default=True")
+    parser.add_argument("-linear", action='store_false', help="""Square grid for neurons and astrocyte, if -linear there is 
+                                                             no spatial arrangement""")
     parser.add_argument("-cp", action='store_true', help="Connectivity plots, default=False")
     parser.add_argument("-p", action="store_true", help="Show all the plots, Default=False")
     args = parser.parse_args()
 
     ## PARAMETERS ###################################################################
     # --  General parameters --
-    N_e = 3200                   # Number of excitatory neurons
-    N_i = 800                     # Number of inhibitory neurons
-    N_a = 4000                    # Number of astrocytes
+    N_e = k_NG.N_e                 # Number of excitatory neurons
+    N_i = k_NG.N_i                    # Number of inhibitory neurons
+    N_a = k_NG.N_a                   # Number of astrocytes
 
     # -- Some metrics parameters needed to establish proper connections --
     size = 3.75*mmeter           # Length and width of the square lattice
@@ -138,10 +140,10 @@ if __name__ == '__main__':
 
     # Arrange excitatory neurons in a grid
     N_rows_exc = int(sqrt(N_e+N_i))
-    N_cols_exc = (N_e+N_i)/N_rows_exc
+    N_cols_exc = ((N_e+N_i)//N_rows_exc)
     grid_dist = (size / N_cols_exc)
     #square grid
-    if args.grid:
+    if args.linear:
         xx = np.arange(N_rows_exc)
         yy = np.arange(N_cols_exc)
         XX,YY = np.meshgrid(xx,yy)
@@ -149,8 +151,9 @@ if __name__ == '__main__':
         neurons.x = XX.flatten()[:(N_e+N_i)]*grid_dist
         neurons.y = YY.flatten()[:(N_e+N_i)]*grid_dist
     else:
-        exc_neurons.x = '(i // N_rows_exc)*grid_dist - N_rows_exc/2.0*grid_dist'
-        exc_neurons.y = '(i % N_rows_exc)*grid_dist - N_cols_exc/2.0*grid_dist'
+        # exc_neurons.x = '(i // N_rows_exc)*grid_dist - N_rows_exc/2.0*grid_dist'
+        # exc_neurons.y = '(i % N_rows_exc)*grid_dist - N_cols_exc/2.0*grid_dist'
+        neurons.x = 'i*grid_dist'
 
     # Random initial membrane potential values and conductances
     neurons.v = 'E_l + rand()*(V_th-E_l)'
@@ -213,10 +216,10 @@ if __name__ == '__main__':
     # Connect excitatory synapses to an astrocyte depending on the position of the
     # post-synaptic neuron
     N_rows_astro = int(sqrt(N_a))
-    N_cols_astro = N_a/N_rows_astro
-    grid_dist_astro = (size / N_rows_astro)
-    exc_syn.astrocyte_index = ('int(x_post/grid_dist) + '
-                                'N_cols_astro*int(y_post/grid_dist)')
+    N_cols_astro = (N_a//N_rows_astro)
+    grid_dist_astro = grid_dist
+    exc_syn.astrocyte_index = ('int(x_post/grid_dist) + N_cols_astro*int(y_post/grid_dist)')
+    # exc_syn.astrocyte_index = exc_syn.j[:]
 
     # ASTROCYTE
     astro_eqs = """
@@ -270,7 +273,7 @@ if __name__ == '__main__':
 
     # Arrange excitatory neurons in a grid
     #square grid
-    if args.grid:
+    if args.linear:
         x_astro = np.arange(N_rows_astro)
         y_astro = np.arange(N_cols_astro)
         XX_A,YY_A = np.meshgrid(x_astro,y_astro)
@@ -278,8 +281,9 @@ if __name__ == '__main__':
         astrocyte.x = XX_A.flatten()[:N_a]*grid_dist_astro
         astrocyte.y = YY_A.flatten()[:N_a]*grid_dist_astro
     else:
-        astrocyte.x = '(i // N_rows_astro_astro)*grid_dist_astro - N_rows_astro/2.0*grid_dist_astro'
-        astrocyte.y = '(i % N_rows_astro)*grid_dist_astro - N_cols_astro/2.0*grid_dist_astro'
+        # astrocyte.x = '(i // N_rows_astro_astro)*grid_dist_astro - N_rows_astro/2.0*grid_dist_astro'
+        # astrocyte.y = '(i % N_rows_astro)*grid_dist_astro - N_cols_astro/2.0*grid_dist_astro'
+        astrocyte.x = 'i*grid_dist'
 
 
     astrocyte.C ="0.005*umolar + rand()*(0.015-0.005)*umolar"
@@ -347,13 +351,24 @@ if __name__ == '__main__':
     print('Spatial arrangement')
     print(f'neurons grid:   {N_rows_exc}x{N_rows_exc} dist={grid_dist/umetre} um')
     print(f'astrocyte grid: {N_rows_astro}x{N_rows_astro} dist={grid_dist_astro/umetre} um\n')
+    print(np.unique(ecs_astro_to_syn.i[:]).shape)
+    print(exc_syn.astrocyte_index[:320])
+        
+   
+    print(N_rows_astro)
+    print(N_cols_astro)
+    print(grid_dist_astro) 
+    print('neuron')
+    print(N_rows_exc) 
+    print(N_cols_exc)
+    print(grid_dist) 
     ##################################################################################################
 
     ## SAVE IMPORTANT VALUES #########################################################################
-    if args.grid: 
+    if args.linear: 
         grid_name='mygrid'
     else: 
-        grid_name='profgrid'
+        grid_name='nogrid'
     
     name = f'Neuro_Glia_network/NG_network_rate_in:{rate_in/Hz:.1f}_ph_'+grid_name+f'_g:{g}_s:{s}_we_{w_e/nS:.2f}'
     makedir.smart_makedir(name)
@@ -495,7 +510,7 @@ if __name__ == '__main__':
         ax2[6].set_ylabel(r'$x_A$')
         ax2[6].grid(linestyle='dotted')
 
-        fig3, ax3 = plt.subplots(nrows=1, ncols=2, 
+        fig3, ax3 = plt.subplots(nrows=1, ncols=2, sharey=True, sharex=True,
                                     num='Physical space', figsize=(15,7))
 
         ax3[0].title.set_text('Neurons grid')
