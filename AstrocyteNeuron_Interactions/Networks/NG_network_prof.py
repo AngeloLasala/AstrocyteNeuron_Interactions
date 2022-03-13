@@ -8,6 +8,7 @@ by release-increasing gliotransmission from a randomly connected network of astr
 
 import matplotlib.pyplot as plt
 from brian2 import *
+from AstrocyteNeuron_Interactions import makedir
 
 set_device('cpp_standalone', directory=None)  # Use fast "C++ standalone mode"
 seed(28371)  # to get identical figures for repeated runs
@@ -287,12 +288,21 @@ exc_mon = SpikeMonitor(exc_neurons)
 inh_mon = SpikeMonitor(inh_neurons)
 ast_mon = SpikeMonitor(astrocytes)
 var_exc = StateMonitor(exc_neurons, ['I_exc', 'I_inh','v'], record=range(3200))
-
 astro_mon = StateMonitor(astrocytes, 'C', record=astrocytes.i[10:100])
 ##########################################I_exc = StateMonitor(exc_neurons, I_exc, record=range(10))######################################
 # Simulation run
 ################################################################################
 run(duration, report='text')
+
+## Save Important variable ######################################################
+name = "Neuro_Glia_network/prof_network/"
+makedir.smart_makedir(name)
+
+# Duration
+np.save(f'{name}/var_exc.v',var_exc.v)
+print(var_exc.v[:].shape)
+
+#################################################################################
 
 a_before = var_exc.v[0:20000].mean(axis=0).std()
 b_before = (var_exc.v[0:20000].std(axis=1).sum())/N_e
