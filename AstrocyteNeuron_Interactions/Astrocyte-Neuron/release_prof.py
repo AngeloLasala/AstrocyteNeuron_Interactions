@@ -196,7 +196,7 @@ ecs_astro_to_syn.connect(j='i if i >= N_synapses and i < 2*N_synapses')
 syn_mon = StateMonitor(synapses, ['r_S','U_0'],
                        record=np.arange(N_synapses*(N_astro+1)))
 GRE = SpikeMonitor(astrocyte)
-astro_var = StateMonitor(astrocyte, ['Gamma_A','I','C'], record=(50,N_synapses+1))
+astro_var = StateMonitor(astrocyte, ['Gamma_A','I','C'], record=(25,150))
 ################################################################################
 # Simulation run
 ################################################################################
@@ -204,7 +204,7 @@ run(duration, report='text')
 
 #Plots#
 fig1, ax1 = plt.subplots(nrows=1, ncols=1, sharex=True, 
-							     num='Average release probability vs incoming presyn AP')
+		         num='Average release probability vs incoming presyn AP')
 
 ax1.errorbar(f_vals/Hz, np.mean(syn_mon.r_S[2*N_synapses:], axis=1),
                np.std(syn_mon.r_S[2*N_synapses:], axis=1),
@@ -221,7 +221,7 @@ ax1.set_xscale('log')
 ax1.set_xlabel(r'$\nu_{in}$ (Hz)')
 
 fig2, ax2 = plt.subplots(nrows=1, ncols=1, sharex=True, 
-							     num='U_0 probability vs incoming presyn AP')
+	    	         num='U_0 probability vs incoming presyn AP')
 
 ax2.errorbar(f_vals/Hz, np.mean(syn_mon.U_0[2*N_synapses:], axis=1),
                np.std(syn_mon.U_0[2*N_synapses:], axis=1),
@@ -245,11 +245,13 @@ ax3.scatter(GRE.t[:]/second, GRE.i[:], marker='|')
 fig4, ax4 = plt.subplots(nrows=2, ncols=1, sharex=True,
                         num=f"Astrocite dynamics ")
 
-ax4[0].plot(astro_var.t[:]/ms, astro_var.Gamma_A[0], color='C0')
+ax4[0].plot(astro_var.t[:]/second, astro_var.Gamma_A[0], color='C0')
+ax4[0].plot(astro_var.t[:]/second, astro_var.Gamma_A[1],ls='dotted', color='C0')
 ax4[0].set_ylabel(r'$\Gamma_A$ ($\mu$M)')
 ax4[0].grid(linestyle='dotted')
 
-ax4[1].plot(astro_var.t[:]/ms, astro_var.C[0]/umolar, color='C3')
+ax4[1].plot(astro_var.t[:]/second, astro_var.C[0]/umolar, color='C3')
+ax4[1].plot(astro_var.t[:]/second, astro_var.C[1]/umolar, ls='dotted', color='C3')
 ax4[1].set_ylabel(r'C ($\mu$M)')
 ax4[1].axhline(C_Theta/umolar,0,duration/second, ls='dashed', color='black')
 ax4[1].grid(linestyle='dotted')
