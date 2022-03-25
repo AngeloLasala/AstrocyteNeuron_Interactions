@@ -127,3 +127,35 @@ def smoothing_b(x, window='gaussian', width=None, ddt=defaultclock.dt):
 		raise NotImplementedError(f'Unknown pre-defined window "{window}"')
 
 	return np.convolve(x, window * 1. / sum(window), mode='same')
+
+def selected_window(v, start, stop, duration=12):
+	"""
+	Given time evolution of variable 'v' returns its time evolution 
+	over selected window 
+	
+	Parameters
+	----------
+	v: array
+		Time evoulution of varible over a proprer integration steps
+
+	start: float
+		initial time of selected window expressed in second (ms)
+
+	stop: float
+		final time of selected window expressed in second (ms)
+
+	duration: <class 'brian2.units.fundamentalunits.Quantity'> (optional)
+		total time simulation. Default=12 second
+
+	Returns
+	-------
+	v_window: array
+		time evolution of variable over selected window
+	"""
+
+	dt = duration/len(v)              # expressed in second
+	start_position = int(start/dt)
+	stop_position = int(stop/dt)   
+
+	v_window = v[start_position:stop_position] 
+	return v_window
