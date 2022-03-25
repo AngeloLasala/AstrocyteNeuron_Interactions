@@ -23,6 +23,8 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='EI network with costantexternal input (Poisson)')
 	parser.add_argument('r', type=float, help="rate input of external poisson proces")
 	parser.add_argument('-p', action='store_true', help="show paramount plots, default=False")
+	parser.add_argument('-no_connection', action='store_true', 
+						help="there is NO recurrent connection (no synaptic connection), default=False")
 	args = parser.parse_args()
 	## Parameters ########################################################################
 
@@ -87,17 +89,23 @@ if __name__ == "__main__":
 	exc_neurons.w_ext = w_e
 	inh_neurons.w_ext = s*w_e 
 	
-	exc="g_e_post+=w_e"
-	inh="g_i_post+=w_i"
-
-	exc_syn = Synapses(exc_neurons, neurons, model="", on_pre=exc)
-	inh_syn = Synapses(inh_neurons, neurons, model="", on_pre=inh)
-
 	g = k_EI.g
 	p_e = k_EI.p_e
 	p_i = p_e/g
-	exc_syn.connect(p=p_e)
-	inh_syn.connect(p=p_i)
+
+	if not(args.no_connection):
+		## actually synaptic connection
+		exc="g_e_post+=w_e"
+		inh="g_i_post+=w_i"
+
+		exc_syn = Synapses(exc_neurons, neurons, model="", on_pre=exc)
+		inh_syn = Synapses(inh_neurons, neurons, model="", on_pre=inh)
+
+		exc_syn.connect(p=p_e)
+		inh_syn.connect(p=p_i)
+	else:
+		#no recurrent connection
+		pass   
 
 	#############################################################################################
 
@@ -118,8 +126,9 @@ if __name__ == "__main__":
 	print('NETWORK')
 	print(f'g: {g}')
 	print(f's: {s}')
-	print(f'exc syn: {exc_syn.N[:]}')
-	print(f'inh syn: {inh_syn.N[:]}')
+	if not(args.no_connection):
+		print(f'exc syn: {exc_syn.N[:]}')
+		print(f'inh syn: {inh_syn.N[:]}')
 	print('\n')
 
 	#Transient time
@@ -147,7 +156,7 @@ if __name__ == "__main__":
 	inh_neurons_fr = neurons_firing(spikes_inh_mon.t[:]/second, spikes_inh_mon.i[:], time_start=0.5, time_stop=2.3)
 	#########################################################################################################
 	## SAVE VARIABLES #######################################################################################
-
+	if args.no_connection: name = f"Neural_network/EI_net_noSTP/Network_g{g}_s{s}_v_in{rate_in/Hz}_no_connection"
 	name = f"Neural_network/EI_net_noSTP/Network_g{g}_s{s}_v_in{rate_in/Hz}"
 	makedir.smart_makedir(name)
 
