@@ -14,13 +14,12 @@ import matplotlib.pyplot as plt
 from scipy import signal
 from random import randrange
 from brian2 import *
-from Module_network import neurons_firing
+from Module_network import neurons_firing, transient
 import constant_EI as k_EI
-from Neuro_Astro_network.network_analysis import transient
 from AstrocyteNeuron_Interactions import makedir
 
+set_device('cpp_standalone', directory=None) 
 if __name__ == "__main__":
-		
 	parser = argparse.ArgumentParser(description='EI network with costantexternal input (Poisson)')
 	parser.add_argument('r', type=float, help="rate input of external poisson proces")
 	parser.add_argument('-p', action='store_true', help="show paramount plots, default=False")
@@ -112,7 +111,7 @@ if __name__ == "__main__":
 
 	# select random excitatory neurons
 	index = 488
-	state_exc_mon = StateMonitor(exc_neurons, ['v', 'g_e', 'g_i', 'LFP', 'I_syn_ext'], record=True)
+	state_exc_mon = StateMonitor(exc_neurons, ['v', 'g_e', 'g_i', 'LFP', 'I_syn_ext'], record=np.arange(N_e))
 	state_inh_mon = StateMonitor(inh_neurons, ['v', 'g_e', 'g_i', 'LFP', 'I_syn_ext'], record=index)
 
 	run(duration, report='text')
@@ -276,6 +275,7 @@ if __name__ == "__main__":
 		ax5[1].grid(linestyle='dotted')
 		plt.savefig(name+f"/Power Spectrum - {rate_in/Hz}.png")
 
-
-
+		device.delete()
 		plt.show()
+
+	device.delete()
