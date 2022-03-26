@@ -156,8 +156,9 @@ if __name__ == "__main__":
 	inh_neurons_fr = neurons_firing(spikes_inh_mon.t[:]/second, spikes_inh_mon.i[:], time_start=0.5, time_stop=2.3)
 	#########################################################################################################
 	## SAVE VARIABLES #######################################################################################
-	if args.no_connection: name = f"Neural_network/EI_net_noSTP/Network_g{g}_s{s}_v_in{rate_in/Hz}_no_connection"
-	name = f"Neural_network/EI_net_noSTP/Network_g{g}_s{s}_v_in{rate_in/Hz}"
+	if not(args.no_connection): name = f"Neural_network/EI_net_noSTP/Network_g{g}_s{s}_v_in{rate_in/Hz}"
+	else: name = f"Neural_network/EI_net_noSTP/Network_g{g}_s{s}_v_in{rate_in/Hz}_no_connection"
+	
 	makedir.smart_makedir(name)
 
 	# Time evolytion variable
