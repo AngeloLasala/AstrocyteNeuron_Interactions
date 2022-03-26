@@ -16,6 +16,8 @@ parser = argparse.ArgumentParser(description="""EI network with costant external
                                                 you find the constants in 'constant_EI.py' module""")
 parser.add_argument('r', type=float, help="rate input of external poisson proces")
 parser.add_argument('-p', action='store_true', help="show paramount plots, default=False")
+parser.add_argument('-no_connection', action='store_true', 
+						help="there is NO recurrent connection (no synaptic connection), default=False")
 args = parser.parse_args()
 ## Parameters ########################################################################
 
@@ -78,32 +80,39 @@ s = k_EI.s
 exc_neurons.w_ext = w_e
 inh_neurons.w_ext = s*w_e
 
-syn_model = """
-du_S/dt = -Omega_f * u_S : 1 (event-driven)
-dx_S/dt = Omega_d * (1-x_S) : 1 (event-driven)
-r_S : 1
-"""
-
-action="""
-u_S += U_0*(1-u_S)
-r_S = u_S*x_S
-x_S -= r_S
-"""
-exc="g_e_post+=w_e*r_S"
-inh="g_i_post+=w_i*r_S"
-
-exc_syn = Synapses(exc_neurons, neurons, model= syn_model, on_pre=action+exc)
-inh_syn = Synapses(inh_neurons, neurons, model= syn_model, on_pre=action+inh)
-
 # Balance degree 
 g = k_EI.g 
 p_e = k_EI.p_e
 p_i = p_e/g
-exc_syn.connect(p=p_e)
-inh_syn.connect(p=p_i)
 
-exc_syn.x_S = 1
-inh_syn.x_S = 1
+# Synaptic connection
+if not(args.no_connection):
+    syn_model = """
+    du_S/dt = -Omega_f * u_S : 1 (event-driven)
+    dx_S/dt = Omega_d * (1-x_S) : 1 (event-driven)
+    r_S : 1
+    """
+
+    action="""
+    u_S += U_0*(1-u_S)
+    r_S = u_S*x_S
+    x_S -= r_S
+    """
+    exc="g_e_post+=w_e*r_S"
+    inh="g_i_post+=w_i*r_S"
+
+    exc_syn = Synapses(exc_neurons, neurons, model= syn_model, on_pre=action+exc)
+    inh_syn = Synapses(inh_neurons, neurons, model= syn_model, on_pre=action+inh)
+
+
+    exc_syn.connect(p=p_e)
+    inh_syn.connect(p=p_i)
+
+    exc_syn.x_S = 1
+    inh_syn.x_S = 1
+else:
+    #no recurrent connection
+    pass
 #############################################################################################
 
 ## RUN and MONITOR  ######################################################################### 
@@ -119,6 +128,7 @@ state_exc_mon = StateMonitor(exc_neurons, 'LFP', record=True)
 run(duration, report='text')
 #################################################################################################
 ## SAVE VARIABLE ################################################################################
+if args.no_connection: name = f"Neural_network/EI_net_STP/f-I_curve/Network_pe_v_in{rate_in}_g{g}_s{s}_we{w_e/nS:.2f}_fIcurve_no_connection"
 name = f"Neural_network/EI_net_STP/f-I_curve/Network_pe_v_in{rate_in}_g{g}_s{s}_we{w_e/nS:.2f}_fIcurve"
 makedir.smart_makedir(name)
 
