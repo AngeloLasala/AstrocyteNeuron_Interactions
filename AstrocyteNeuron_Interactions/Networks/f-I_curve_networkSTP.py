@@ -138,9 +138,14 @@ np.save(f'{name}/g',g)
 np.save(f'{name}/s',s)
 np.save(f'{name}/rate_in',rate_in)
 
+#Firing rate
 np.save(f'{name}/fr_exc', population_fr_exc.rate[:])
 np.save(f'{name}/fr_inh', population_fr_exc.rate[:])
 np.save(f'{name}/fr', population_fr.rate[:])
+
+#Spikes monitor
+np.save(f'{name}/spikes_exc_mon_t', spikes_exc_mon.t[:])
+np.save(f'{name}/spikes_exc_mon_i', spikes_exc_mon.i[:])
 #################################################################################################
 
 ## ANALYSIS #####################################################################################
@@ -158,9 +163,9 @@ freq_fr_inh, spect_fr_inh = signal.welch(firing_rate_inh[trans:], fs=1/defaultcl
 freq_fr, spectrum_fr = signal.welch(population_fr.rate[trans:], fs=1/defaultclock.dt, nperseg=len(population_fr.rate[trans:])//4)
 freq_LFP, spectrum_LFP = signal.welch(LFP[trans:], fs=1/defaultclock.dt/Hz, nperseg=len(LFP[trans:])//4)
 
-neurons_fr = neurons_firing(spikes_mon.t[:]/second, spikes_mon.i[:], time_start=0.5, time_stop=2.3)
-exc_neurons_fr = neurons_firing(spikes_exc_mon.t[:]/second, spikes_exc_mon.i[:], time_start=0.5, time_stop=2.3)
-inh_neurons_fr = neurons_firing(spikes_inh_mon.t[:]/second, spikes_inh_mon.i[:], time_start=0.5, time_stop=2.3)
+neurons_fr, greater_ind = neurons_firing(spikes_mon.t[:]/second, spikes_mon.i[:], time_start=0.5, time_stop=2.3)
+exc_neurons_fr, greater_ind_exc = neurons_firing(spikes_exc_mon.t[:]/second, spikes_exc_mon.i[:], time_start=0.5, time_stop=2.3)
+inh_neurons_fr, greater_ind_inh = neurons_firing(spikes_inh_mon.t[:]/second, spikes_inh_mon.i[:], time_start=0.5, time_stop=2.3)
 
 ## some information
 print('NETWORK')
@@ -169,12 +174,6 @@ print(f'g = {g}')
 print(f's = {s}')
 print(f'pop-exc: {firing_rate_exc[trans:].mean()}')
 print(f'pop-inh: {firing_rate_inh[trans:].mean()}')
-
-plt.figure(num='Firing rate distribuction')
-plt.hist(neurons_fr/Hz, bins=13)
-plt.hist(exc_neurons_fr/Hz, bins=13, label='Exc')
-plt.hist(inh_neurons_fr/Hz, bins=13, label='Inh')
-plt.legend()
 
 #################################################################################################
 if args.p:
@@ -211,9 +210,9 @@ if args.p:
     fig2, ax2 = plt.subplots(nrows=1, ncols=1, figsize=(7,6),
 								num=f"Neuron's firing rate distribuction - {rate_in/Hz}")
 
-    ax2.hist(neurons_fr/Hz, bins=12, color='k', alpha=0.5, label='Total population' )
-    ax2.hist(exc_neurons_fr/Hz, bins=6, color='C3', label='Exc', alpha=0.65 )
-    ax2.hist(inh_neurons_fr/Hz, bins=6, color='C0', label='Inh', alpha=0.65)
+    ax2.hist(neurons_fr, bins=12, color='k', alpha=0.5, label='Total population' )
+    ax2.hist(exc_neurons_fr, bins=6, color='C3', label='Exc', alpha=0.65 )
+    ax2.hist(inh_neurons_fr, bins=6, color='C0', label='Inh', alpha=0.65)
     ax2.set_xlabel('frequency (Hz)')
     ax2.set_ylabel("Number of neurons")
     ax2.legend()
