@@ -5,7 +5,7 @@ Neuro-Glia network.
 import numpy as np
 from brian2 import *
 
-def neurons_firing(t_spikes, neurons_i, time_start, time_stop):
+def neurons_firing(t_spikes, neurons_i, time_start, time_stop, n=200):
     """
     Firing rate of single neurons
     Distribuction of neurons spikes activity
@@ -28,24 +28,41 @@ def neurons_firing(t_spikes, neurons_i, time_start, time_stop):
     
     stop_start : float
                 stop of time window, second
+		
+	n : integer (optional)
+		number of neurons with grater firing rate
 
     Returns
     -------
     neurons_fr : array
                 list of neuron's firing rate in time_start-time_stop windows
+
+	greater_fr : list
+				neuros's index with gratere firing rate
     """
     
     # indeces: indeces of firing neurons
     indeces = np.unique(neurons_i)
     time = (time_stop-time_start)*second
 
+	#Compute single firing rate
     neurons_fr = []
     for ind in indeces:
         spikes = [spk for spk in t_spikes[neurons_i==ind] if (spk > time_start and spk < time_stop)]
         firing_rate = len(spikes)/time
         neurons_fr.append(firing_rate)
-
-    return neurons_fr
+    neurons_fr = np.array(neurons_fr/Hz)
+ 
+    #Find neuron*s index with greater firing rate
+    greater_fr = np.sort(neurons_fr)[-n:]
+    greater_ind = list()
+    for fr in np.unique(greater_fr):
+	    ind = np.where(neurons_fr==fr)
+	    for iii in ind[0]:
+	    	greater_ind.append(iii)
+    greater_ind = (np.array(greater_ind)).flatten()
+    
+    return neurons_fr, greater_ind
 
 
 def transient(t, transient):
@@ -159,3 +176,14 @@ def selected_window(v, start, stop, duration=12):
 
 	v_window = v[start_position:stop_position] 
 	return v_window
+
+if __name__== "__main__":
+	i = np.load("Neural_network/EI_net_STP/f-I_curve/Network_pe_v_in44.0_g5.0_s1.15_we0.05_fIcurve/spikes_exc_mon_i.npy")
+	t = np.load("Neural_network/EI_net_STP/f-I_curve/Network_pe_v_in44.0_g5.0_s1.15_we0.05_fIcurve/spikes_exc_mon_t.npy")
+
+	histi, index  = neurons_firing(t, i, 0.5, 2.3)
+	
+	plt.figure()
+	for a, ind in enumerate(index):
+		plt.scatter(t[i==ind],(i[i==ind]/ind)*a, marker='|', color='C0')
+	plt.show()
