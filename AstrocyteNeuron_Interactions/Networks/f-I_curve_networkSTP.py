@@ -48,7 +48,7 @@ Omega_f = 3.33/second  # Synaptic facilitation rate
 ## MODEL   ##################################################################################
 defaultclock.dt = k_EI.dt*ms
 duration = k_EI.duration*second  # Total simulation time
-seed(19958)
+# seed(19958)
 
 #Neurons
 neuron_eqs = """
@@ -104,7 +104,7 @@ if not(args.no_connection):
     exc_syn = Synapses(exc_neurons, neurons, model= syn_model, on_pre=action+exc)
     inh_syn = Synapses(inh_neurons, neurons, model= syn_model, on_pre=action+inh)
 
-
+    seed(15325)
     exc_syn.connect(p=p_e)
     inh_syn.connect(p=p_i)
 
@@ -124,11 +124,11 @@ population_fr_exc = PopulationRateMonitor(exc_neurons)
 population_fr_inh = PopulationRateMonitor(inh_neurons)
 population_fr = PopulationRateMonitor(neurons)
 
-state_exc_mon = StateMonitor(exc_neurons, 'LFP', record=True)
+state_exc_mon = StateMonitor(exc_neurons, ['LFP', 'I_syn_ext'], record=True)
 run(duration, report='text')
 #################################################################################################
 ## SAVE VARIABLE ################################################################################
-if not(args.no_connection): name = f"Neural_network/EI_net_STP/f-I_curve/Network_pe_v_in{rate_in}_g{g}_s{s}_we{w_e/nS:.2f}_fIcurve"
+if not(args.no_connection): name = f"Neural_network/EI_net_STP/f-I_curve/Network_pe_v_in{rate_in}_g{g}_s{s}_we{w_e/nS:.2f}"
 else: name = f"Neural_network/EI_net_STP/f-I_curve/Network_pe_v_in{rate_in}_g{g}_s{s}_we{w_e/nS:.2f}_fIcurve_no_connection"
 
 makedir.smart_makedir(name)
@@ -146,9 +146,16 @@ np.save(f'{name}/fr', population_fr.rate[:])
 #Spikes monitor
 np.save(f'{name}/spikes_exc_mon_t', spikes_exc_mon.t[:])
 np.save(f'{name}/spikes_exc_mon_i', spikes_exc_mon.i[:])
+
+#Connection
+if not(args.no_connection):
+    np.save(f'{name}/exc_syn_i', exc_syn.i[:])
+    np.save(f'{name}/exc_syn_j', exc_syn.j[:])
+    np.save(f'{name}/I_ext', state_exc_mon.I_syn_ext[:])
 #################################################################################################
 
 ## ANALYSIS #####################################################################################
+
 #Transient time
 trans_time = k_EI.trans_time
 trans = transient(population_fr.t[:]/second*second, trans_time)
@@ -158,14 +165,14 @@ LFP = state_exc_mon.LFP[:].sum(axis=0)
 firing_rate_exc = population_fr_exc.smooth_rate(window="gaussian", width=0.05*ms)
 firing_rate_inh = population_fr_inh.smooth_rate(window="gaussian", width=0.05*ms)
 
-freq_fr_exc, spect_fr_exc = signal.welch(firing_rate_exc[trans:], fs=1/defaultclock.dt, nperseg=len(firing_rate_exc[trans:])//4)
-freq_fr_inh, spect_fr_inh = signal.welch(firing_rate_inh[trans:], fs=1/defaultclock.dt, nperseg=len(firing_rate_inh[trans:])//4)
-freq_fr, spectrum_fr = signal.welch(population_fr.rate[trans:], fs=1/defaultclock.dt, nperseg=len(population_fr.rate[trans:])//4)
-freq_LFP, spectrum_LFP = signal.welch(LFP[trans:], fs=1/defaultclock.dt/Hz, nperseg=len(LFP[trans:])//4)
+freq_fr_exc, spect_fr_exc = signal.welch(firing_rate_exc[trans:], fs=1/defaultclock.dt, nperseg=len(firing_rate_exc[trans:])//2)
+freq_fr_inh, spect_fr_inh = signal.welch(firing_rate_inh[trans:], fs=1/defaultclock.dt, nperseg=len(firing_rate_inh[trans:])//2)
+freq_fr, spectrum_fr = signal.welch(population_fr.rate[trans:], fs=1/defaultclock.dt, nperseg=len(population_fr.rate[trans:])//3)
+freq_LFP, spectrum_LFP = signal.welch(LFP[trans:], fs=1/defaultclock.dt/Hz, nperseg=len(LFP[trans:])//3)
 
-neurons_fr, greater_ind = neurons_firing(spikes_mon.t[:]/second, spikes_mon.i[:], time_start=0.5, time_stop=2.3)
-exc_neurons_fr, greater_ind_exc = neurons_firing(spikes_exc_mon.t[:]/second, spikes_exc_mon.i[:], time_start=0.5, time_stop=2.3)
-inh_neurons_fr, greater_ind_inh = neurons_firing(spikes_inh_mon.t[:]/second, spikes_inh_mon.i[:], time_start=0.5, time_stop=2.3)
+neurons_fr, greater_ind = neurons_firing(spikes_mon.t[:]/second, spikes_mon.i[:], time_start=0.5, time_stop=duration/second)
+exc_neurons_fr, greater_ind_exc = neurons_firing(spikes_exc_mon.t[:]/second, spikes_exc_mon.i[:], time_start=0.5, time_stop=duration/second)
+inh_neurons_fr, greater_ind_inh = neurons_firing(spikes_inh_mon.t[:]/second, spikes_inh_mon.i[:], time_start=0.5, time_stop=duration/second)
 
 ## some information
 print('NETWORK')
@@ -211,8 +218,8 @@ if args.p:
 								num=f"Neuron's firing rate distribuction - {rate_in/Hz}")
 
     ax2.hist(neurons_fr, bins=12, color='k', alpha=0.5, label='Total population' )
-    ax2.hist(exc_neurons_fr, bins=6, color='C3', label='Exc', alpha=0.65 )
-    ax2.hist(inh_neurons_fr, bins=6, color='C0', label='Inh', alpha=0.65)
+    ax2.hist(exc_neurons_fr, bins=12, color='C3', label='Exc', alpha=0.65 )
+    ax2.hist(inh_neurons_fr, bins=12, color='C0', label='Inh', alpha=0.65)
     ax2.set_xlabel('frequency (Hz)')
     ax2.set_ylabel("Number of neurons")
     ax2.legend()
@@ -226,6 +233,7 @@ if args.p:
     ax3[0].set_title('Population Firing Rate')
     ax3[0].plot(freq_fr, spectrum_fr, color='k')
     ax3[0].set_xlabel('frequency (Hz)')
+    ax3[0].set_xlim([-10,500])
     ax3[0].grid(linestyle='dotted')
     
     ax3[1].set_title('LFP')
