@@ -75,7 +75,7 @@ if __name__ == "__main__":
 
 	#External input
 	rate_in = args.r*Hz
-	poisson = PoissonInput(neurons, 'X_ext', 160 , rate=rate_in, weight='1')
+	poisson = PoissonInput(neurons, 'X_ext', 160 , rate=rate_in, weight='1.0')
 
 	neurons.v = 'E_l + rand()*(V_th-E_l)'
 	neurons.g_e = 'rand()*w_e'
@@ -119,8 +119,8 @@ if __name__ == "__main__":
 
 	# select random excitatory neurons
 	index = 488
-	state_exc_mon = StateMonitor(exc_neurons, ['v', 'g_e', 'g_i', 'LFP', 'I_syn_ext'], record=np.arange(N_e))
-	state_inh_mon = StateMonitor(inh_neurons, ['v', 'g_e', 'g_i', 'LFP', 'I_syn_ext'], record=index)
+	state_exc_mon = StateMonitor(exc_neurons, ['v', 'g_e', 'g_i', 'LFP', 'I_syn_ext','X_ext'], record=np.arange(N_e))
+	state_inh_mon = StateMonitor(inh_neurons, ['v', 'g_e', 'g_i', 'LFP', 'I_syn_ext', 'X_ext'], record=index)
 
 	run(duration, report='text')
 	print('NETWORK')
@@ -148,12 +148,12 @@ if __name__ == "__main__":
 	print(f'I/E: {fr_inh[trans:].mean()/fr_exc[trans:].mean()}')
 
 	## Spectra Analysis and Neuron's firing rates distribuction
-	freq_fr, spectrum_fr = signal.welch(firing_rate.rate[trans:], fs=1/defaultclock.dt/Hz, nperseg=len(firing_rate.rate[:])//4)
-	freq_LFP, spectrum_LFP = signal.welch(LFP[trans:], fs=1/defaultclock.dt/Hz, nperseg=len(LFP)//4)
+	freq_fr, spectrum_fr = signal.welch(firing_rate.rate[trans:], fs=1/defaultclock.dt/Hz, nperseg=len(firing_rate.rate[:])//2)
+	freq_LFP, spectrum_LFP = signal.welch(LFP[trans:], fs=1/defaultclock.dt/Hz, nperseg=len(LFP)//2)
 
-	neurons_fr = neurons_firing(spikes_mon.t[:]/second, spikes_mon.i[:], time_start=0.5, time_stop=2.3)
-	exc_neurons_fr = neurons_firing(spikes_exc_mon.t[:]/second, spikes_exc_mon.i[:], time_start=0.5, time_stop=2.3)
-	inh_neurons_fr = neurons_firing(spikes_inh_mon.t[:]/second, spikes_inh_mon.i[:], time_start=0.5, time_stop=2.3)
+	neurons_fr, grater_ind = neurons_firing(spikes_mon.t[:]/second, spikes_mon.i[:], time_start=0.5, time_stop=2.3)
+	exc_neurons_fr, greater_ind_exc = neurons_firing(spikes_exc_mon.t[:]/second, spikes_exc_mon.i[:], time_start=0.5, time_stop=2.3)
+	inh_neurons_fr, greater_ind_inh = neurons_firing(spikes_inh_mon.t[:]/second, spikes_inh_mon.i[:], time_start=0.5, time_stop=2.3)
 	#########################################################################################################
 	## SAVE VARIABLES #######################################################################################
 	if not(args.no_connection): name = f"Neural_network/EI_net_noSTP/Network_g{g}_s{s}_v_in{rate_in/Hz}"
@@ -259,9 +259,9 @@ if __name__ == "__main__":
 		fig4, ax4 = plt.subplots(nrows=1, ncols=1, figsize=(7,6),
 								num="Neuron's firing rate distribuction")
 
-		ax4.hist(neurons_fr/Hz, bins=13, color='k', alpha=0.5, density=True, label='Total population')
-		ax4.hist(exc_neurons_fr/Hz, bins=13, color='C3', density=True, label='Exc', alpha=0.65)
-		ax4.hist(inh_neurons_fr/Hz, bins=13, color='C0', density=True, label='Inh', alpha=0.65)
+		ax4.hist(neurons_fr, bins=13, color='k', alpha=0.5, label='Total population')
+		ax4.hist(exc_neurons_fr, bins=13, color='C3', label='Exc', alpha=0.65)
+		ax4.hist(inh_neurons_fr, bins=13, color='C0', label='Inh', alpha=0.65)
 		ax4.set_xlabel('frequency (Hz)')
 		ax4.set_ylabel('Numeber of neurons')
 		ax4.legend()
@@ -274,6 +274,7 @@ if __name__ == "__main__":
 		ax5[0].set_title('Population Firing Rate')
 		ax5[0].plot(freq_fr, spectrum_fr, color='k')
 		ax5[0].set_xlabel('frequency (Hz)')
+		ax5[0].set_xlim([-10,500])
 		ax5[0].grid(linestyle='dotted')
 		
 		ax5[1].set_title('LFP')
@@ -285,6 +286,9 @@ if __name__ == "__main__":
 		ax5[1].grid(linestyle='dotted')
 		plt.savefig(name+f"/Power Spectrum - {rate_in/Hz}.png")
 
+		plt.figure()
+		plt.plot(state_exc_mon.t[trans:]/ms, state_exc_mon.X_ext[index,trans:])
+		
 		device.delete()
 		plt.show()
 
