@@ -2,13 +2,14 @@
 Recurrent Network of E/I neurons with short-term plasticity (STP), f-I curve of 
 single excitatory and inhibitory neurons. Basically it is the v_in vs nu_S curve.
 """
+import os
 import argparse
 import matplotlib.pyplot as plt
 from scipy import signal
 from brian2 import *
 from Module_network import neurons_firing, transient
-from AstrocyteNeuron_Interactions import makedir
 import constant_EI as k_EI
+import makedir
 
 set_device('cpp_standalone', directory=None)  #1% gain 
 
@@ -186,7 +187,10 @@ print(f'pop-inh: {firing_rate_inh[trans:].mean()}')
 if args.p:
     if not(args.no_connection): name = name = f"Neural_network/EI_net_STP/Network_pe_v_in{rate_in}_g{g}_s{s}_we{w_e/nS:.2f}"
     else: name =name = f"Neural_network/EI_net_STP/Network_pe_v_in{rate_in}_g{g}_s{s}_we{w_e/nS:.2f}_no_connection"
-    makedir.smart_makedir(name)
+    
+    makedir.smart_makedir(name, trial=True)
+    trial_index = [int(trl.split('-')[-1]) for trl in os.listdir(name)]
+    trial_free = max(trial_index)
     
     fig1, ax1 = plt.subplots(nrows=4, ncols=1, sharex=True, gridspec_kw={'height_ratios': [2,0.6,0.6,1]},
 								num=f'Raster plot, v_in={rate_in/Hz} (no STP)', figsize=(8,10))
@@ -212,7 +216,7 @@ if args.p:
     ax1[3].set_xlim([0.25,2.4])
     ax1[3].grid(linestyle='dotted')
 
-    plt.savefig(name+f'/Raster plot, v_in={rate_in/Hz}.png')
+    plt.savefig(name+f'/trial-{trial_free}'+f'/Raster plot, v_in={rate_in/Hz}.png')
 
     fig2, ax2 = plt.subplots(nrows=1, ncols=1, figsize=(7,6),
 								num=f"Neuron's firing rate distribuction - {rate_in/Hz}")
@@ -224,7 +228,7 @@ if args.p:
     ax2.set_ylabel("Number of neurons")
     ax2.legend()
 
-    plt.savefig(name+f"/Neuron's firing rate distribuction - {rate_in/Hz}.png")
+    plt.savefig(name+f'/trial-{trial_free}'+f"/Neuron's firing rate distribuction - {rate_in/Hz}.png")
 
 
     fig3, ax3 = plt.subplots(nrows=1, ncols=2, figsize=(12,6),
@@ -243,7 +247,7 @@ if args.p:
     ax3[1].set_yscale('log')
     ax3[1].set_xlabel('frequency (Hz)')
     ax3[1].grid(linestyle='dotted')
-    plt.savefig(name+f"/Power Spectrum - {rate_in/Hz}.png")
+    plt.savefig(name+f'/trial-{trial_free}'+f"/Power Spectrum - {rate_in/Hz}.png")
 
 
     device.delete()
