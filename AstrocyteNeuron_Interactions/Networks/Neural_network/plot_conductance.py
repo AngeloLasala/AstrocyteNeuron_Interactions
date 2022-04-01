@@ -36,8 +36,8 @@ Omega_d = 2.0/second   # Synaptic depression rate
 Omega_f = 3.33/second  # Synaptic facilitation rate
 
 index=500
-name_STP = 'EI_net_STP_balanceSTP/Network_pe_v_in64.0/'
-name_noSTP = 'EI_net_noSTP_balancenoSTP/Network_pe_v_in64.0/'
+name_STP = 'EI_net_STP_balanceSTP/Network_pe_v_in64.0'
+name_noSTP = 'EI_net_noSTP_balancenoSTP/Network_pe_v_in64.0'
 
 t = np.load(f'{name_STP}/state_exc_mon.t.npy')
 trans = np.load(f'{name_STP}/trans.npy')
