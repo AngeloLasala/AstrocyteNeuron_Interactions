@@ -32,14 +32,14 @@ ax2[1].grid(linestyle='dotted')
 
 rates_in =[40.0,45.0,50.0,55.0,60.0,65.0,70.0]
 for rate_in in rates_in:
-	name_folder = f"EI_net_STP/f-I_curve/Network_pe_v_in{rate_in}_g{g}_s{s}_we{we}_fIcurve"
+	name_folder = f"EI_net_STP/Network_pe_g{g}_s{s}_we{we}/v_in{rate_in}/f-I_curve"
 	## LOAD VARIABLES ###################################################################
 	duration = np.load(f'{name_folder}/duration.npy')*second
 
 	# Excitatory neurons variable
-	pop_exc = np.load(f'{name_folder}/pop_exc.npy')
+	pop_exc = np.load(f'{name_folder}/fr_exc.npy')
 	# Inhibitory neurons variable
-	pop_inh = np.load(f'{name_folder}/pop_inh.npy')
+	pop_inh = np.load(f'{name_folder}/fr_inh.npy')
 
 	if rate_in == 40.0: 
 		ax2[0].scatter(rate_in, pop_exc.mean(), marker='o', color='C3',label='Exc')
@@ -51,6 +51,8 @@ for rate_in in rates_in:
 	ax2[1].scatter(rate_in, pop_inh.mean()/pop_exc.mean(), marker='d', color='k')
 
 	ax2[0].legend()
+
+plt.savefig(name_folder+f'v_in-v_exc characteristic curve g:{g} s:{s}')
 plt.show()
 
 
