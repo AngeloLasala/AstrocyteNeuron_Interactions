@@ -141,7 +141,7 @@ np.save(f'{name}/rate_in',rate_in)
 
 #Firing rate
 np.save(f'{name}/fr_exc', population_fr_exc.rate[:])
-np.save(f'{name}/fr_inh', population_fr_exc.rate[:])
+np.save(f'{name}/fr_inh', population_fr_inh.rate[:])
 np.save(f'{name}/fr', population_fr.rate[:])
 
 #Spikes monitor
