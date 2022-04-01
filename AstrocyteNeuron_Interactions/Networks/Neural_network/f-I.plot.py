@@ -52,7 +52,7 @@ for rate_in in rates_in:
 
 	ax2[0].legend()
 
-plt.savefig(name_folder+f'v_in-v_exc characteristic curve g:{g} s:{s}')
+plt.savefig(f'EI_net_STP/Network_pe_g{g}_s{s}_we{we}/v_in-v_exc characteristic curve g:{g} s:{s} we:{we:.2f}.png')
 plt.show()
 
 
