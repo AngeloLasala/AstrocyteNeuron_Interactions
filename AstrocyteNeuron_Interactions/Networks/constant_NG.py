@@ -17,7 +17,7 @@ N_a = 4000
 
 # TIME CONSTANT
 dt = 0.1 #ms            #0.05ms
-duration = 0.1 #s      
+duration = 12.0 #s      
 trans_time = 300 #ms     #300ms
 
 # index: excitatory neurron index used to monitor variable
@@ -26,12 +26,12 @@ index = 400
 # NETWORK STRUCTURE
 # how much the ext-inh synaptic strength is highr
 # than ext-exc synaptic strength
-s = 1.0
+s = 1.15
 
 # Recurrent balance degrees: g = pe/pi, IMPORTANT: I always fix pe
 # g = 5: recurrent balance
 # g < 5: inhibitory prevails
 # g > 5: excitatory prevails 
-g = 0.25 
+g = 5.0 
 p_e = 0.05  
 

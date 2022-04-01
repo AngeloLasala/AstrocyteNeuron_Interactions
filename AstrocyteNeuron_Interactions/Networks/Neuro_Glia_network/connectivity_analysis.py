@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
 	N_e = 3200
 	N_i = 800
-	N_a = 4000
+	N_a = 4000 
 
 	name=args.file
 

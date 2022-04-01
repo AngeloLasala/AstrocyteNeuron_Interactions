@@ -15,11 +15,10 @@ from AstrocyteNeuron_Interactions.Brian2_utils.connectivity import connectivity_
 from AstrocyteNeuron_Interactions import makedir
 
 set_device('cpp_standalone', directory=None) 
-# prefs.codegen.target = 'cython'
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Neuron-Glia (NG) network, find NG_netwrok parameters in "constant_NG.py"')
-    parser.add_argument("rate_in", type=float, help="value of external input rate expressed in pA")
+    parser.add_argument("rate_in", type=float, help="value of external input rate expressed in Hz")
     parser.add_argument("-linear", action='store_false', help="""Square grid for neurons and astrocyte, if -linear there is 
                                                              no spatial arrangement""")
     parser.add_argument("-cp", action='store_true', help="Connectivity plots, default=False")
@@ -129,8 +128,8 @@ if __name__ == '__main__':
     LFP = (abs(g_e*(E_e-v)) + abs(g_i*(E_i-v)) + abs(I_syn_ext))/g_l : volt
 
     # Neuron position in space
-    x : meter (constant)
-    y : meter (constant)
+    x : 1 (constant)
+    y : 1 (constant)
     """
     neurons = NeuronGroup(N_e+N_i, model=neuron_eqs, method='euler',
                         threshold='v>V_th', reset='v=V_r', refractory='tau_r')
@@ -153,7 +152,7 @@ if __name__ == '__main__':
     else:
         # exc_neurons.x = '(i // N_rows_exc)*grid_dist - N_rows_exc/2.0*grid_dist'
         # exc_neurons.y = '(i % N_rows_exc)*grid_dist - N_cols_exc/2.0*grid_dist'
-        neurons.x = 'i*grid_dist'
+        neurons.x = 'i'
 
     # Random initial membrane potential values and conductances
     neurons.v = 'E_l + rand()*(V_th-E_l)'
@@ -218,7 +217,7 @@ if __name__ == '__main__':
     N_rows_astro = int(sqrt(N_a))
     N_cols_astro = (N_a//N_rows_astro)
     grid_dist_astro = grid_dist
-    exc_syn.astrocyte_index = ('int(x_post/grid_dist) + N_cols_astro*int(y_post/grid_dist)')
+    exc_syn.astrocyte_index = 'x_post'
     # exc_syn.astrocyte_index = exc_syn.j[:]
 
     # ASTROCYTE
@@ -258,8 +257,8 @@ if __name__ == '__main__':
     Y_S                           : mmolar
 
     # The astrocyte position in space
-    x : meter (constant)
-    y : meter (constant)
+    x : 1 (constant)
+    y : 1 (constant)
     """
 
     astro_release = """
@@ -283,8 +282,7 @@ if __name__ == '__main__':
     else:
         # astrocyte.x = '(i // N_rows_astro_astro)*grid_dist_astro - N_rows_astro/2.0*grid_dist_astro'
         # astrocyte.y = '(i % N_rows_astro)*grid_dist_astro - N_cols_astro/2.0*grid_dist_astro'
-        astrocyte.x = 'i*grid_dist'
-
+        astrocyte.x = 'i'
 
     astrocyte.C ="0.005*umolar + rand()*(0.015-0.005)*umolar"
     astrocyte.h = "0.85 + rand()*(0.95-0.85)"
@@ -296,7 +294,7 @@ if __name__ == '__main__':
     # ASTRO TO EXC_SYNAPSES
     ecs_astro_to_syn = Synapses(astrocyte, exc_syn, 'G_A_post = G_A_pre : mmolar (summed)')
     ecs_astro_to_syn.connect('i == astrocyte_index_post')
-    
+  
 
     #EXC_SYNAPSES TO ASTRO
     ecs_syn_to_astro = Synapses(exc_syn, astrocyte, 'Y_S_post = Y_S_pre/N_incoming : mmolar (summed)')
@@ -321,9 +319,12 @@ if __name__ == '__main__':
     ## MOMITOR ###############################################################################
     spikes_exc_mon = SpikeMonitor(exc_neurons)
     spikes_inh_mon = SpikeMonitor(inh_neurons)
+    astro_mon = SpikeMonitor(astrocyte)
+
     firing_rate_exc = PopulationRateMonitor(exc_neurons)
     firing_rate_inh = PopulationRateMonitor(inh_neurons)
-    astro_mon = SpikeMonitor(astrocyte)
+    firing_rate = PopulationRateMonitor(neurons)
+    
     neurons_mon = StateMonitor(neurons, ['v','g_e','g_i','I_exc', 'I_inh', 'I_syn_ext'], 
                               record=[i for i in range(200)] + [i for i in range(N_e,N_e+200)])
     mon_LFP = StateMonitor(exc_neurons, 'LFP', record=True)
@@ -352,7 +353,9 @@ if __name__ == '__main__':
     print(f'neurons grid:   {N_rows_exc}x{N_rows_exc} dist={grid_dist/umetre} um')
     print(f'astrocyte grid: {N_rows_astro}x{N_rows_astro} dist={grid_dist_astro/umetre} um\n')
     print(np.unique(ecs_astro_to_syn.i[:]).shape)
-    print(exc_syn.astrocyte_index[:320])
+    print(np.unique(exc_syn.astrocyte_index[:]))
+    print(np.unique(exc_syn.astrocyte_index[:]).shape)
+    # print(exc_syn.astrocyte_index[:320])
         
    
     print(N_rows_astro)
@@ -397,6 +400,8 @@ if __name__ == '__main__':
     np.save(f'{name}/firing_rate_exc.rate',firing_rate_exc.rate)
     np.save(f'{name}/firing_rate_inh.t',firing_rate_inh.t)
     np.save(f'{name}/firing_rate_inh.rate',firing_rate_inh.rate)
+    np.save(f'{name}/firing_rate.t',firing_rate.t)
+    np.save(f'{name}/firing_rate.rate',firing_rate.rate)
 
     # LFP 
     np.save(f'{name}/mon_LFP.LFP',mon_LFP.LFP)
@@ -458,26 +463,31 @@ if __name__ == '__main__':
     if args.p:
         fig1, ax1 = plt.subplots(nrows=2, ncols=1, sharex=True, gridspec_kw={'height_ratios': [3, 1]},
                                 figsize=(12, 14), num=f'NG_network_{rate_in/Hz:.1f}_ph_'+grid_name)
-        step = 1
-        ax1[0].plot(spikes_exc_mon.t[np.array(spikes_exc_mon.i)%step==0]/ms, 
+        step = 4
+        ax1[0].plot(spikes_exc_mon.t[np.array(spikes_exc_mon.i)%step==0]/second, 
                     spikes_exc_mon.i[np.array(spikes_exc_mon.i)%step==0], '|', color='C3')
-        ax1[0].plot(spikes_inh_mon.t[np.array(spikes_inh_mon.i)%step==0]/ms, 
+        ax1[0].plot(spikes_inh_mon.t[np.array(spikes_inh_mon.i)%step==0]/second, 
                     spikes_inh_mon.i[np.array(spikes_inh_mon.i)%step==0]+N_e, '|', color='C0',)
-        ax1[0].plot(astro_mon.t[np.array(astro_mon.i)%step==0]/ms, 
+        ax1[0].plot(astro_mon.t[np.array(astro_mon.i)%step==0]/second, 
                     astro_mon.i[np.array(astro_mon.i)%step==0]+(N_e+N_i),'|' , color='green')
         ax1[0].set_xlabel('time (s)')
         ax1[0].set_ylabel('cell index')
 
-        hist_step = 20
-        bin_size = (duration/ms)/((duration/ms)//hist_step)*ms
-        print(f'bin size for hist: {bin_size}')
-        spk_count, bin_edges = np.histogram(np.r_[spikes_exc_mon.t/ms,spikes_inh_mon.t/ms], 
-                                            int(duration/ms)//hist_step)
-        rate = double(spk_count)/(N_e+N_i)/bin_size
-        ax1[1].plot(bin_edges[:-1], rate, '-', color='k')
+        ax1[1].plot(firing_rate.t[:]/second, firing_rate.smooth_rate(window='gaussian', width=1*ms), color='k')
+        ax1[1].grid(linestyle='dotted')
         ax1[1].set_ylabel('rate (Hz)')
         ax1[1].set_xlabel('time (ms)')
-        ax1[1].grid(linestyle='dotted')
+
+        # hist_step = 20
+        # bin_size = (duration/ms)/((duration/ms)//hist_step)*ms
+        # print(f'bin size for hist: {bin_size}')
+        # spk_count, bin_edges = np.histogram(np.r_[spikes_exc_mon.t/ms,spikes_inh_mon.t/ms], 
+        #                                     int(duration/ms)//hist_step)
+        # rate = double(spk_count)/(N_e+N_i)/bin_size
+        # ax1[1].plot(bin_edges[:-1], rate, '-', color='k')
+        # ax1[1].set_ylabel('rate (Hz)')
+        # ax1[1].set_xlabel('time (ms)')
+        # ax1[1].grid(linestyle='dotted')
 
         fig2, ax2 = plt.subplots(nrows=7, ncols=1, sharex=True, figsize=(14, 14), num='astrocyte dynamics')
         index_plot = 0

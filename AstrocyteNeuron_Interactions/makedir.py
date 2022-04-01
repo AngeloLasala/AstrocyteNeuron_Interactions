@@ -6,7 +6,7 @@ import shutil
 
 
 def go_up(level_up):
-    '''
+    """
     Simple function that returns the path of parent directory at a specified level
     Parameters
     ----------
@@ -16,7 +16,7 @@ def go_up(level_up):
     --------
     path : str
         Path of the directory at level you chose from the current directory.
-    '''
+    """
     if level_up == 0:
         path = os.getcwd()
     if level_up == 1:
@@ -36,9 +36,10 @@ def go_up(level_up):
     return path
 
 
-def smart_makedir(name_dir, level_up=0):
-    '''
+def smart_makedir(name_dir, level_up=0, trial=False):
+    """
     Easy way to create a folder. You can go up from the current path up to 4 times.
+
     Parameters
     ----------
     name_dir : str
@@ -48,7 +49,7 @@ def smart_makedir(name_dir, level_up=0):
     Returns
     -------
     None.
-    '''
+    """
 
     separator = '/'
     if level_up == 0:
@@ -63,13 +64,20 @@ def smart_makedir(name_dir, level_up=0):
         path = separator.join([go_up(4), name_dir])
 
     if os.path.exists(path):
-        answer = input('Path already exists. Do you want to overwrite the files? [y/n] ')
-        if answer == 'y':
-            # Remove all the files in case they already exist
-            shutil.rmtree(path)
+        if trial:
+            print(os.listdir())
+            list_trial = [int(name_trial.split('-')[-1]) for name_trial in os.listdir(path)]
+            if len(list_trial) == 0: os.makedirs(path+'/trial_0')
+            else: os.makedirs(path+'/trial-'+str(len(list_trial)+1))
+            return
         else:
-            logging.info("I am quitting \n")
-            sys.exit()
+            answer = input('Path already exists. Do you want to overwrite the files? [y/n] ')
+            if answer == 'y':
+                # Remove all the files in case they already exist
+                shutil.rmtree(path)
+            else:
+                logging.info("I am quitting \n")
+                sys.exit()
     os.makedirs(path)
     logging.info(f"Successfully created the directory '{path}' \n")
 

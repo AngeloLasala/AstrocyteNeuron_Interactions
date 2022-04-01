@@ -97,7 +97,7 @@ alpha = 0.0                  # Gliotransmission nature
 ################################################################################
 # Define HF stimulus
 ################################################################################
-stimulus = TimedArray([1.0, 1.2, 1.0, 1.0], dt=2*second)
+stimulus = TimedArray([1.0, 1.2, 1.0], dt=2*second)
 
 ################################################################################
 # Simulation time (based on the stimulus)
@@ -117,6 +117,7 @@ dg_i/dt = -g_i/tau_i : siemens  # post-synaptic inhibitory conductance
 
 I_exc =  abs(g_e*(E_e-v)) : ampere
 I_inh =  abs(g_i*(E_i-v)) : ampere
+I_ext = I_ex*stimulus(t) : ampere
 
 # ELLIPSIS END
 # Neuron position in space
@@ -287,7 +288,9 @@ astro_to_astro.connect('i != j and '
 exc_mon = SpikeMonitor(exc_neurons)
 inh_mon = SpikeMonitor(inh_neurons)
 ast_mon = SpikeMonitor(astrocytes)
-var_exc = StateMonitor(exc_neurons, ['I_exc', 'I_inh','v'], record=range(3200))
+population = PopulationRateMonitor(neurons)
+
+var_exc = StateMonitor(exc_neurons, ['I_exc', 'I_ext', 'I_inh','v'], record=range(3200))
 astro_mon = StateMonitor(astrocytes, 'C', record=astrocytes.i[10:100])
 ##########################################I_exc = StateMonitor(exc_neurons, I_exc, record=range(10))######################################
 # Simulation run
@@ -317,14 +320,23 @@ print(sync_b)
 print(sync_a)
 
 #Plots
-plt.figure()
+plt.figure(num='Raster plot')
 plt.scatter(exc_mon.t[:], exc_mon.i[:], marker='|', color='C3')
 plt.scatter(inh_mon.t[:], inh_mon.i[:]+N_e, marker='|', color='C0')
 plt.scatter(ast_mon.t[:], ast_mon.i[:]+N_e+N_i, marker='|', color='C2')
 
+plt.figure(num='Population rate monitor')
+plt.plot(population.t[:]/second, population.rate[:]/Hz)
+
 plt.figure()
+print(var_exc.I_exc[:]/pA.mean())
+print(var_exc.I_exc[:]/pA.mean())
+print(var_exc.I_exc[:]/pA.mean())
 plt.plot(var_exc.t[:], var_exc.I_exc[0]/pA)
 plt.plot(var_exc.t[:], var_exc.I_inh[0]/pA)
+plt.plot(var_exc.t[:], var_exc.I_ext[0]/pA)
+
+plt.figure()
 
 device.delete()
 plt.show()

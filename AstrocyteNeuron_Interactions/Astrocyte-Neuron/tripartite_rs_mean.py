@@ -216,6 +216,8 @@ if __name__ == "__main__":
 		ax1_1.grid(linestyle='dotted')
 		
 		
+		ax1_2.errorbar(rate_in/Hz, np.mean(syn_mon.r_S[2*N_syn:,trans:], axis=1), np.std(syn_mon.r_S[2*N_syn:,trans:], axis=1), 
+                fmt='o', markersize=4, lw=0.4, color='black', label='no gliotrasmission', alpha=0.5)
 		ax1_2.errorbar(rate_in/Hz, np.mean(syn_mon.r_S[:N_syn,trans:], axis=1), np.std(syn_mon.r_S[:N_syn,trans:], axis=1), 
                 fmt='o', markersize=4, lw=0.4, color='C6', label='closed-loop')
 		ax1_2.set_ylabel(r'$\langle r_S \rangle$')

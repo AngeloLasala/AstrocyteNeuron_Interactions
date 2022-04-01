@@ -13,7 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import signal
 from brian2 import *
-from network_analysis import transient
+from network_analysis import transient, selected_window
 
 def smoothing_b(x, window='gaussian', width=None, ddt=defaultclock.dt):
 	"""
@@ -70,6 +70,49 @@ def smoothing_b(x, window='gaussian', width=None, ddt=defaultclock.dt):
 
 	return np.convolve(x, window * 1. / sum(window), mode='same')
 
+def neurons_firing(t_spikes, neurons_i, time_start, time_stop):
+    """
+    Firing rate of single neurons
+    Distribuction of neurons spikes activity
+
+    Parameters
+    ----------
+    t_spikes : array
+            spiking time of all neurons (comes from SpikesMonitor group of Brian2),
+            there are expressed in second. For istance:
+            monitor = SpikesMonitor(neurons)
+            t_spikes = monitor.t
+
+    neurons_i : array
+            indexes array come from SpikesMonitor group of Brian2, for istance
+            monitor = SpikesMonitor(neurons)
+            neurons_i = monitor.i
+    
+    time_start : float
+                start of time window, second
+    
+    stop_start : float
+                stop of time window, second
+
+    Returns
+    -------
+    neurons_fr : array
+                list of neuron's firing rate in time_start-time_stop windows
+    """
+    
+    # indeces: indeces of firing neurons
+    indeces = np.unique(neurons_i)
+    time = (time_stop-time_start)*second
+
+    neurons_fr = []
+    for ind in indeces:
+        spikes = [spk for spk in t_spikes[neurons_i==ind] if (spk > time_start and spk < time_stop)]
+        firing_rate = len(spikes)/time
+        neurons_fr.append(firing_rate)
+
+    return neurons_fr
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Advanced connectivity connection')
     parser.add_argument('file', type=str, help="file's name of network in 'Neuro_Glia_network' folder")
@@ -87,6 +130,7 @@ if __name__ == '__main__':
     inh_neurons_i = np.load(f'{name}/spikes_inh_mon.i.npy')
     t_astro = np.load(f'{name}/astro_mon.t.npy')
     astro_i = np.load(f'{name}/astro_mon.i.npy')
+    mon_LFP = np.load(f'{name}/mon_LFP.LFP.npy')
 
     t = np.load(f'{name}/var_astro_mon.t.npy')
     Y_S = np.load(f'{name}/var_astro_mon.Y_S.npy')
@@ -109,6 +153,9 @@ if __name__ == '__main__':
     firing_rate_exc = np.load(f'{name}/firing_rate_exc.rate.npy')
     firing_rate_inh_t = np.load(f'{name}/firing_rate_inh.t.npy')
     firing_rate_inh = np.load(f'{name}/firing_rate_inh.rate.npy')
+    firing_rate_t = np.load(f'{name}/firing_rate.t.npy')
+    firing_rate = np.load(f'{name}/firing_rate.rate.npy')
+
 
 
     astro_connected = np.load(f'{name}/ecs_astro_to_syn.i.npy')
@@ -120,7 +167,7 @@ if __name__ == '__main__':
 
     N_e = 3200
     N_i = 800
-    N_a = 3200
+    N_a = 4000
     C_Theta = 0.5*umolar
     defaultclock.dt = 0.1*ms
     
@@ -129,54 +176,129 @@ if __name__ == '__main__':
     ## Analysis ##############################################################################
     # transient time
     trans = transient(t*second, 50000)
-    firing_rate_exc = smoothing_b(firing_rate_exc, width=1*ms)
-    firing_rate_inh = smoothing_b(firing_rate_inh, width=1*ms)
+#     firing_rate_exc = smoothing_b(firing_rate_exc, width=1*ms)
+#     firing_rate_inh = smoothing_b(firing_rate_inh, width=1*ms)
+
+    LFP = mon_LFP.sum(axis=0)
+
+    # Network analysis concern mean values and spectral analysis of
+    # population firing rate and LFP
+    analysis = {'BASE': [0.5*second, 1.6*second],'GRE1': [4*second, 7*second], 'GRE2': [9*second, 11*second]}
+
+    fig4, ax4 = plt.subplots(nrows=2, ncols=1, sharex=True,
+                            num='Firing rate and LFP ')
+    fr_t = firing_rate_t[:]/second
+    fr_smooth = smoothing_b(firing_rate, width=1*ms)
+    ax4[0].plot(fr_t[5000:], fr_smooth[5000:], color='k', alpha=0.7)
+    ax4[0].grid(linestyle='dotted')
+    ax4[0].set_xlabel('time (s)')
+    ax4[0].set_ylabel('firing rate (Hz)')
+
+    ax4[1].plot(mon_t[5000:]/second, LFP[5000:], color='C5', alpha=0.7)
+    ax4[1].grid(linestyle='dotted')
+    ax4[1].set_xlabel('time (s)')
+    ax4[1].set_ylabel('LFP (?)')
+
+    for zone in analysis.keys():
+        fig3, ax3 = plt.subplots(nrows=2, ncols=1, sharex=True, figsize=(6,15),
+                            num='Spectral analysis '+zone)
+        
+        fr_exc = selected_window(firing_rate_exc, analysis[zone][0], analysis[zone][1])
+        fr_inh = selected_window(firing_rate_inh, analysis[zone][0], analysis[zone][1])
+        fr = selected_window(firing_rate, analysis[zone][0], analysis[zone][1])
+        LFP_w = selected_window(LFP, analysis[zone][0], analysis[zone][1])
+
+        N = len(fr_exc)
+        NN = len(LFP_w)
+
+        freq_fr_exc, spectrum_fr_exc = signal.welch(fr_exc, fs=1/defaultclock.dt/Hz, nperseg=N//2)
+        freq_fr_inh, spectrum_fr_inh = signal.welch(fr_inh, fs=1/defaultclock.dt/Hz, nperseg=N//4)
+        freq_fr, spectrum_fr = signal.welch(fr, fs=1/defaultclock.dt/Hz, nperseg=N//2)
+        freq_LFP_w, spectrum_LFP_w = signal.welch(LFP_w, fs=1/defaultclock.dt/Hz, nperseg=NN//4)
+        print(len(freq_LFP_w))
+
+        print(f' {zone} - time window: {analysis[zone][0]/second:.2f} - {analysis[zone][1]/second:.2f} s')
+        print(f'exc: mean={fr_exc.mean():.4f} std={fr_exc.std():.4f} Hz')
+        print(f'inh: mean={fr_inh.mean():.4f} std={fr_inh.std():.4f} Hz')
+        print(f'LFP: mean={LFP_w.mean():.4f} std={LFP_w.std():.4f} volt') 
+        print(f'frequency resolution Whelch : {1/((N//2+1)*defaultclock.dt)} Hz')
+        print(f'frequency resolution Whelch : {1/((NN//4+1)*defaultclock.dt)} Hz')
+
+        ax3[0].set_title(zone)
+        ax3[0].plot(freq_fr_exc, spectrum_fr_exc, color='k')
+        ax3[0].set_ylabel('spectrum fr')
+        # ax3[0].set_yscale('log')
+        ax3[0].plot(freq_fr_exc[1:], 1/(freq_fr_exc[1:]**2), alpha=0.5)
+
+        ax3[1].plot(freq_LFP_w, spectrum_LFP_w)
+        # ax3[2].set_xscale('log')
+        # ax3[2].set_yscale('log')
+        ax3[1].set_ylabel('spectrum LFP')
+        ax3[1].set_xlabel('frequecy (Hz)')
+
+        
+        # Underline selected zone
+        ax4[0].plot(selected_window(fr_t, analysis[zone][0], analysis[zone][1]),
+                    selected_window(fr_smooth, analysis[zone][0], analysis[zone][1]), color='C1')
+        
+        ax4[1].plot(selected_window(mon_t, analysis[zone][0], analysis[zone][1]),
+                    LFP_w, color='C1')
+        
+    # Neurons firnig rate distribuction
+    neuron_fr_BASE = neurons_firing(t_exc, exc_neurons_i, 
+                                time_start=analysis['BASE'][0]/second, time_stop=analysis['BASE'][1]/second)
+    neuron_fr_GRE1 = neurons_firing(t_exc, exc_neurons_i, 
+                                time_start=analysis['GRE1'][0]/second, time_stop=analysis['GRE1'][1]/second)
+    neuron_fr_GRE2 = neurons_firing(t_exc, exc_neurons_i, 
+                                time_start=analysis['GRE2'][0]/second, time_stop=analysis['GRE2'][1]/second)
+    
+    plt.figure()
+    plt.hist(x=neuron_fr_BASE/Hz, bins=14, alpha=0.5)
+    plt.hist(x=neuron_fr_GRE1/Hz, bins=15, alpha=0.6)
+    plt.hist(x=neuron_fr_GRE2/Hz, bins=17, alpha=0.75)
+
     
     # Mean firing rate and Recurrent current before and after GRE
     # before: trans- 2 second
     # after: 3 - 5 second
-    fr_exc_before = firing_rate_exc[trans:20000]    
-    fr_exc_after = firing_rate_exc[30000:50000]  
-    fr_inh_before = firing_rate_inh[trans:20000]    
-    fr_inh_after = firing_rate_inh[30000:50000]
+    fr_exc_before = selected_window(firing_rate_exc, 1*second, 2*second)  
+    fr_exc_after = selected_window(firing_rate_exc, 3*second, 5*second)  
+    fr_inh_before = selected_window(firing_rate_inh, 1*second, 2*second)
+    fr_inh_after = selected_window(firing_rate_inh, 3*second, 5*second)
 
     I_exc_before = I_exc[:200,trans:20000]
     I_exc_after = I_exc[:200,30000:50000]
     I_inh_before = I_inh[200:,trans:20000]
     I_inh_after = I_inh[200:,30000:50000]
 
-    print(f'POPULATION FIRING RATES')
-    print(f'before GRE')
-    print(f'exc: mean={fr_exc_before.mean():.4f} std={fr_exc_before.std():.4f} Hz')
-    print(f'inh: mean={fr_inh_before.mean():.4f} std={fr_inh_before.std():.4f} Hz')
-    print(f'after GRE')
-    print(f'exc: mean={fr_exc_after.mean():.4f} std={fr_exc_after.std():.4f} Hz')
-    print(f'inh: mean={fr_inh_after.mean():.4f} std={fr_inh_after.std():.4f} Hz')
-    print(f'total time simulation')
-    print(f'exc: mean={firing_rate_exc[trans:].mean():.4f} std={firing_rate_exc[trans:].std():.4f} Hz')
-    print(f'inh: mean={firing_rate_inh[trans:].mean():.4f} std={firing_rate_inh[trans:].std():.4f} Hz')
+   
+#     print(f'POPULATION FIRING RATES')
+#     print(f'before GRE')
+#     print(f'exc: mean={fr_exc_before.mean():.4f} std={fr_exc_before.std():.4f} Hz')
+#     print(f'inh: mean={fr_inh_before.mean():.4f} std={fr_inh_before.std():.4f} Hz')
+#     print(f'after GRE')
+#     print(f'exc: mean={fr_exc_after.mean():.4f} std={fr_exc_after.std():.4f} Hz')
+#     print(f'inh: mean={fr_inh_after.mean():.4f} std={fr_inh_after.std():.4f} Hz')
+#     print(f'total time simulation')
+#     print(f'exc: mean={firing_rate_exc[trans:].mean():.4f} std={firing_rate_exc[trans:].std():.4f} Hz')
+#     print(f'inh: mean={firing_rate_inh[trans:].mean():.4f} std={firing_rate_inh[trans:].std():.4f} Hz')
 
-    N = len(firing_rate_exc)
-    #  print(f'sampling freq Whelch : {1/((N//4+1)*defaultclock.dt)} Hz')
-    
-    f_fr_exc, spect_fr_exc = signal.welch(firing_rate_exc[trans:],fs=1/defaultclock.dt, nperseg=N//4)
-    f_fr_inh, spect_fr_inh = signal.welch(firing_rate_inh[trans:],fs=1/defaultclock.dt, nperseg=N//4)
     ###########################################################################################
 
     ## Information #############################################################################
-    print('')
-    print('RECURRENT CURRENTS')
-    print(f'I_external on exc: {I_external[:200].mean()/pA:.4f} +- {(I_external[:200].mean()/pA)/np.sqrt(200):.4f} pA')
-    print(f'I_external on inh: {I_external[200:].mean()/pA:.4f} +- {(I_external[200:].mean()/pA)/np.sqrt(200):.4f} pA')
-    print(f'before GRE')
-    print(f'exc: mean={I_exc_before.mean()/pA:.4f} std={I_exc_before.std()/pA:.4f} pA')
-    print(f'inh: mean={I_inh_before.mean()/pA:.4f} std={I_inh_after.std()/pA:.4f} pA')
-    print(f'after GRE')
-    print(f'exc: mean={I_exc_after.mean()/pA:.4f} std={I_exc_after.std()/pA:.4f} pA')
-    print(f'inh: mean={I_inh_after.mean()/pA:.4f} std={I_inh_after.std()/pA:.4f} pA')
-    print(f'OVERALL')
-    print(f'I_exc : {I_exc[:200].mean()/pA:.4f}  +- {(I_exc[:200].std()/pA)/np.sqrt(200):.4f} pA')
-    print(f'I_inh : {I_inh[:200].mean()/pA:.4f}  +- {(I_inh[:200].std()/pA)/np.sqrt(200):.4f} pA')
+#     print('')
+#     print('RECURRENT CURRENTS')
+#     print(f'I_external on exc: {I_external[:200].mean()/pA:.4f} +- {(I_external[:200].mean()/pA)/np.sqrt(200):.4f} pA')
+#     print(f'I_external on inh: {I_external[200:].mean()/pA:.4f} +- {(I_external[200:].mean()/pA)/np.sqrt(200):.4f} pA')
+#     print(f'before GRE')
+#     print(f'exc: mean={I_exc_before.mean()/pA:.4f} std={I_exc_before.std()/pA:.4f} pA')
+#     print(f'inh: mean={I_inh_before.mean()/pA:.4f} std={I_inh_after.std()/pA:.4f} pA')
+#     print(f'after GRE')
+#     print(f'exc: mean={I_exc_after.mean()/pA:.4f} std={I_exc_after.std()/pA:.4f} pA')
+#     print(f'inh: mean={I_inh_after.mean()/pA:.4f} std={I_inh_after.std()/pA:.4f} pA')
+#     print(f'OVERALL')
+#     print(f'I_exc : {I_exc[:200].mean()/pA:.4f}  +- {(I_exc[:200].std()/pA)/np.sqrt(200):.4f} pA')
+#     print(f'I_inh : {I_inh[:200].mean()/pA:.4f}  +- {(I_inh[:200].std()/pA)/np.sqrt(200):.4f} pA')
 
     ############################################################################################
     ## PLOTS ######################################################################################
@@ -227,14 +349,6 @@ if __name__ == '__main__':
 
     plt.savefig(name+f'External and Recurrent current.png')
 
-    fig3, ax3 = plt.subplots(nrows=2, ncols=1, sharex=True,
-                            num='Spectral analisis - firing rate')
-
-    ax3[0].plot(f_fr_exc, spect_fr_exc)
-    ax3[0].grid(linestyle='dotted')
-
-    ax3[1].plot(f_fr_inh, spect_fr_inh)
-    ax3[1].grid(linestyle='dotted')
 
     # fig2, ax2 = plt.subplots(nrows=4, ncols=1, sharex=True, figsize=(13, 9), 
     #                         num=f'astrocyte dynamics')
