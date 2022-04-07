@@ -99,6 +99,9 @@ if not(args.no_connection):
     r_S = u_S*x_S
     x_S -= r_S
     """
+    w_e = w_e
+    w_i = w_i
+
     exc="g_e_post+=w_e*r_S"
     inh="g_i_post+=w_i*r_S"
 
@@ -130,7 +133,7 @@ run(duration, report='text')
 #################################################################################################
 ## SAVE VARIABLE ################################################################################
 if not(args.no_connection): name = f"Neural_network/EI_net_STP/Network_pe_g{g}_s{s}_we{w_e/nS:.2f}/v_in{rate_in}/f-I_curve"
-else: name = f"Neural_network/EI_net_STP/Network_pe_g{g}_s{s}_we{w_e/nS:.2f}/_v_in{rate_in}/fIcurve_no_connection"
+else: name = f"Neural_network/EI_net_STP/Network_pe_g{g}_s{s}_we{w_e/nS:.2f}/v_in{rate_in}/fIcurve_no_connection"
 
 makedir.smart_makedir(name)
 
@@ -185,13 +188,20 @@ print(f'pop-inh: {firing_rate_inh[trans:].mean()}')
 
 #################################################################################################
 if args.p:
-    if not(args.no_connection): name = name = f"Neural_network/EI_net_STP/Network_pe_g{g}_s{s}_we{w_e/nS:.2f}/v_in{rate_in}/images"
-    else: name =name = f"Neural_network/EI_net_STP/Network_pe_g{g}_s{s}_we{w_e/nS:.2f}/v_in{rate_in}/images_no_connection"
+    print(not(args.no_connection))
+    if not(args.no_connection): name = f"Neural_network/EI_net_STP/Network_pe_g{g}_s{s}_we{w_e/nS:.2f}/v_in{rate_in}/data"
+    else: name = f"Neural_network/EI_net_STP/Network_pe_g{g}_s{s}_we{w_e/nS:.2f}/v_in{rate_in}/data_no_connection"
     
     makedir.smart_makedir(name, trial=True)
     trial_index = [int(trl.split('-')[-1]) for trl in os.listdir(name)]
     trial_free = max(trial_index)
-    
+
+    ## fro each trial save spectrum analysis
+    np.save(f'{name}'+f'/trial-{trial_free}/freq_fr', freq_fr)
+    np.save(f'{name}'+f'/trial-{trial_free}/spectrum_fr', spectrum_fr)
+    np.save(f'{name}'+f'/trial-{trial_free}/freq_LFP', freq_LFP)
+    np.save(f'{name}'+f'/trial-{trial_free}/spectrum_LFP', spectrum_LFP)
+
     fig1, ax1 = plt.subplots(nrows=4, ncols=1, sharex=True, gridspec_kw={'height_ratios': [2,0.6,0.6,1]},
 								num=f'Raster plot, v_in={rate_in/Hz} (no STP)', figsize=(8,10))
 
@@ -249,8 +259,6 @@ if args.p:
     ax3[1].grid(linestyle='dotted')
     plt.savefig(name+f'/trial-{trial_free}'+f"/Power Spectrum - {rate_in/Hz}.png")
 
-
     device.delete()
     plt.show()
-
 device.delete()
