@@ -11,8 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from brian2 import *
 import constant_NG as k_NG 
-from AstrocyteNeuron_Interactions.Brian2_utils.connectivity import connectivity_plot,connectivity_EIring
-from AstrocyteNeuron_Interactions import makedir
+import makedir
 
 set_device('cpp_standalone', directory=None) 
 
