@@ -260,5 +260,5 @@ if args.p:
     plt.savefig(name+f'/trial-{trial_free}'+f"/Power Spectrum - {rate_in/Hz}.png")
 
     device.delete()
-    plt.show()
+    # plt.show()
 device.delete()
