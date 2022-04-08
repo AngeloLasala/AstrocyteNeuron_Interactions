@@ -8,14 +8,13 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from brian2 import *
-from AstrocyteNeuron_Interactions import makedir
+import makedir
 
 set_device('cpp_standalone', directory=None)  # Use fast "C++ standalone mode"
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Tripartite synapses')
 	parser.add_argument('-p', action='store_true', help="show paramount plots, default=False")
-	parser.add_argument('-by_hand', action='store_true', help="show paramount plots, default=False")
 	args = parser.parse_args()
 
 	## PARAMETERS ###################################################################
@@ -167,15 +166,13 @@ if __name__ == "__main__":
 	rate_in = 3.5*Hz             # Rate of presynaptic neurons
 	pre_neurons = PoissonGroup(N_syn, rates=rate_in)
 	post_neurons = NeuronGroup(N_syn, model="dg_e/dt = -g_e/tau_e : siemens # post-synaptic excitatory conductance",
-					method='rk4')
+								method='rk4')
 
-	Omega_G = 50/(60*second)
 	synapses = Synapses(pre_neurons, post_neurons, model=syn_model, on_pre=action+exc, method='linear')
 	synapses.connect(j='i')   # closed-loop 
 	synapses.connect(j='i')   # open-loop 
 	synapses.connect(j='i')   # no gliotrasmission
 	synapses.x_S = 1.0
-
 
 	astrocyte = NeuronGroup(N_a * N_syn, model=astro_eqs, method='rk4', dt=1e-2*second,
                             threshold='C>C_Theta', refractory='C>C_Theta', reset=astro_release)
