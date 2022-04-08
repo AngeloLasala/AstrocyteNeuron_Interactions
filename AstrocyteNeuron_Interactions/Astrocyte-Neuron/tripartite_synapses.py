@@ -7,7 +7,7 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from brian2 import *
-from AstrocyteNeuron_Interactions import makedir
+import makedir
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Tripartite synapses')
