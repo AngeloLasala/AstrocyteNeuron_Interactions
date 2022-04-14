@@ -234,7 +234,7 @@ if __name__ == "__main__":
 			Y_S_astro_sat_err = np.sqrt(blocking(Y_S_astro_sat/mmolar, k=14)[-1])*mmolar
 			Y_S_stp_sat_err = np.sqrt(blocking(Y_S_stp_sat/mmolar, k=14)[-1])*mmolar
 
-			print()
+			
 			print(f'MEAN TIME IN {t_sat.mean()/second:.1f} +- 5 s')
 			print(f'Y_S = {Y_S_astro_sat.mean()/umolar:.4f}+-{Y_S_astro_sat_err/umolar:.4f} uM')
 			# plt.figure()
@@ -256,7 +256,7 @@ if __name__ == "__main__":
 
 		## Plots ###########################################################################################
 		fig1, ax1 = plt.subplots(nrows=2, ncols=1, sharex=True, figsize=(12,6), 
-								num=f"Y_S noglio mean - window {w}")
+								num=f"Y_S noglio mean - window {w}, rate {rate_in}")
 
 		ax1[0].plot(t, Y_S_mean/umolar, lw=0.7, color='black', label='STP')
 		ax1[0].fill_between(t, (Y_S_mean+Y_S_error)/umolar, (Y_S_mean-Y_S_error)/umolar, color='black', alpha=0.5)
@@ -275,12 +275,13 @@ if __name__ == "__main__":
 		ax1[1].set_ylabel(r'$\langle Y_S \rangle$ ($\mu$M)')
 		ax1[1].set_xlabel('time (s)')
 
-	fig2, ax2 = plt.subplots(nrows=1, ncols=1, num=f'Saturation - rate {rate_in}')
+	fig2, ax2 = plt.subplots(nrows=1, ncols=1, figsize=(8,6), 
+							num=f'Saturation - rate {rate_in}')
 
 	ax2.errorbar(saturation_time, saturation_mean_stp/umolar, saturation_error_stp/umolar, 
-				fmt='o', color='k', markersize=3, label='GLIO')
+				fmt='o', color='k', capsize=1.5,  markersize=2.5, label='GLIO')
 	ax2.errorbar(saturation_time, saturation_mean_glia/umolar, saturation_error_glia/umolar, 
-				fmt='o', color='C6', markersize=3, label='GLIO')
+				fmt='o', color='C6', capsize=1.5,  markersize=2.5, label='GLIO')
 	ax2.grid(linestyle='dotted')
 	ax2.set_ylabel(r'$\langle Y_S \rangle$ ($\mu$M)')
 	ax2.set_xlabel('time (s)')

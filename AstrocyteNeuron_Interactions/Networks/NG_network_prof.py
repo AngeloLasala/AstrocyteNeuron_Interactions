@@ -8,7 +8,7 @@ by release-increasing gliotransmission from a randomly connected network of astr
 
 import matplotlib.pyplot as plt
 from brian2 import *
-from AstrocyteNeuron_Interactions import makedir
+import makedir
 
 set_device('cpp_standalone', directory=None)  # Use fast "C++ standalone mode"
 seed(28371)  # to get identical figures for repeated runs
@@ -118,6 +118,8 @@ dg_i/dt = -g_i/tau_i : siemens  # post-synaptic inhibitory conductance
 I_exc =  abs(g_e*(E_e-v)) : ampere
 I_inh =  abs(g_i*(E_i-v)) : ampere
 I_ext = I_ex*stimulus(t) : ampere
+
+LFP = (abs(g_e*(E_e-v)) + abs(g_i*(E_i-v)) + abs(I_ext))/g_l : volt
 
 # ELLIPSIS END
 # Neuron position in space
@@ -290,7 +292,7 @@ inh_mon = SpikeMonitor(inh_neurons)
 ast_mon = SpikeMonitor(astrocytes)
 population = PopulationRateMonitor(neurons)
 
-var_exc = StateMonitor(exc_neurons, ['I_exc', 'I_ext', 'I_inh','v'], record=range(3200))
+var_exc = StateMonitor(exc_neurons, ['v', 'LFP'], record=range(3200))
 astro_mon = StateMonitor(astrocytes, 'C', record=astrocytes.i[10:100])
 ##########################################I_exc = StateMonitor(exc_neurons, I_exc, record=range(10))######################################
 # Simulation run
@@ -318,6 +320,7 @@ sync_b = a_before/b_before
 sync_a = a_after/b_after
 print(sync_b)
 print(sync_a)
+print(f'LFP: {var_exc.LFP[:].sum(axis=0).mean()} V')
 
 #Plots
 plt.figure(num='Raster plot')

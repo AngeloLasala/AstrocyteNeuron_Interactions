@@ -26,12 +26,12 @@ index = 400
 # NETWORK STRUCTURE
 # how much the ext-inh synaptic strength is highr
 # than ext-exc synaptic strength
-s = 1.15
+s = 1.05
 
 # Recurrent balance degrees: g = pe/pi, IMPORTANT: I always fix pe
 # g = 5: recurrent balance
 # g < 5: inhibitory prevails
 # g > 5: excitatory prevails 
-g = 5.0 
+g = 1.5 
 p_e = 0.05  
 

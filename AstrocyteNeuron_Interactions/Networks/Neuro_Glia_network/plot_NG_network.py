@@ -178,29 +178,29 @@ if __name__ == '__main__':
     trans = transient(t*second, 50000)
 #     firing_rate_exc = smoothing_b(firing_rate_exc, width=1*ms)
 #     firing_rate_inh = smoothing_b(firing_rate_inh, width=1*ms)
-
     LFP = mon_LFP.sum(axis=0)
 
     # Network analysis concern mean values and spectral analysis of
     # population firing rate and LFP
-    analysis = {'BASE': [0.5*second, 1.6*second],'GRE1': [4*second, 7*second], 'GRE2': [9*second, 11*second]}
+    analysis = {'BASE': [0.5*second, 1.6*second],'GRE1': [4*second, 6.5*second], 'GRE2': [9*second, 11.5*second]}
 
     fig4, ax4 = plt.subplots(nrows=2, ncols=1, sharex=True,
                             num='Firing rate and LFP ')
     fr_t = firing_rate_t[:]/second
-    fr_smooth = smoothing_b(firing_rate, width=1*ms)
+    fr_smooth = smoothing_b(firing_rate, width=5*ms)
     ax4[0].plot(fr_t[5000:], fr_smooth[5000:], color='k', alpha=0.7)
     ax4[0].grid(linestyle='dotted')
     ax4[0].set_xlabel('time (s)')
     ax4[0].set_ylabel('firing rate (Hz)')
+    
 
     ax4[1].plot(mon_t[5000:]/second, LFP[5000:], color='C5', alpha=0.7)
     ax4[1].grid(linestyle='dotted')
     ax4[1].set_xlabel('time (s)')
     ax4[1].set_ylabel('LFP (?)')
-
+    
     for zone in analysis.keys():
-        fig3, ax3 = plt.subplots(nrows=2, ncols=1, sharex=True, figsize=(6,15),
+        fig3, ax3 = plt.subplots(nrows=1, ncols=2, figsize=(12,6),
                             num='Spectral analysis '+zone)
         
         fr_exc = selected_window(firing_rate_exc, analysis[zone][0], analysis[zone][1])
@@ -211,32 +211,35 @@ if __name__ == '__main__':
         N = len(fr_exc)
         NN = len(LFP_w)
 
-        freq_fr_exc, spectrum_fr_exc = signal.welch(fr_exc, fs=1/defaultclock.dt/Hz, nperseg=N//2)
-        freq_fr_inh, spectrum_fr_inh = signal.welch(fr_inh, fs=1/defaultclock.dt/Hz, nperseg=N//4)
-        freq_fr, spectrum_fr = signal.welch(fr, fs=1/defaultclock.dt/Hz, nperseg=N//2)
-        freq_LFP_w, spectrum_LFP_w = signal.welch(LFP_w, fs=1/defaultclock.dt/Hz, nperseg=NN//4)
+        freq_fr_exc, spectrum_fr_exc = signal.welch(fr_exc, fs=1/defaultclock.dt/Hz, nperseg=N//3)
+        freq_fr_inh, spectrum_fr_inh = signal.welch(fr_inh, fs=1/defaultclock.dt/Hz, nperseg=N//3)
+        freq_fr, spectrum_fr = signal.welch(fr, fs=1/defaultclock.dt/Hz, nperseg=N//3)
+        freq_LFP_w, spectrum_LFP_w = signal.welch(LFP_w, fs=1/defaultclock.dt/Hz, nperseg=NN//3)
         print(len(freq_LFP_w))
 
         print(f' {zone} - time window: {analysis[zone][0]/second:.2f} - {analysis[zone][1]/second:.2f} s')
         print(f'exc: mean={fr_exc.mean():.4f} std={fr_exc.std():.4f} Hz')
         print(f'inh: mean={fr_inh.mean():.4f} std={fr_inh.std():.4f} Hz')
         print(f'LFP: mean={LFP_w.mean():.4f} std={LFP_w.std():.4f} volt') 
-        print(f'frequency resolution Whelch : {1/((N//2+1)*defaultclock.dt)} Hz')
-        print(f'frequency resolution Whelch : {1/((NN//4+1)*defaultclock.dt)} Hz')
+        print(f'frequency resolution Whelch : {1/((N//3+1)*defaultclock.dt)} Hz')
+        print(f'frequency resolution Whelch : {1/((NN//3+1)*defaultclock.dt)} Hz')
 
         ax3[0].set_title(zone)
         ax3[0].plot(freq_fr_exc, spectrum_fr_exc, color='k')
+        ax3[0].set_xlim([-10,500])
         ax3[0].set_ylabel('spectrum fr')
+        ax3[0].grid(linestyle='dotted')
+        ax3[0].set_xlabel('frequecy (Hz)')
         # ax3[0].set_yscale('log')
-        ax3[0].plot(freq_fr_exc[1:], 1/(freq_fr_exc[1:]**2), alpha=0.5)
-
-        ax3[1].plot(freq_LFP_w, spectrum_LFP_w)
-        # ax3[2].set_xscale('log')
-        # ax3[2].set_yscale('log')
+        
+        ax3[1].plot(freq_LFP_w, spectrum_LFP_w, color='C5')
+        ax3[1].plot(freq_LFP_w[1:], 1/(freq_LFP_w[1:]**2), alpha=0.5)
+        ax3[1].set_xscale('log')
+        ax3[1].set_yscale('log')
         ax3[1].set_ylabel('spectrum LFP')
         ax3[1].set_xlabel('frequecy (Hz)')
+        ax3[1].grid(linestyle='dotted')
 
-        
         # Underline selected zone
         ax4[0].plot(selected_window(fr_t, analysis[zone][0], analysis[zone][1]),
                     selected_window(fr_smooth, analysis[zone][0], analysis[zone][1]), color='C1')
@@ -252,61 +255,50 @@ if __name__ == '__main__':
     neuron_fr_GRE2 = neurons_firing(t_exc, exc_neurons_i, 
                                 time_start=analysis['GRE2'][0]/second, time_stop=analysis['GRE2'][1]/second)
     
-    plt.figure()
-    plt.hist(x=neuron_fr_BASE/Hz, bins=14, alpha=0.5)
-    plt.hist(x=neuron_fr_GRE1/Hz, bins=15, alpha=0.6)
-    plt.hist(x=neuron_fr_GRE2/Hz, bins=17, alpha=0.75)
-
-    
     # Mean firing rate and Recurrent current before and after GRE
     # before: trans- 2 second
-    # after: 3 - 5 second
-    fr_exc_before = selected_window(firing_rate_exc, 1*second, 2*second)  
-    fr_exc_after = selected_window(firing_rate_exc, 3*second, 5*second)  
-    fr_inh_before = selected_window(firing_rate_inh, 1*second, 2*second)
-    fr_inh_after = selected_window(firing_rate_inh, 3*second, 5*second)
+    # after: 4 - 6.5 second
+    fr_exc_base = selected_window(firing_rate_exc, analysis['BASE'][0], analysis['BASE'][1])  
+    fr_inh_base = selected_window(firing_rate_inh, analysis['BASE'][0], analysis['BASE'][1])
+    fr_exc_gre1 = selected_window(firing_rate_exc, analysis['GRE1'][0], analysis['GRE1'][1])  
+    fr_inh_gre1 = selected_window(firing_rate_inh, analysis['GRE1'][0], analysis['GRE1'][1])
 
-    I_exc_before = I_exc[:200,trans:20000]
-    I_exc_after = I_exc[:200,30000:50000]
-    I_inh_before = I_inh[200:,trans:20000]
-    I_inh_after = I_inh[200:,30000:50000]
-
+    I_exc_base = selected_window(I_exc[0], 1.2*second, 5.5*second)
    
-#     print(f'POPULATION FIRING RATES')
-#     print(f'before GRE')
-#     print(f'exc: mean={fr_exc_before.mean():.4f} std={fr_exc_before.std():.4f} Hz')
-#     print(f'inh: mean={fr_inh_before.mean():.4f} std={fr_inh_before.std():.4f} Hz')
-#     print(f'after GRE')
-#     print(f'exc: mean={fr_exc_after.mean():.4f} std={fr_exc_after.std():.4f} Hz')
-#     print(f'inh: mean={fr_inh_after.mean():.4f} std={fr_inh_after.std():.4f} Hz')
-#     print(f'total time simulation')
-#     print(f'exc: mean={firing_rate_exc[trans:].mean():.4f} std={firing_rate_exc[trans:].std():.4f} Hz')
-#     print(f'inh: mean={firing_rate_inh[trans:].mean():.4f} std={firing_rate_inh[trans:].std():.4f} Hz')
-
     ###########################################################################################
-
     ## Information #############################################################################
-#     print('')
-#     print('RECURRENT CURRENTS')
-#     print(f'I_external on exc: {I_external[:200].mean()/pA:.4f} +- {(I_external[:200].mean()/pA)/np.sqrt(200):.4f} pA')
-#     print(f'I_external on inh: {I_external[200:].mean()/pA:.4f} +- {(I_external[200:].mean()/pA)/np.sqrt(200):.4f} pA')
-#     print(f'before GRE')
-#     print(f'exc: mean={I_exc_before.mean()/pA:.4f} std={I_exc_before.std()/pA:.4f} pA')
-#     print(f'inh: mean={I_inh_before.mean()/pA:.4f} std={I_inh_after.std()/pA:.4f} pA')
-#     print(f'after GRE')
-#     print(f'exc: mean={I_exc_after.mean()/pA:.4f} std={I_exc_after.std()/pA:.4f} pA')
-#     print(f'inh: mean={I_inh_after.mean()/pA:.4f} std={I_inh_after.std()/pA:.4f} pA')
-#     print(f'OVERALL')
-#     print(f'I_exc : {I_exc[:200].mean()/pA:.4f}  +- {(I_exc[:200].std()/pA)/np.sqrt(200):.4f} pA')
-#     print(f'I_inh : {I_inh[:200].mean()/pA:.4f}  +- {(I_inh[:200].std()/pA)/np.sqrt(200):.4f} pA')
-
+    print('')
+    print('EXTERNAL AND RECURRENT CURRENTS')
+    print(f'I_external on exc: {I_external[:200].mean()/pA:.4f} +- {(I_external[:200].mean()/pA)/np.sqrt(200):.4f} pA')
+    print(f'I_external on inh: {I_external[200:].mean()/pA:.4f} +- {(I_external[200:].mean()/pA)/np.sqrt(200):.4f} pA')
+    for zone in analysis.keys():
+        print(zone)
+        I_exc_zone = selected_window(I_exc[:200].mean(axis=0), analysis[zone][0], analysis[zone][1])
+        I_inh_zone = selected_window(I_inh[:200].mean(axis=0), analysis[zone][0], analysis[zone][1])
+        print(f'I_exc : {I_exc_zone.mean()/pA:.4f} +- {I_exc_zone.std()/pA/np.sqrt(len(I_exc_zone)):.4f} pA')
+        print(f'I_inh : {I_inh_zone.mean()/pA:.4f} pA +- {I_inh_zone.std()/pA/np.sqrt(len(I_exc_zone)):.4f} pA')
+    print('')
+    print('FIRING RATE')
+    for zone in analysis.keys():
+        print(zone)
+        fr_smooth_zone = selected_window(fr_smooth, analysis[zone][0], analysis[zone][1])  
+        fr_exc_zone = selected_window(firing_rate_exc, analysis[zone][0], analysis[zone][1])  
+        fr_inh_zone = selected_window(firing_rate_inh, analysis[zone][0], analysis[zone][1])
+        print(f'fr : {fr_smooth_zone.mean()/Hz:.4f} +- {fr_smooth_zone.std()/Hz/np.sqrt(len(I_exc_zone)):.4f} Hz')
+        print(f'fr_exc : {fr_exc_zone.mean()/Hz:.4f} +- {fr_exc_zone.std()/Hz/np.sqrt(len(I_exc_zone)):.4f} Hz')
+        print(f'fr_inh : {fr_inh_zone.mean()/Hz:.4f} +- {fr_inh_zone.std()/Hz/np.sqrt(len(I_exc_zone)):.4f} Hz')
+    print('')
+    print('LFP')
+    for zone in analysis.keys():
+        print(zone)
+        LFP_zone = selected_window(LFP, analysis[zone][0], analysis[zone][1])  
+        print(f'LFP : {LFP_zone.mean()/volt:.4f} +- {LFP_zone.std()/volt:.4f} V')
+        
     ############################################################################################
     ## PLOTS ######################################################################################
-    
-    
     fig1, ax1 = plt.subplots(nrows=3, ncols=1, sharex=True, gridspec_kw={'height_ratios': [2.5,1,1]},
                             figsize=(12, 14), num=f'Raster plot')
-    step = 4
+    step = 10
     ax1[0].plot(t_exc[exc_neurons_i%step==0]/second, 
             exc_neurons_i[exc_neurons_i%step==0], '|', color='C3')
     ax1[0].plot(t_inh[inh_neurons_i%step==0]/second, 
@@ -349,6 +341,14 @@ if __name__ == '__main__':
 
     plt.savefig(name+f'External and Recurrent current.png')
 
+    fig6, ax6 = plt.subplots(nrows=1, ncols=1, num='Single firing rate distribuction - Exc population')
+    
+    ax6.hist(x=neuron_fr_BASE/Hz, bins=7, alpha=0.5, label='BASE')
+    ax6.hist(x=neuron_fr_GRE1/Hz, bins=7, alpha=0.6, label='GRE1')
+    ax6.hist(x=neuron_fr_GRE2/Hz, bins=7, alpha=0.75, label='GRE2')
+    ax6.set_xlabel('frequency (Hz)')
+    ax6.set_ylabel('Number of neurons')
+    ax6.legend()
 
     # fig2, ax2 = plt.subplots(nrows=4, ncols=1, sharex=True, figsize=(13, 9), 
     #                         num=f'astrocyte dynamics')
