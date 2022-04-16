@@ -16,7 +16,7 @@ from random import randrange
 from brian2 import *
 from Module_network import neurons_firing, transient
 import constant_EI as k_EI
-from AstrocyteNeuron_Interactions import makedir
+import makedir
 
 set_device('cpp_standalone', directory=None) 
 if __name__ == "__main__":
