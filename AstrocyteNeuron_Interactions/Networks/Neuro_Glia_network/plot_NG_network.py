@@ -112,6 +112,69 @@ def neurons_firing(t_spikes, neurons_i, time_start, time_stop):
 
     return neurons_fr
 
+def variance(x):
+	"""
+	Variance of finite size values. The correction is maded by 
+	the factor 1/(N-1)
+
+	Parameters
+	---------
+	x : array
+		array of data
+
+	Returns
+	-------
+	var : float
+		variance
+	"""
+	x = np.array(x)
+	N = len(x)
+
+	mean = np.mean(x)
+	var = ((x-mean)**2).sum()/(N*(N-1))
+	return var
+
+def blocking(x ,k=10):
+	"""
+	Data blocking techniques to estimate the variance of 
+	correlated variable
+
+	Parameters
+	----------
+	x : array
+		data 
+
+	k : integer
+		number of block
+	
+	Returns
+	-------
+	variances_list : list
+		list of variances for each block
+	"""
+	x = np.array(x)
+
+	variances_list = []
+	for time in range(k):
+		N = int(len(x))
+		if N%2 != 0:
+			N = N-1
+
+		## index odd and even
+		index = np.arange(N)
+		odd = index[index%2==0]
+		even = index[index%2!=0]
+
+		# variance 
+		x1 = x[odd]
+		x2 = x[even]
+		x_block = (x1+x2)/2.0
+		var_block = variance(x_block)
+		variances_list.append(var_block)
+		x = x_block
+
+	return variances_list
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Advanced connectivity connection')
@@ -156,21 +219,11 @@ if __name__ == '__main__':
     firing_rate_t = np.load(f'{name}/firing_rate.t.npy')
     firing_rate = np.load(f'{name}/firing_rate.rate.npy')
 
-
-
-    astro_connected = np.load(f'{name}/ecs_astro_to_syn.i.npy')
-    syn_connected = np.load(f'{name}/ecs_astro_to_syn.j.npy')
-    astro_to_syn_i = np.load(f'{name}/ecs_astro_to_syn.i.npy')
-    astro_to_syn_j = np.load(f'{name}/ecs_astro_to_syn.j.npy')
-    syn_to_astro_i = np.load(f'{name}/ecs_syn_to_astro.i.npy')
-    syn_to_astro_j = np.load(f'{name}/ecs_syn_to_astro.j.npy')
-
     N_e = 3200
     N_i = 800
     N_a = 4000
     C_Theta = 0.5*umolar
     defaultclock.dt = 0.1*ms
-    
     #######################################################################################################
 
     ## Analysis ##############################################################################
@@ -267,16 +320,38 @@ if __name__ == '__main__':
    
     ###########################################################################################
     ## Information #############################################################################
+    
     print('')
     print('EXTERNAL AND RECURRENT CURRENTS')
-    print(f'I_external on exc: {I_external[:200].mean()/pA:.4f} +- {(I_external[:200].mean()/pA)/np.sqrt(200):.4f} pA')
-    print(f'I_external on inh: {I_external[200:].mean()/pA:.4f} +- {(I_external[200:].mean()/pA)/np.sqrt(200):.4f} pA')
+    I_external_exc = I_external[:200].mean(axis=0)
+    I_external_inh = I_external[200:].mean(axis=0)
+    I_external_exc_err = np.sqrt(blocking(I_external_exc, k=12)[-1])
+    I_external_inh_err = np.sqrt(blocking(I_external_inh, k=12)[-1])
+
+    # plt.figure(num='firing rate')
+    # plt.scatter([i+1 for i in range(20)], blocking(I_external_exc/pA, k=20), label=f' exc')
+    # plt.scatter([i+1 for i in range(20)], blocking(I_external_inh/pA, k=20), label=f' inh')
+    # plt.yscale('log')
+    # plt.legend()
+    # plt.show()
+
+    print(f'I_external on exc: {I_external_exc.mean()/pA:.4f} +- {I_external_exc_err/pA:.4f} pA')
+    print(f'I_external on inh: {I_external_inh.mean()/pA:.4f} +- {I_external_inh_err/pA:.4f} pA')
     for zone in analysis.keys():
         print(zone)
         I_exc_zone = selected_window(I_exc[:200].mean(axis=0), analysis[zone][0], analysis[zone][1])
         I_inh_zone = selected_window(I_inh[:200].mean(axis=0), analysis[zone][0], analysis[zone][1])
-        print(f'I_exc : {I_exc_zone.mean()/pA:.4f} +- {I_exc_zone.std()/pA/np.sqrt(len(I_exc_zone)):.4f} pA')
-        print(f'I_inh : {I_inh_zone.mean()/pA:.4f} pA +- {I_inh_zone.std()/pA/np.sqrt(len(I_exc_zone)):.4f} pA')
+        I_exc_zone_err = np.sqrt(blocking(I_exc_zone/pA, k=10)[-1])*pA
+        I_inh_zone_err = np.sqrt(blocking(I_inh_zone/pA, k=10)[-1])*pA
+        
+        plt.figure(num='currents')
+        plt.scatter([i+1 for i in range(10)], blocking(I_exc_zone/pA, k=10), label=f'{zone} exc')
+        plt.scatter([i+1 for i in range(10)], blocking(I_inh_zone/pA, k=10), label=f'{zone} inh')
+        plt.yscale('log')
+        plt.legend()
+
+        print(f'I_exc : {I_exc_zone.mean()/pA:.4f} +- {I_exc_zone_err/pA:.4f} pA')
+        print(f'I_inh : {I_inh_zone.mean()/pA:.4f} pA +- {I_inh_zone_err/pA:.4f} pA')
     print('')
     print('FIRING RATE')
     for zone in analysis.keys():
@@ -284,7 +359,16 @@ if __name__ == '__main__':
         fr_smooth_zone = selected_window(fr_smooth, analysis[zone][0], analysis[zone][1])  
         fr_exc_zone = selected_window(firing_rate_exc, analysis[zone][0], analysis[zone][1])  
         fr_inh_zone = selected_window(firing_rate_inh, analysis[zone][0], analysis[zone][1])
-        print(f'fr : {fr_smooth_zone.mean()/Hz:.4f} +- {fr_smooth_zone.std()/Hz/np.sqrt(len(I_exc_zone)):.4f} Hz')
+
+        fr_exc_zone_err = np.sqrt(blocking(fr_smooth_zone/Hz, k=12)[-1])*Hz
+        
+        # plt.figure(num='firing rate')
+        # plt.scatter([i+1 for i in range(15)], blocking(fr_smooth_zone/Hz, k=15), label=f'{zone} exc')
+        # plt.yscale('log')
+        # plt.legend()
+        # plt.show()
+
+        print(f'fr : {fr_smooth_zone.mean()/Hz:.4f} +- {fr_exc_zone_err/Hz:.4f} Hz')
         print(f'fr_exc : {fr_exc_zone.mean()/Hz:.4f} +- {fr_exc_zone.std()/Hz/np.sqrt(len(I_exc_zone)):.4f} Hz')
         print(f'fr_inh : {fr_inh_zone.mean()/Hz:.4f} +- {fr_inh_zone.std()/Hz/np.sqrt(len(I_exc_zone)):.4f} Hz')
     print('')

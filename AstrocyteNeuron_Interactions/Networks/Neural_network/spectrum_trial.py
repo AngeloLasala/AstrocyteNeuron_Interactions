@@ -20,7 +20,7 @@ we = 0.05
 rate_in = args.v_in
 
 ## Load data #############################################################################
-name = f'EI_net_STP/Network_pe_g{g}_s{s}_we{we}/v_in{rate_in}/data'
+name = f'EI_net_STP/Network_pe_g{g}_s{s}_we{we}/v_in{rate_in}/data_no_connection'
 
 freq_fr = np.load(name+f'/trial-1'+'/freq_fr.npy')
 freq_LFP = np.load(name+f'/trial-1'+'/freq_LFP.npy')
@@ -41,7 +41,7 @@ ax3[0].set_title('Population Firing Rate')
 ax3[0].plot(freq_fr, spectrum_fr, color='k')
 # ax3[0].plot(freq_fr, 1/((freq_fr)**2), lw=0.7, alpha=0.9)
 ax3[0].set_xlabel('frequency (Hz)')
-ax3[0].set_xlim([-10,500])
+ax3[0].set_xlim([-10,200])
 # ax3[0].set_ylim([-0,0.02])
 ax3[0].grid(linestyle='dotted')
 

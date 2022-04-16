@@ -128,12 +128,14 @@ population_fr_exc = PopulationRateMonitor(exc_neurons)
 population_fr_inh = PopulationRateMonitor(inh_neurons)
 population_fr = PopulationRateMonitor(neurons)
 
-state_exc_mon = StateMonitor(exc_neurons, ['LFP', 'I_syn_ext'], record=True)
+state_exc_mon = StateMonitor(exc_neurons, ['v', 'LFP', 'I_syn_ext'], record=True)
+state_inh_mon = StateMonitor(inh_neurons, ['v'], record=True)
+
 run(duration, report='text')
 #################################################################################################
 ## SAVE VARIABLE ################################################################################
 if not(args.no_connection): name = f"Neural_network/EI_net_STP/Network_pe_g{g}_s{s}_we{w_e/nS:.2f}/v_in{rate_in}/f-I_curve"
-else: name = f"Neural_network/EI_net_STP/Network_pe_g{g}_s{s}_we{w_e/nS:.2f}/v_in{rate_in}/fIcurve_no_connection"
+else: name = f"Neural_network/EI_net_STP/Network_pe_g{g}_s{s}_we{w_e/nS:.2f}/v_in{rate_in}/f-I_curve_no_connection"
 
 makedir.smart_makedir(name)
 
@@ -150,12 +152,16 @@ np.save(f'{name}/fr', population_fr.rate[:])
 #Spikes monitor
 np.save(f'{name}/spikes_exc_mon_t', spikes_exc_mon.t[:])
 np.save(f'{name}/spikes_exc_mon_i', spikes_exc_mon.i[:])
+np.save(f'{name}/spikes_inh_mon_t', spikes_inh_mon.t[:])
+np.save(f'{name}/spikes_inh_mon_i', spikes_inh_mon.i[:])
+np.save(f'{name}/v_exc', state_exc_mon.v[:])
+np.save(f'{name}/v_inh', state_inh_mon.v[:])
 
 #Connection
-if not(args.no_connection):
-    np.save(f'{name}/exc_syn_i', exc_syn.i[:])
-    np.save(f'{name}/exc_syn_j', exc_syn.j[:])
-    np.save(f'{name}/I_ext', state_exc_mon.I_syn_ext[:])
+# if not(args.no_connection):
+#     np.save(f'{name}/exc_syn_i', exc_syn.i[:])
+#     np.save(f'{name}/exc_syn_j', exc_syn.j[:])
+#     np.save(f'{name}/I_ext', state_exc_mon.I_syn_ext[:])
 #################################################################################################
 
 ## ANALYSIS #####################################################################################
@@ -203,7 +209,7 @@ if args.p:
     np.save(f'{name}'+f'/trial-{trial_free}/spectrum_LFP', spectrum_LFP)
 
     fig1, ax1 = plt.subplots(nrows=4, ncols=1, sharex=True, gridspec_kw={'height_ratios': [2,0.6,0.6,1]},
-								num=f'Raster plot, v_in={rate_in/Hz} (no STP)', figsize=(8,10))
+								num=f'Raster plot, v_in={rate_in/Hz}', figsize=(8,10))
 
     ax1[0].scatter(spikes_exc_mon.t[:]/second, spikes_exc_mon.i[:], color='C3', marker='|')
     ax1[0].scatter(spikes_inh_mon.t[:]/second, spikes_inh_mon.i[:]+N_e, color='C0', marker='|')
@@ -260,5 +266,5 @@ if args.p:
     plt.savefig(name+f'/trial-{trial_free}'+f"/Power Spectrum - {rate_in/Hz}.png")
 
     device.delete()
-    # plt.show()
+    plt.show()
 device.delete()

@@ -28,40 +28,62 @@ def CV_population(v_population):
 	mean_v = np.mean(v_population, axis=1)
 	return standard_dev_v/mean_v
 
-def crosscorr(x, y, max_lag, bootstrap_test=False, color='k'):
-    x_mean = np.mean(x)
-    y_mean = np.mean(y)
-    cross_corr = []
-    for d in np.arange(0,max_lag,50):
-        cc = 0
-        for i in range(len(x)-d):
-            cc += (x[i] - x_mean) * (y[i+d] - y_mean)
-        cc = cc / np.sqrt(np.sum((x - x_mean)**2) * np.sum((y - y_mean)**2))
-        cross_corr.append(cc)
+def crosscorr(x, y, max_lag, step=10, bootstrap_test=False):
+	"""
+	Cross-correlation function between x and y
 
-    if bootstrap_test:
-        cross_corr_s = []
-        for i in range(100):
-            xs, ys = x, y
-            np.random.shuffle(xs)
-            np.random.shuffle(ys)
-            xs_mean = np.mean(xs)
-            ys_mean = np.mean(ys)
-            cross_corr_s_i = []
-            for d in range(max_lag):
-                cc = 0
-                for i in range(len(x)-d):
-                    cc += (xs[i] - xs_mean) * (ys[i+d] - ys_mean)
-                cc = cc / np.sqrt(np.sum((xs - xs_mean)**2) * np.sum((ys- ys_mean)**2))
-                cross_corr_s_i.append(cc)
-            cross_corr_s.append(cross_corr_s_i)
-        meancc = np.mean(np.array(cross_corr_s), axis=0)
-        stdcc = np.std(np.array(cross_corr_s), axis=0)
-        plt.plot(meancc - 3*stdcc, 'crimson', lw=0.5)
-        plt.plot(meancc, 'crimson', lw=0.5)
-        plt.plot(meancc + 3*stdcc, 'crimson', lw=0.5)
-        plt.fill_between(np.arange(0, max_lag), meancc + 3*stdcc, meancc - 3*stdcc, color='crimson', alpha=0.6)
-    return cross_corr
+	Parameters
+	----------
+	x : array
+		values of x
+	
+	y : array 
+		values of y
+
+	max_lag : integer
+		max value of time lag used to evaluete cross correlation
+
+	step : integer, optional
+		distance between consecutive lag time, default=10
+
+	Returns
+	-------
+	cross_corr : list
+		cross correlation values for each time lag
+	"""
+	x_mean = np.mean(x)
+	y_mean = np.mean(y)
+	cross_corr = []
+	for d in np.arange(0,max_lag,step):
+		cc = 0
+		for i in range(len(x)-d):
+		    cc += (x[i] - x_mean) * (y[i+d] - y_mean)
+		cc = cc / np.sqrt(np.sum((x - x_mean)**2) * np.sum((y - y_mean)**2))
+		cross_corr.append(cc)
+
+	if bootstrap_test:
+		cross_corr_s = []
+		for i in range(100):
+			xs, ys = x, y
+			np.random.shuffle(xs)
+			np.random.shuffle(ys)
+			xs_mean = np.mean(xs)
+			ys_mean = np.mean(ys)
+			cross_corr_s_i = []
+			for d in range(max_lag):
+				cc = 0
+				for i in range(len(x)-d):
+					cc += (xs[i] - xs_mean) * (ys[i+d] - ys_mean)
+				cc = cc / np.sqrt(np.sum((xs - xs_mean)**2) * np.sum((ys- ys_mean)**2))
+				cross_corr_s_i.append(cc)
+			cross_corr_s.append(cross_corr_s_i)
+		meancc = np.mean(np.array(cross_corr_s), axis=0)
+		stdcc = np.std(np.array(cross_corr_s), axis=0)
+		plt.plot(meancc - 3*stdcc, 'crimson', lw=0.5)
+		plt.plot(meancc, 'crimson', lw=0.5)
+		plt.plot(meancc + 3*stdcc, 'crimson', lw=0.5)
+		plt.fill_between(np.arange(0, max_lag), meancc + 3*stdcc, meancc - 3*stdcc, color='crimson', alpha=0.6)
+	return cross_corr
 
 
 def neurons_firing(t_spikes, neurons_i, time_start, time_stop):
@@ -159,20 +181,23 @@ if __name__ == "__main__":
 
 		max_exc_neurons = max_firing_rate(exc_neuron_fr, k=2)
 		max_inh_neurons = max_firing_rate(inh_neuron_fr, k=2)
+
+		max_lag = 5000	
+		steps_lag = 50
+		cc_exc_to_exc = crosscorr(v_exc[max_exc_neurons[0]], v_exc[max_exc_neurons[1]], max_lag, step=steps_lag)
+		cc_inh_to_inh = crosscorr(v_inh[max_inh_neurons[0]], v_inh[max_inh_neurons[1]], max_lag, step=steps_lag)
+		cc_exc_to_inh = crosscorr(v_exc[max_exc_neurons[0]], v_inh[max_inh_neurons[0]], max_lag, step=steps_lag)
 		
-		cc_exc_to_exc = crosscorr(v_exc[max_exc_neurons[0]], v_exc[max_exc_neurons[1]], 5000)
-		cc_inh_to_inh = crosscorr(v_inh[max_inh_neurons[0]], v_inh[max_inh_neurons[1]], 5000)
-		cc_exc_to_inh = crosscorr(v_exc[max_exc_neurons[0]], v_inh[max_inh_neurons[0]], 5000)
-		
+		lags_sample = np.arange(0, max_lag,steps_lag)*0.05*ms
 		ax1[0].set_title(f'cross-correlation E-E')
-		ax1[0].plot(cc_exc_to_exc, label=ttt)
+		ax1[0].plot(lags_sample/ms, cc_exc_to_exc, label=ttt)
 		ax1[1].set_title(f'cross-correlation I-I')
-		ax1[1].plot(cc_inh_to_inh, label=ttt)
+		ax1[1].plot(lags_sample/ms, cc_inh_to_inh, label=ttt)
 		ax1[2].set_title(f'cross-correlation E-I')
-		ax1[2].plot(cc_exc_to_inh, label=ttt)
+		ax1[2].plot(lags_sample/ms, cc_exc_to_inh, label=ttt)
 		
 		for axes in [ax1[0], ax1[1], ax1[2]]:	
-			axes.set_xlabel('Lags - (i*50*0.05 ms)')
+			axes.set_xlabel('time lags  (ms)')
 			axes.grid(linestyle='dotted')
 			axes.legend()
 		
