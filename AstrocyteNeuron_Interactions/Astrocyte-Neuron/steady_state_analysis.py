@@ -191,7 +191,7 @@ if __name__ == "__main__":
 	saturation_time = []
 	saturation_mean_stp, saturation_error_stp = [], []
 	saturation_mean_glia, saturation_error_glia = [], []
-	for w in [2,3,4,5,6]:
+	for w in range(1,9):
 		name = f"Tripartite_synapses/Astrocycitc_steady_state/rate_in{rate_in}/time_windows{w}"
 		Y_S_noglio = np.load(f'{name}/Y_S_noglio.npy')*mmolar
 		Y_S_astro = np.load(f'{name}/Y_S_astro.npy')*mmolar
@@ -279,10 +279,11 @@ if __name__ == "__main__":
 							num=f'Saturation - rate {rate_in}')
 
 	ax2.errorbar(saturation_time, saturation_mean_stp/umolar, saturation_error_stp/umolar, 
-				fmt='o', color='k', capsize=1.5,  markersize=2.5, label='GLIO')
+				fmt='o', color='k', capsize=1.5,  markersize=3.5, label='GLIO')
 	ax2.errorbar(saturation_time, saturation_mean_glia/umolar, saturation_error_glia/umolar, 
-				fmt='o', color='C6', capsize=1.5,  markersize=2.5, label='GLIO')
+				fmt='o', color='C6', capsize=1.5,  markersize=3.5, label='GLIO')
 	ax2.grid(linestyle='dotted')
+	ax2.set_xlim([12,330])
 	ax2.set_ylabel(r'$\langle Y_S \rangle$ ($\mu$M)')
 	ax2.set_xlabel('time (s)')
 
