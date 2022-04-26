@@ -65,13 +65,13 @@ if __name__ == "__main__":
 	d_5 = 0.08*umolar            # Ca^2+ activation dissociation constant
 	#  IP_3 production
 	# Agonist-dependent IP_3 production
-	O_beta = 0.5*umolar/second   # Maximal rate of IP_3 production by PLCbeta
+	O_beta = 3.2*umolar/second   # Maximal rate of IP_3 production by PLCbeta
 	O_N = 0.3/umolar/second      # Agonist binding rate
 	Omega_N = 0.5/second         # Maximal inactivation rate
 	K_KC = 0.5*umolar            # Ca^2+ affinity of PKC
 	zeta = 10                    # Maximal reduction of receptor affinity by PKC
 	# Endogenous IP3 production
-	O_delta = 1.2*umolar/second  # Maximal rate of IP_3 production by PLCdelta
+	O_delta = 0.6*umolar/second  # Maximal rate of IP_3 production by PLCdelta
 	kappa_delta = 1.5*umolar     # Inhibition constant of PLC_delta by IP_3
 	K_delta = 0.1*umolar         # Ca^2+ affinity of PLCdelta
 	# IP_3 degradation
@@ -166,12 +166,11 @@ if __name__ == "__main__":
     x_A -= U_A * x_A
     """
 
-	N_syn = 160                # Total number of synapses 
+	N_syn = 100                # Total number of synapses 
 	N_a = 1                    # Total number of astrocyte
 
-	rate_mean = 1.8
-	rate_in = np.random.exponential(rate_mean,N_syn*N_a)*Hz       # Rate of presynaptic neurons
-	rate_in = 2.6*Hz
+	# rate_in = np.random.exponential(rate_mean,N_syn*N_a)*Hz       # Rate of presynaptic neurons
+	rate_in = 0.5*Hz
 	pre_neurons = PoissonGroup(N_syn, rates=rate_in)
 	post_neurons = NeuronGroup(N_syn, model="dg_e/dt = -g_e/tau_e : siemens # post-synaptic excitatory conductance",
 								method='exact')
@@ -198,12 +197,12 @@ if __name__ == "__main__":
 	ecs_syn_to_astro.connect(j='i if i<N_syn')
 
 	## Monitor
-	for enu, windows in enumerate(range(6)):
+	for enu, windows in enumerate(range(8)):
 		print(f'run number {enu+1}')
 		pre_AP = SpikeMonitor(pre_neurons)
 		GRE = SpikeMonitor(astrocyte)
 		syn_mon = StateMonitor(synapses, ['Gamma_S', 'r_S', 'Y_S'], record=np.arange(N_syn*(N_a+1)), when='after_synapses')
-		
+		var_astro_mon = StateMonitor(astrocyte, ['C','I','h'], record=np.arange(10))
 		run(duration, report='text')
 	
 		## Save Variable for each time window
@@ -212,6 +211,10 @@ if __name__ == "__main__":
 
 		np.save(f'{name}/Y_S_noglio', syn_mon.Y_S[N_syn:])
 		np.save(f'{name}/Y_S_astro', syn_mon.Y_S[:N_syn])
+		np.save(f'{name}/C', var_astro_mon.C[:])
+		np.save(f'{name}/I', var_astro_mon.I[:])
+		np.save(f'{name}/h', var_astro_mon.h[:])
+		np.save(f'{name}/t', var_astro_mon.t[:])
 
 		## Standard error  
 		Y_S_noglio_mean = syn_mon.Y_S[N_syn:].mean(axis=0)
@@ -244,7 +247,7 @@ if __name__ == "__main__":
 			ax1_2 = fig1.add_subplot(gs[1, 0])
 			ax1_3 = fig1.add_subplot(gs[:, 1])
 
-			ax1_1.set_title(r'$\nu_{in}=$'+f'{rate_mean} Hz')
+			ax1_1.set_title(r'$\nu_{in}=$'+f'{rate_in/Hz} Hz')
 			ax1_1.plot(syn_mon.t[:]/second, syn_mon.Y_S[N_syn:].mean(axis=0)/umolar, color='black', label='no gliotrasmission')
 			ax1_1.set_ylabel(r'$\langle Y_S \rangle$ ($\mu$M)')
 			ax1_1.grid(linestyle='dotted')
@@ -260,10 +263,15 @@ if __name__ == "__main__":
 			ax1_3.scatter(GRE.t[:][GRE.i[:]<N_syn]/second, GRE.i[:][GRE.i[:]<N_syn], marker='|', color='C6')
 			ax1_3.set_ylabel('astrocite indeces')
 			ax1_3.set_xlabel('time (s)')
+
+			plt.figure()
+			plt.plot(var_astro_mon.t[:], var_astro_mon.C[5])
+			plt.grid()
 			
 		del pre_AP
 		del GRE
 		del syn_mon
+		del var_astro_mon
 
 	# device.delete()
 	plt.show()
