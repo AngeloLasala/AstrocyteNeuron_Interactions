@@ -9,29 +9,64 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from brian2 import *
-from AstrocyteNeuron_Interactions import makedir
+import makedir
 
 set_device('cpp_standalone', directory=None)  # Use fast "C++ standalone mode"
 
+def STP_mean_field(u_0, nu_S_start=-1, nu_S_stop=2, nu_S_number=200):
+	"""
+	Mean field solution of simple synapses (no gliotramission modulation)
+	described by short-term plasticity.
+	Return steady state of synaptic variable, u_S and x_S, for constant 
+	synaptic input rate, nu_S (Hz)
+
+	Parameters
+	----------
+	nu_S_start : integer 
+				Order of magnitude of first nu_S value
+		
+	nu_S_stop : integer 
+				Order of magnitude of last nu_S value
+
+	nu_S_number : interger (optionl)
+				Total sample's number of nu_S. Default=200
+	Returns
+	-------
+	nu_S : 1D-array
+			Sample of synaptic rates (Hz)
+	u_S : 1D-array
+		Steady states of u_S
+
+	x_S : 1D-array
+		Steady state of x_S
+
+	"""
+	nu_S = np.logspace(nu_S_start, nu_S_stop, nu_S_number)*Hz
+	u_S =  (u_0*(Omega_f+nu_S))/(Omega_f+nu_S*u_0)
+	x_S = Omega_d / (Omega_d + u_S*nu_S)
+
+	return nu_S, u_S, x_S
+
+def mean_error(values):
+	r_mean, r_error = [], []
+	for i in values:
+		rrr = np.unique(i)
+		r_mean.append(rrr.mean())
+		if len(rrr)<30:
+			error = (np.max(rrr)-np.min(rrr))/2
+		else:
+			error = rrr.std()/np.sqrt(len(rrr-1))
+		r_error.append(error)
+	return r_mean, r_error
+ 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Tripartite synapses')
+	parser.add_argument('modulation', type=str, help='type of astromodulation: A or F')
 	parser.add_argument('-p', action='store_true', help="show paramount plots, default=False")
 	args = parser.parse_args()
 
+	mod = {'A':[0.5, 1.2], 'F':[2.0, 0.6]}
 	## PARAMETERS ###################################################################
-	# -- Neuron --
-	E_l = -60*mV                 # Leak reversal potential
-	g_l = 9.99*nS                # Leak conductance
-	E_e = 0*mV                   # Excitatory synaptic reversal potential
-	E_i = -80*mV                 # Inhibitory synaptic reversal potential
-	C_m = 198*pF                 # Membrane capacitance
-	tau_e = 5*ms                 # Excitatory synaptic time constant
-	tau_i = 10*ms                # Inhibitory synaptic time constant
-	tau_r = 5*ms                 # Refractory period
-	I_ex = 100*pA                # External current
-	V_th = -50*mV                # Firing threshold
-	V_r = E_l                    # Reset potential
-
 	# -- Synapse --
 	rho_c = 0.005                # Synaptic vesicle-to-extracellular space volume ratio
 	Y_T = 500.*mmolar            # Total vesicular neurotransmitter concentration
@@ -60,13 +95,13 @@ if __name__ == "__main__":
 	d_5 = 0.08*umolar            # Ca^2+ activation dissociation constant
 	#  IP_3 production
 	# Agonist-dependent IP_3 production
-	O_beta = 0.5*umolar/second   # Maximal rate of IP_3 production by PLCbeta
+	O_beta = mod[args.modulation][0]*umolar/second   # Maximal rate of IP_3 production by PLCbeta
 	O_N = 0.3/umolar/second      # Agonist binding rate
 	Omega_N = 0.5/second         # Maximal inactivation rate
 	K_KC = 0.5*umolar            # Ca^2+ affinity of PKC
 	zeta = 10                    # Maximal reduction of receptor affinity by PKC
 	# Endogenous IP3 production
-	O_delta = 1.2*umolar/second  # Maximal rate of IP_3 production by PLCdelta
+	O_delta = mod[args.modulation][1]*umolar/second  # Maximal rate of IP_3 production by PLCdelta
 	kappa_delta = 1.5*umolar     # Inhibition constant of PLC_delta by IP_3
 	K_delta = 0.1*umolar         # Ca^2+ affinity of PLCdelta
 	# IP_3 degradation
@@ -88,7 +123,7 @@ if __name__ == "__main__":
 	## TIME PARAMETERS ##############################################################
 	defaultclock.dt = 1*ms
 	duration = 300*second
-	seed(28371)  # to get identical figures for repeated runs
+	# seed(28371)  # to get identical figures for repeated runs
 	#################################################################################
 
 	## SYNAPSES
@@ -158,7 +193,7 @@ if __name__ == "__main__":
     x_A -= U_A * x_A
     """
 
-	N_syn = 160                # Total number of synapses
+	N_syn = 101                # Total number of synapses
 	N_a = 2                    # Total number of astrocyte
 
 	rate_in = np.logspace(-1, 2, N_syn)*Hz        # Rate of presynaptic neurons
@@ -191,7 +226,7 @@ if __name__ == "__main__":
 	#Monitor
 	syn_mon = StateMonitor(synapses, ['Y_S','Gamma_S','U_0','r_S'], record=np.arange(N_syn*(N_a+1)), when='after_synapses')
 	astro_mon = SpikeMonitor(astrocyte)
-	astro_var = StateMonitor(astrocyte, ['Gamma_A','I','C'], record=[i for i in range(100) if i%5==0])
+	astro_var = StateMonitor(astrocyte, ['Gamma_A','I','C'], record=[5,35,70])
 
 	run(duration, report='text')
 	trans = 50000   #trans*dt=15000*0.1*ms=15s
@@ -263,7 +298,7 @@ if __name__ == "__main__":
 		fig4 = plt.figure(figsize=(13,7),num=f"Astrocite dynamics - no J_ext")
 
 		gs = fig1.add_gridspec(3,3)
-		for i, i_rate in zip(range(3),[5,70,100]):
+		for i, i_rate in zip(range(3),[5,35,70]):
 			ax4_1 = fig4.add_subplot(gs[0, i])
 			ax4_2 = fig4.add_subplot(gs[1, i])
 			ax4_3 = fig4.add_subplot(gs[2, i])
@@ -297,16 +332,32 @@ if __name__ == "__main__":
 		ax5.set_ylabel(r'$\nu_A$ (Hz)')
 		ax5.grid(linestyle='dotted')
 
-		fig6, ax6 = plt.subplots(nrows=1, ncols=2, figsize=(12,5),
-								num='Ca steady state and st of its oscillation')
+		fig6, ax6 = plt.subplots(nrows=1, ncols=1,
+								num='Immages for thesi')
+		r_mean, r_error = mean_error(syn_mon.r_S[2*N_syn:,trans:])
 
-		ax6[0].axhline(C_Theta/umolar,0,duration/second, ls='dashed', color='black')
-		for i, i_rate in enumerate([i for i in range(100) if i%5==0]):
-			ax6[0].errorbar(rate_in[i_rate]/Hz, astro_var.C[i,20000:].mean()/umolar,
-							astro_var.C[i,20000:].std()/umolar, fmt='o', color='C1')
+		ax6.errorbar(rate_in/Hz, r_mean, r_error, 
+                fmt='o', markersize=4, lw=1, color='black', alpha=0.8, barsabove=False, label='simulation')
 		
-		ax6[1].plot(astro_var.t[20000:]/second, astro_var.C[1,20000:]/umolar)
-		ax6[1].plot(astro_var.t[20000:]/second, astro_var.C[14,20000:]/umolar)
+		nu_S_app, u_S_app, x_S_app = STP_mean_field(u_0=U_0__star)
+		ax6.plot(nu_S_app/Hz, u_S_app*x_S_app, color='k', label='mean field approximation')
+		ax6.set_ylabel(r'$\langle r_S \rangle$')
+		ax6.set_xscale('log')
+		ax6.set_xlabel(r'$\nu_{S}$ (Hz)')
+		ax6.legend()
+		ax6.grid(linestyle='dotted')
+
+		fig7, ax7 = plt.subplots(nrows=1, ncols=1, num='Average release probability vs incoming presyn AP -bif')
+
+		ax7.errorbar(rate_in/Hz, np.mean(syn_mon.r_S[2*N_syn:,trans:], axis=1), np.std(syn_mon.r_S[2*N_syn:,trans:], axis=1), 
+                fmt='o', markersize=4, lw=0.4, color='black', label='no gliotrasmission')
+		ax7.errorbar(rate_in/Hz, np.mean(syn_mon.r_S[:N_syn,trans:], axis=1), np.std(syn_mon.r_S[:N_syn,trans:], axis=1), 
+                fmt='o', markersize=4, lw=0.4, color='C6', label='closed-loop')
+		
+		ax7.set_ylabel(r'$\langle r_S \rangle$')
+		ax7.set_xscale('log')
+		ax7.legend()
+		ax7.grid(linestyle='dotted')
 
 	device.delete()
 	plt.show()
