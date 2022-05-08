@@ -82,6 +82,16 @@ def GRE_mean_field(nu_A_array=[], nu_A_start=-5, nu_A_stop=1, nu_A_number=200, s
 
 	return nu_A, u_0
 
+def guess_fuction_bif(nu_S, nu_A0=0.16, nu_S_bif=1):
+	"""
+	"""
+	pos = np.where(nu_S<nu_S_bif)[0][-1]
+	nu_A_1 = [nu_A0 for i in range(pos)]
+	nu_A_2 = [nu_A0*np.exp(-(i-nu_S_bif)) for i in nu_S[pos:]]
+	nu_A = nu_A_1 + nu_A_2
+	return np.asanyarray(nu_A)
+	
+
 if __name__ == "__main__":
 
 	## Parameters #####################################################
@@ -109,7 +119,9 @@ if __name__ == "__main__":
 	# nu_A is a function of nu_S, I suppose an exponential one.
 	# For each values of nu_A we have a single solutions for u_0 that 
 	# I put in STD_mean_field solution
-	nu_A_sim = (0.1 * np.exp(-nu_S/Hz))
+	nu_A_sim = (0.18 * np.exp(-nu_S/Hz))
+	nu_A_sim = guess_fuction_bif(nu_S/Hz)
+
 	nu_A_close, u_0_close = GRE_mean_field(nu_A_array=nu_A_sim)
 	nu_S_close, u_S_close, x_S_close = STP_mean_field(u_0_close)
 
