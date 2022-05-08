@@ -17,10 +17,12 @@ set_device('cpp_standalone', directory=None)  # Use fast "C++ standalone mode"
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Tripartite synapses')
 	parser.add_argument('modulation', type=str, help='type of astromodulation: A or F')
+	parser.add_argument('-astro', action='store_false', help="""biforcation only for tripartite, else only 
+														for astro. default=True""")
 	parser.add_argument('-p', action='store_true', help="show paramount plots, default=False")
 	args = parser.parse_args()
 
-	mod = {'A':[0.5, 1.2], 'F':[2.0, 0.6]}
+	mod = {'A':[0.5, 1.2], 'F':[3.2, 0.6]}
 	## PARAMETERS ###################################################################
 	# -- Synapse --
 	rho_c = 0.005                # Synaptic vesicle-to-extracellular space volume ratio
@@ -147,7 +149,7 @@ if __name__ == "__main__":
     x_A -= U_A * x_A
     """
 
-	N_syn = 100                # Total number of synapses
+	N_syn = 10                # Total number of synapses
 	N_a = 1                    # Total number of astrocyte
 
 	rate_start = 0.3
@@ -183,60 +185,69 @@ if __name__ == "__main__":
 	ecs_syn_to_astro.connect(j='i if i<N_syn')   #closed-loop
 
 	# # ASTRO TO EXC_SYNAPSES
-	ecs_astro_to_syn = Synapses(astrocyte, synapses, 'G_A_post = G_A_pre : mmolar (summed)')
-	ecs_astro_to_syn.connect(j='i if i<N_syn')                      #closed-loop
+	if args.astro:
+		ecs_astro_to_syn = Synapses(astrocyte, synapses, 'G_A_post = G_A_pre : mmolar (summed)')
+		ecs_astro_to_syn.connect(j='i if i<N_syn')                      #closed-loop
 	
 	#Monitor
-	syn_mon = StateMonitor(synapses, ['Y_S','Gamma_S','U_0','r_S'], record=np.arange(N_syn*(N_a+1)), when='after_synapses', dt=1*ms)
+	# syn_mon = StateMonitor(synapses, ['Y_S','Gamma_S','U_0','r_S'], record=np.arange(N_syn*(N_a+1)), when='after_synapses', dt=1*ms)
 	astro_mon = SpikeMonitor(astrocyte)
-	astro_var = StateMonitor(astrocyte, ['Gamma_A','I','C'], record=True, dt=10*ms)
+	spike_mon = SpikeMonitor(pre_neurons)
+	astro_var = StateMonitor(astrocyte, ['Y_S','Gamma_A','I','C'], record=True, dt=10*ms)
 
 	run(duration, report='text')
 
 	## Save variable ##################################################################################
-	name = f'Tripartite_synapses/Biforcation/O_beta{O_beta/(umolar/second):.1f}_O_delta{O_delta/(umolar/second):.1f}_long'
-	makedir.smart_makedir(name)
+	# name = f'Tripartite_synapses/Biforcation/O_beta{O_beta/(umolar/second):.2f}_O_delta{O_delta/(umolar/second):.1f}_long'
+	# makedir.smart_makedir(name)
 
-	## rate array
-	np.save(f'{name}/duration', duration)
-	np.save(f'{name}/rate_start', rate_start)
-	np.save(f'{name}/rate_stop', rate_stop)
-	np.save(f'{name}/N', N_syn)
+	# ## rate array
+	# np.save(f'{name}/duration', duration)
+	# np.save(f'{name}/rate_start', rate_start)
+	# np.save(f'{name}/rate_stop', rate_stop)
+	# np.save(f'{name}/N', N_syn)
 
-	# Synapses variable
-	np.save(f'{name}/Y_S', syn_mon.Y_S[:])
-	np.save(f'{name}/Gamma_S', syn_mon.Gamma_S[:])
-	np.save(f'{name}/r_S', syn_mon.r_S[:])
+	# # Synapses variable
+	# np.save(f'{name}/Y_S', syn_mon.Y_S[:])
+	# np.save(f'{name}/Gamma_S', syn_mon.Gamma_S[:])
+	# np.save(f'{name}/r_S', syn_mon.r_S[:])
 
-	# Astrocytic variable
-	np.save(f'{name}/C', astro_var.C[:])
-	np.save(f'{name}/I', astro_var.I[:])
-	np.save(f'{name}/Gamma_A', astro_var.Gamma_A[:])
-	np.save(f'{name}/GRE_t', astro_mon.t[:])
-	np.save(f'{name}/GRE_i', astro_mon.i[:])
+	# # Astrocytic variable
+	# np.save(f'{name}/C', astro_var.C[:])
+	# np.save(f'{name}/I', astro_var.I[:])
+	# np.save(f'{name}/Gamma_A', astro_var.Gamma_A[:])
+	# np.save(f'{name}/GRE_t', astro_mon.t[:])
+	# np.save(f'{name}/GRE_i', astro_mon.i[:])
 
 	## Plots #########################################################################################
 	# Astro variable
 	trans = 50000   #trans*dt=50000*0.5*ms=25 s
+	trans = 47000   #trans*dt_sam = 40000*10*ms= 400 s
 
 	if args.p:
-		fig4, ax4 = plt.subplots(nrows=3, ncols=1, figsize=(13,7),num=f"Astrocite dynamics")
+		index = 1
+		fig4, ax4 = plt.subplots(nrows=4, ncols=1, figsize=(13,7), sharex=True,
+								num=f"Astrocite dynamics - rate={rate_in[index]/Hz:.2f} Hz")
 
-
-		ax4[0].plot(astro_var.t[:]/second, astro_var.Gamma_A[1], color='C7')
-		ax4[0].set_ylabel(r'$\Gamma_A$')
+		ax4[0].plot(astro_var.t[trans:]/second, astro_var.Y_S[index,trans:]/umolar, color='C1')
+		ax4[0].set_ylabel(r'$Y_S$ ($\mu$M)')
 		ax4[0].grid(linestyle='dotted')
 
-		ax4[1].plot(astro_var.t[:]/second, astro_var.I[1]/umolar, color='C0')
-		ax4[1].set_ylabel(r'I ($\mu$M)')
+		ax4[1].plot(astro_var.t[trans:]/second, astro_var.Gamma_A[index,trans:], color='C7')
+		ax4[1].set_ylabel(r'$\Gamma_A$')
 		ax4[1].grid(linestyle='dotted')
 
-		ax4[2].plot(astro_var.t[:]/second, astro_var.C[0]/umolar, color='C3')
-		ax4[2].plot(astro_var.t[:]/second, astro_var.C[1]/umolar, color='C3')
-		ax4[2].set_ylabel(r'C ($\mu$M)')
-		ax4[2].axhline(C_Theta/umolar,0,duration/second, ls='dashed', color='black')
+		ax4[2].plot(astro_var.t[trans:]/second, astro_var.I[index,trans:]/umolar, color='C0')
+		ax4[2].set_ylabel(r'I ($\mu$M)')
 		ax4[2].grid(linestyle='dotted')
-		ax4[2].set_xlabel('time (ms)')
+
+		# ax4[3].scatter(spike_mon.t[:], spike_mon.i[:]+1.0, marker='|')
+		ax4[3].plot(astro_var.t[trans:]/second, astro_var.C[index,trans:]/umolar, color='C3')
+		# ax4[2].plot(astro_var.t[:]/second, astro_var.C[1]/umolar, color='C3')
+		ax4[3].set_ylabel(r'C ($\mu$M)')
+		# ax4[3].axhline(C_Theta/umolar,0,duration/second, ls='dashed', color='black')
+		ax4[3].grid(linestyle='dotted')
+		ax4[3].set_xlabel('time (s)')
 
 		fig5, ax5 = plt.subplots(nrows=1, ncols=1, 
 								num='Charateristic curve nu_A vs nu_S')
