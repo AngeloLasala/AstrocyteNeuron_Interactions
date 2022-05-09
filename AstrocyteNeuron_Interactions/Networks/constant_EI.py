@@ -3,7 +3,8 @@ Module of network parameters that could be changes over simulation
 """
 # TIME CONSTANT
 dt = 0.05 #ms            #0.05ms
-duration = 2.3 #s    #2.3s
+dt_samp = 0.1 #ms
+duration = 3.0 #s    #2.3s
 trans_time = 500 #ms          #300ms
 
 # index: excitatory neurron index used to monitor variable

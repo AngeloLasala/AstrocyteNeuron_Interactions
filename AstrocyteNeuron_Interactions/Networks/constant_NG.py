@@ -17,8 +17,17 @@ N_a = 4000
 
 # TIME CONSTANT
 dt = 0.1 #ms            #0.05ms
-duration = 12.0 #s      
-trans_time = 300 #ms     #300ms
+duration = 10          #s   
+trans_time = 300 #ms    #300ms
+
+# Simulation, expecialy for log time one, is divide in different and 
+# consecutive sub-simulation of total duration equals to 'duration'. Thus,
+# total time simulation is duration*windows.
+# Note: at the end of each sub-simulation, all variable are saved in specific
+# folder, all 'Monitor group are deleted' such that the RAM is clear and 
+# next sub-simulation starts. 
+windows = 10                
+
 
 # index: excitatory neurron index used to monitor variable
 index = 400
@@ -26,12 +35,12 @@ index = 400
 # NETWORK STRUCTURE
 # how much the ext-inh synaptic strength is highr
 # than ext-exc synaptic strength
-s = 1.05
+s = 1.00
 
 # Recurrent balance degrees: g = pe/pi, IMPORTANT: I always fix pe
 # g = 5: recurrent balance
 # g < 5: inhibitory prevails
 # g > 5: excitatory prevails 
-g = 1.5 
+g = 0.25 
 p_e = 0.05  
 

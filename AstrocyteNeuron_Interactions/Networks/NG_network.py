@@ -13,7 +13,7 @@ from brian2 import *
 import constant_NG as k_NG 
 import makedir
 
-set_device('cpp_standalone', directory=None) 
+# set_device('cpp_standalone', directory=None) 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Neuron-Glia (NG) network, find NG_netwrok parameters in "constant_NG.py"')
@@ -105,7 +105,7 @@ if __name__ == '__main__':
     ## TIME PARAMETERS ##############################################################
     defaultclock.dt = k_NG.dt*ms
     duration = k_NG.duration*second
-    seed(28371)  # to get identical figures for repeated runs
+    # seed(28371)  # to get identical figures for repeated runs
     #################################################################################
 
     ## NETWORK #####################################################################
@@ -196,11 +196,12 @@ if __name__ == '__main__':
     inh_act="g_i_post+=w_i*r_S"
 
     # Synaptic connection: it is introduced a balance parameter to define recurrent connection 
-    # balance: g=5.0, "fast spiking inh". g=5 s=1.3 rate_input=[50,70] Hz
+    # seed is put before synaptic connection to give same networks structure
     g = k_NG.g 
     p_e = k_NG.p_e
     p_i = p_e/g
     
+    seed(15325)
     exc_syn = Synapses(exc_neurons, neurons, model= syn_model, on_pre=syn_action+exc_act, method='linear')
     exc_syn.connect(True, p=p_e)
     exc_syn.x_S = 1.0
@@ -267,7 +268,7 @@ if __name__ == '__main__':
 
     astrocyte = NeuronGroup(N_a, astro_eqs, 
                             threshold='C>C_Theta', refractory='C>C_Theta', reset=astro_release,
-                            method='rk4', dt=1e-2*second)
+                            dt=1e-2*second, method='rk2')
 
     # Arrange excitatory neurons in a grid
     #square grid
@@ -316,152 +317,131 @@ if __name__ == '__main__':
     ##########################################################################################
 
     ## MOMITOR ###############################################################################
-    spikes_exc_mon = SpikeMonitor(exc_neurons)
-    spikes_inh_mon = SpikeMonitor(inh_neurons)
-    astro_mon = SpikeMonitor(astrocyte)
+    for enu, windows in enumerate(range(k_NG.windows)):
+        print(f'run number {enu+1}')
+        spikes_exc_mon = SpikeMonitor(exc_neurons)
+        spikes_inh_mon = SpikeMonitor(inh_neurons)
+        astro_mon = SpikeMonitor(astrocyte)
 
-    firing_rate_exc = PopulationRateMonitor(exc_neurons)
-    firing_rate_inh = PopulationRateMonitor(inh_neurons)
-    firing_rate = PopulationRateMonitor(neurons)
-    
-    neurons_mon = StateMonitor(neurons, ['v','g_e','g_i','I_exc', 'I_inh', 'I_syn_ext'], 
-                              record=[i for i in range(200)] + [i for i in range(N_e,N_e+200)])
-    mon_LFP = StateMonitor(exc_neurons, 'LFP', record=True)
-    var_astro_mon = StateMonitor(astrocyte, ['C','I','h','Gamma_A','Y_S','G_A','x_A'], record=True)
-    ###########################################################################################
-
-    ## RUN and NETWORK INFORMATION ###################################################################
-    print(f'we : {w_e}')
-    print(f'g : {g}')
-    print(f's : {s}')
-    run(duration, report='text')
-    print('NETWORK INFORMATION')
-    print(f'we : {w_e}')
-    print(f'g : {g}')
-    print(f's : {s}')
-    print(f'excitatory neurons = {N_e}')
-    print(f'inhibitory neurons = {N_i}')
-    print(f'excitatory synapses = {len(exc_syn.i)}')
-    print(f'inhibitory synapses = {len(inh_syn.i)}')
-    print('_______________\n')
-    print(f'astrocytes = {N_a}')
-    print(f'syn to astro connection = {len(ecs_syn_to_astro.i)}')
-    print(f'astro to syn connection = {len(ecs_astro_to_syn.i)}\n')
-    print('_______________\n')
-    print('Spatial arrangement')
-    print(f'neurons grid:   {N_rows_exc}x{N_rows_exc} dist={grid_dist/umetre} um')
-    print(f'astrocyte grid: {N_rows_astro}x{N_rows_astro} dist={grid_dist_astro/umetre} um\n')
-    print(np.unique(ecs_astro_to_syn.i[:]).shape)
-    print(np.unique(exc_syn.astrocyte_index[:]))
-    print(np.unique(exc_syn.astrocyte_index[:]).shape)
-    # print(exc_syn.astrocyte_index[:320])
+        firing_rate_exc = PopulationRateMonitor(exc_neurons)
+        firing_rate_inh = PopulationRateMonitor(inh_neurons)
+        firing_rate = PopulationRateMonitor(neurons)
         
-   
-    print(N_rows_astro)
-    print(N_cols_astro)
-    print(grid_dist_astro) 
-    print('neuron')
-    print(N_rows_exc) 
-    print(N_cols_exc)
-    print(grid_dist) 
-    ##################################################################################################
+        neurons_mon = StateMonitor(neurons, ['v','g_e','g_i','I_exc', 'I_inh', 'I_syn_ext'], 
+                                record=[i for i in range(200)] + [i for i in range(N_e,N_e+200)])
+        mon_LFP = StateMonitor(exc_neurons, 'LFP', record=[i for i in range(1000)])
+        var_astro_mon = StateMonitor(astrocyte, ['C','I','h','Gamma_A','Y_S','G_A','x_A'], record=[i for i in range(100)])
+        ###########################################################################################
 
-    ## SAVE IMPORTANT VALUES #########################################################################
-    if args.linear: 
-        grid_name='mygrid'
-    else: 
-        grid_name='nogrid'
+        ## RUN and NETWORK INFORMATION ###################################################################
+        print(f'we : {w_e}')
+        print(f'g : {g}')
+        print(f's : {s}')
+        run(duration, report='text', report_period=1.8*ksecond)
+        # print(np.unique(ecs_astro_to_syn.i[:]).shape)
+        # print(np.unique(exc_syn.astrocyte_index[:]))
+        # print(np.unique(exc_syn.astrocyte_index[:]).shape)        
     
-    name = f'Neuro_Glia_network/NG_network_rate_in:{rate_in/Hz:.1f}_ph_'+grid_name+f'_g:{g}_s:{s}_we_{w_e/nS:.2f}'
-    makedir.smart_makedir(name)
 
-    # Duration
-    np.save(f'{name}/duration',duration)
-    np.save(f'{name}/rate_in',rate_in)
+        ##################################################################################################
 
-    # Raster plot
-    np.save(f'{name}/spikes_exc_mon.t',spikes_exc_mon.t)
-    np.save(f'{name}/spikes_exc_mon.i',spikes_exc_mon.i)
-    np.save(f'{name}/spikes_inh_mon.t',spikes_inh_mon.t)
-    np.save(f'{name}/spikes_inh_mon.i',spikes_inh_mon.i)
-    np.save(f'{name}/astro_mon.t',astro_mon.t)
-    np.save(f'{name}/astro_mon.i',astro_mon.i)
+        ## SAVE IMPORTANT VALUES #########################################################################
+        if args.linear: 
+            grid_name='mygrid'
+        else: 
+            grid_name='nogrid'
+        
+        name = f'Neuro_Glia_network/NG_network_rate_in{rate_in/Hz:.1f}_ph_'+grid_name+f'_g{g}_s{s}_we_{w_e/nS:.2f}_running_F_{O_beta/(umolar/second):.1f}astro_ic/time_windows_{enu+1}'
+        makedir.smart_makedir(name)
 
-    # Neurons variables
-    np.save(f'{name}/neurons_mon.v',neurons_mon.v)
-    np.save(f'{name}/neurons_mon.g_e',neurons_mon.g_e)
-    np.save(f'{name}/neurons_mon.g_i',neurons_mon.g_i)
-    np.save(f'{name}/neurons_mon.I_exc',neurons_mon.I_exc)
-    np.save(f'{name}/neurons_mon.I_inh',neurons_mon.I_inh)
-    np.save(f'{name}/neurons_mon.I_syn_ext',neurons_mon.I_syn_ext)
-    np.save(f'{name}/neurons_mon.t',neurons_mon.t)
-    np.save(f'{name}/firing_rate_exc.t',firing_rate_exc.t)
-    np.save(f'{name}/firing_rate_exc.rate',firing_rate_exc.rate)
-    np.save(f'{name}/firing_rate_inh.t',firing_rate_inh.t)
-    np.save(f'{name}/firing_rate_inh.rate',firing_rate_inh.rate)
-    np.save(f'{name}/firing_rate.t',firing_rate.t)
-    np.save(f'{name}/firing_rate.rate',firing_rate.rate)
+        # Duration
+        np.save(f'{name}/duration',duration)
+        np.save(f'{name}/rate_in',rate_in)
 
-    # LFP 
-    np.save(f'{name}/mon_LFP.LFP',mon_LFP.LFP)
+        # Raster plot
+        np.save(f'{name}/spikes_exc_mon.t',spikes_exc_mon.t)
+        np.save(f'{name}/spikes_exc_mon.i',spikes_exc_mon.i)
+        np.save(f'{name}/spikes_inh_mon.t',spikes_inh_mon.t)
+        np.save(f'{name}/spikes_inh_mon.i',spikes_inh_mon.i)
+        np.save(f'{name}/astro_mon.t',astro_mon.t)
+        np.save(f'{name}/astro_mon.i',astro_mon.i)
 
-    # Astrocte variables 
-    np.save(f'{name}/var_astro_mon.t',var_astro_mon.t)
-    np.save(f'{name}/var_astro_mon.Y_S',var_astro_mon.Y_S)
-    np.save(f'{name}/var_astro_mon.Gamma_A',var_astro_mon.Gamma_A)
-    np.save(f'{name}/var_astro_mon.I',var_astro_mon.I)
-    np.save(f'{name}/var_astro_mon.C',var_astro_mon.C)
-    np.save(f'{name}/var_astro_mon.h',var_astro_mon.h)
-    np.save(f'{name}/var_astro_mon.x_A',var_astro_mon.x_A)
-    np.save(f'{name}/var_astro_mon.G_A',var_astro_mon.G_A)
+        # Neurons variables
+        np.save(f'{name}/neurons_mon.v',neurons_mon.v)
+        # np.save(f'{name}/neurons_mon.g_e',neurons_mon.g_e)
+        # np.save(f'{name}/neurons_mon.g_i',neurons_mon.g_i)
+        np.save(f'{name}/neurons_mon.I_exc',neurons_mon.I_exc)
+        np.save(f'{name}/neurons_mon.I_inh',neurons_mon.I_inh)
+        np.save(f'{name}/neurons_mon.I_syn_ext',neurons_mon.I_syn_ext)
+        np.save(f'{name}/neurons_mon.t',neurons_mon.t)
+        np.save(f'{name}/firing_rate_exc.t',firing_rate_exc.t)
+        np.save(f'{name}/firing_rate_exc.rate',firing_rate_exc.rate)
+        # np.save(f'{name}/firing_rate_inh.t',firing_rate_inh.t)
+        np.save(f'{name}/firing_rate_inh.rate',firing_rate_inh.rate)
+        # np.save(f'{name}/firing_rate.t',firing_rate.t)
+        np.save(f'{name}/firing_rate.rate',firing_rate.rate)
 
-    # Connection
-    np.save(f'{name}/exc_syn.i',exc_syn.i)
-    np.save(f'{name}/exc_syn.j',exc_syn.j)
-    np.save(f'{name}/inh_syn.i',inh_syn.i)
-    np.save(f'{name}/inh_syn.j',inh_syn.j)
-    np.save(f'{name}/ecs_astro_to_syn.i',ecs_astro_to_syn.i)
-    np.save(f'{name}/ecs_astro_to_syn.j',ecs_astro_to_syn.j)
-    np.save(f'{name}/ecs_syn_to_astro.i',ecs_syn_to_astro.i)
-    np.save(f'{name}/ecs_syn_to_astro.j',ecs_syn_to_astro.j)
-    # np.save(f'{name}/astro_to_astro.i',astro_to_astro.i)
-    # np.save(f'{name}/astro_to_astro.j',astro_to_astro.j)
+        # LFP 
+        np.save(f'{name}/mon_LFP.LFP',mon_LFP.LFP)
 
-    # Network Structure
-    with open(f"{name}/network_structure.txt",
-            'w', encoding='utf-8') as file:
-            file.write(f"""NETWORK INFORMATION \n
-    TIME SIMULATION
-    dt = {defaultclock.dt/ms} ms
-    duration = {duration/second} s
+        # Astrocte variables 
+        np.save(f'{name}/var_astro_mon.t',var_astro_mon.t)
+        np.save(f'{name}/var_astro_mon.Y_S',var_astro_mon.Y_S)
+        np.save(f'{name}/var_astro_mon.Gamma_A',var_astro_mon.Gamma_A)
+        np.save(f'{name}/var_astro_mon.I',var_astro_mon.I)
+        np.save(f'{name}/var_astro_mon.C',var_astro_mon.C)
+        np.save(f'{name}/var_astro_mon.h',var_astro_mon.h)
+        np.save(f'{name}/var_astro_mon.x_A',var_astro_mon.x_A)
+        np.save(f'{name}/var_astro_mon.G_A',var_astro_mon.G_A)
 
-    STRUCTURE PARAMETERS
-    g = {g}
-    p_e = {p_e}
-    p_i = {p_i}
-    s = {s}
-    rate_in = {rate_in/Hz} Hz (single external neuron)
-    rate_in = {(rate_in/Hz) * 160} Hz(total external neurons)
+        # Connection
+        # np.save(f'{name}/exc_syn.i',exc_syn.i)
+        # np.save(f'{name}/exc_syn.j',exc_syn.j)
+        # np.save(f'{name}/inh_syn.i',inh_syn.i)
+        # np.save(f'{name}/inh_syn.j',inh_syn.j)
+        # np.save(f'{name}/ecs_astro_to_syn.i',ecs_astro_to_syn.i)
+        # np.save(f'{name}/ecs_astro_to_syn.j',ecs_astro_to_syn.j)
+        # np.save(f'{name}/ecs_syn_to_astro.i',ecs_syn_to_astro.i)
+        # np.save(f'{name}/ecs_syn_to_astro.j',ecs_syn_to_astro.j)
+        # np.save(f'{name}/astro_to_astro.i',astro_to_astro.i)
+        # np.save(f'{name}/astro_to_astro.j',astro_to_astro.j)
 
-    RECURRENT ELEMENT
-    excitatory neurons = {N_e}
-    inhibitory neurons = {N_i}
-    excitatory synapses = {len(exc_syn.i)}
-    inhibitory synapses = {len(inh_syn.i)}
-    ________________________________________\n
-    astrocytes = {N_a}
-    syn to astro connection = {len(ecs_syn_to_astro.i)}
-    astro to syn connection = {len(ecs_astro_to_syn.i)}
-    ___________________________________________\n
-    Spatial arrangement
-    neurons grid:   {N_rows_exc}x{N_rows_exc} dist={grid_dist/umetre:.1f} um
-    astrocyte grid: {N_rows_astro}x{N_rows_astro} dist={grid_dist/umetre:.1f} um""")
+        # Network Structure
+        with open(f"{name}/network_structure.txt",
+                'w', encoding='utf-8') as file:
+                file.write(f"""NETWORK INFORMATION \n
+        TIME SIMULATION
+        dt = {defaultclock.dt/ms} ms
+        duration = {duration/second} s
+
+        PARAMETERS
+        O_beta = {O_beta}
+        O_delta = {O_delta}
+
+        STRUCTURE PARAMETERS
+        g = {g}
+        p_e = {p_e}
+        p_i = {p_i}
+        s = {s}
+        rate_in = {rate_in/Hz} Hz (single external neuron)
+        rate_in = {(rate_in/Hz) * 160} Hz(total external neurons)
+
+        RECURRENT ELEMENT
+        excitatory neurons = {N_e}
+        inhibitory neurons = {N_i}
+        excitatory synapses = {len(exc_syn.i)}
+        inhibitory synapses = {len(inh_syn.i)}
+        ________________________________________\n
+        astrocytes = {N_a}
+        syn to astro connection = {len(ecs_syn_to_astro.i)}
+        astro to syn connection = {len(ecs_astro_to_syn.i)}
+        ___________________________________________\n""")
     ###################################################################################################
 
-    ## PLOTS #########################################################################################
+    # ## PLOTS #########################################################################################
     if args.p:
         fig1, ax1 = plt.subplots(nrows=2, ncols=1, sharex=True, gridspec_kw={'height_ratios': [3, 1]},
-                                figsize=(12, 14), num=f'NG_network_{rate_in/Hz:.1f}_ph_'+grid_name)
+                                figsize=(12, 14), num=f'NG_network_{rate_in/Hz:.1f}_ph_'+grid_name+f'_run {enu+1}')
         step = 4
         ax1[0].plot(spikes_exc_mon.t[np.array(spikes_exc_mon.i)%step==0]/second, 
                     spikes_exc_mon.i[np.array(spikes_exc_mon.i)%step==0], '|', color='C3')
@@ -574,6 +554,10 @@ if __name__ == '__main__':
                             color_s='red', color_t='green', size=5, lw=0.3)
             connectivity_plot(astro_to_astro, source='Astro', target='Astro', name='Astro_to_Astro',
                             color_s='green', color_t='green', size=5, lw=0.3)
-
-    device.delete()
+    
+    
+    del spikes_exc_mon, spikes_inh_mon, astro_mon
+    del firing_rate_exc, firing_rate_inh, firing_rate
+    del neurons_mon, mon_LFP, var_astro_mon
+    # # device.delete()
     plt.show()

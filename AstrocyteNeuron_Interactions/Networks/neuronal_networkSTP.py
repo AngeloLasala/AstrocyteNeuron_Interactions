@@ -128,8 +128,9 @@ population_fr_exc = PopulationRateMonitor(exc_neurons)
 population_fr_inh = PopulationRateMonitor(inh_neurons)
 population_fr = PopulationRateMonitor(neurons)
 
-state_exc_mon = StateMonitor(exc_neurons, ['v', 'LFP', 'I_syn_ext'], record=True)
-state_inh_mon = StateMonitor(inh_neurons, ['v'], record=True)
+dt_samp = k_EI.dt_samp*ms
+state_exc_mon = StateMonitor(exc_neurons, ['v', 'LFP', 'I_syn_ext'], record=[i for i in range(1000)], dt=dt_samp)
+state_inh_mon = StateMonitor(inh_neurons, ['v'], record=True, dt=dt_samp)
 
 run(duration, report='text')
 #################################################################################################
@@ -166,19 +167,25 @@ np.save(f'{name}/v_inh', state_inh_mon.v[:])
 
 ## ANALYSIS #####################################################################################
 
-#Transient time
-trans_time = k_EI.trans_time
-trans = transient(population_fr.t[:]/second*second, trans_time)
+#Transient time, for LFP trans depend on dt_sample
+trans_time = k_EI.trans_time*ms
+trans = int(trans_time/defaultclock.dt)
+trans_LFP = int(trans_time/dt_samp)
 
 ## Spectral analysis and Neuron's firing rates distribuction
 LFP = state_exc_mon.LFP[:].sum(axis=0)
+print(LFP.shape)
+print(LFP[trans_LFP:].shape)
+
 firing_rate_exc = population_fr_exc.smooth_rate(window="gaussian", width=0.05*ms)
 firing_rate_inh = population_fr_inh.smooth_rate(window="gaussian", width=0.05*ms)
 
 freq_fr_exc, spect_fr_exc = signal.welch(firing_rate_exc[trans:], fs=1/defaultclock.dt, nperseg=len(firing_rate_exc[trans:])//2)
 freq_fr_inh, spect_fr_inh = signal.welch(firing_rate_inh[trans:], fs=1/defaultclock.dt, nperseg=len(firing_rate_inh[trans:])//2)
 freq_fr, spectrum_fr = signal.welch(population_fr.rate[trans:], fs=1/defaultclock.dt, nperseg=len(population_fr.rate[trans:])//3)
-freq_LFP, spectrum_LFP = signal.welch(LFP[trans:], fs=1/defaultclock.dt/Hz, nperseg=len(LFP[trans:])//3)
+freq_LFP, spectrum_LFP = signal.welch(LFP[trans_LFP:], fs=1/dt_samp, nperseg=len(LFP[trans_LFP:])//3)
+print(spectrum_LFP.shape)
+print(spectrum_fr.shape)
 
 neurons_fr, greater_ind = neurons_firing(spikes_mon.t[:]/second, spikes_mon.i[:], time_start=0.5, time_stop=duration/second)
 exc_neurons_fr, greater_ind_exc = neurons_firing(spikes_exc_mon.t[:]/second, spikes_exc_mon.i[:], time_start=0.5, time_stop=duration/second)
@@ -195,7 +202,7 @@ print(f'pop-inh: {firing_rate_inh[trans:].mean()}')
 #################################################################################################
 if args.p:
     print(not(args.no_connection))
-    if not(args.no_connection): name = f"Neural_network/EI_net_STP/Network_pe_g{g}_s{s}_we{w_e/nS:.2f}/v_in{rate_in}/data"
+    if not(args.no_connection): name = f"Neural_network/EI_net_STP/Network_pe_g{g}_s{s}_we{w_e/nS:.2f}/v_in{rate_in}/data_red_{dt_samp/ms:.2f}"
     else: name = f"Neural_network/EI_net_STP/Network_pe_g{g}_s{s}_we{w_e/nS:.2f}/v_in{rate_in}/data_no_connection"
     
     makedir.smart_makedir(name, trial=True)
@@ -226,7 +233,7 @@ if args.p:
     ax1[1].grid(linestyle='dotted')
     ax1[2].grid(linestyle='dotted')
 
-    ax1[3].plot(state_exc_mon.t[trans:]/second, LFP[trans:], color='C5')
+    ax1[3].plot(state_exc_mon.t[trans_LFP:]/second, LFP[trans_LFP:], color='C5')
     ax1[3].set_ylabel('LFP (mV)')
     ax1[3].set_xlabel('time (s)')
     ax1[3].set_xlim([0.25,2.4])
@@ -266,5 +273,5 @@ if args.p:
     plt.savefig(name+f'/trial-{trial_free}'+f"/Power Spectrum - {rate_in/Hz}.png")
 
     device.delete()
-    plt.show()
+    # plt.show()
 device.delete()

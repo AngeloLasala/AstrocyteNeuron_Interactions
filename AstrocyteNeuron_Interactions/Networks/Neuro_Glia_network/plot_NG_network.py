@@ -131,7 +131,8 @@ def variance(x):
 	N = len(x)
 
 	mean = np.mean(x)
-	var = ((x-mean)**2).sum()/(N*(N-1))
+	var = ((x-mean)**2)
+	var = var.sum()/(N*(N-1))
 	return var
 
 def blocking(x ,k=10):
@@ -206,17 +207,17 @@ if __name__ == '__main__':
 
     #[:200] = excitatory , [200:] = inhibitory
     mon_v = np.load(f'{name}/neurons_mon.v.npy')
-    mon_g_e = np.load(f'{name}/neurons_mon.g_e.npy')
-    mon_g_i = np.load(f'{name}/neurons_mon.g_i.npy')
+    # mon_g_e = np.load(f'{name}/neurons_mon.g_e.npy')
+    # mon_g_i = np.load(f'{name}/neurons_mon.g_i.npy')
     mon_t = np.load(f'{name}/neurons_mon.t.npy')
     I_exc = np.load(f'{name}/neurons_mon.I_exc.npy')
     I_inh = np.load(f'{name}/neurons_mon.I_inh.npy')
     I_external = np.load(f'{name}/neurons_mon.I_syn_ext.npy')
     firing_rate_exc_t = np.load(f'{name}/firing_rate_exc.t.npy')
     firing_rate_exc = np.load(f'{name}/firing_rate_exc.rate.npy')
-    firing_rate_inh_t = np.load(f'{name}/firing_rate_inh.t.npy')
+    # firing_rate_inh_t = np.load(f'{name}/firing_rate_inh.t.npy')
     firing_rate_inh = np.load(f'{name}/firing_rate_inh.rate.npy')
-    firing_rate_t = np.load(f'{name}/firing_rate.t.npy')
+    # firing_rate_t = np.load(f'{name}/firing_rate.t.npy')
     firing_rate = np.load(f'{name}/firing_rate.rate.npy')
 
     N_e = 3200
@@ -235,11 +236,11 @@ if __name__ == '__main__':
 
     # Network analysis concern mean values and spectral analysis of
     # population firing rate and LFP
-    analysis = {'BASE': [0.5*second, 1.6*second],'GRE1': [4*second, 6.5*second], 'GRE2': [9*second, 11.5*second]}
+    analysis = {'BASE': [0.3*second, 1.6*second],'GRE1': [4*second, 6.5*second], 'GRE2': [9*second, 11.5*second]}
 
     fig4, ax4 = plt.subplots(nrows=2, ncols=1, sharex=True,
                             num='Firing rate and LFP ')
-    fr_t = firing_rate_t[:]/second
+    fr_t = firing_rate_exc_t[:]/second
     fr_smooth = smoothing_b(firing_rate, width=5*ms)
     ax4[0].plot(fr_t[5000:], fr_smooth[5000:], color='k', alpha=0.7)
     ax4[0].grid(linestyle='dotted')
@@ -256,10 +257,10 @@ if __name__ == '__main__':
         fig3, ax3 = plt.subplots(nrows=1, ncols=2, figsize=(12,6),
                             num='Spectral analysis '+zone)
         
-        fr_exc = selected_window(firing_rate_exc, analysis[zone][0], analysis[zone][1])
-        fr_inh = selected_window(firing_rate_inh, analysis[zone][0], analysis[zone][1])
-        fr = selected_window(firing_rate, analysis[zone][0], analysis[zone][1])
-        LFP_w = selected_window(LFP, analysis[zone][0], analysis[zone][1])
+        fr_exc = selected_window(firing_rate_exc, analysis[zone][0], analysis[zone][1], duration=duration)
+        fr_inh = selected_window(firing_rate_inh, analysis[zone][0], analysis[zone][1], duration=duration)
+        fr = selected_window(firing_rate, analysis[zone][0], analysis[zone][1], duration=duration)
+        LFP_w = selected_window(LFP, analysis[zone][0], analysis[zone][1], duration=duration)
 
         N = len(fr_exc)
         NN = len(LFP_w)
@@ -279,7 +280,7 @@ if __name__ == '__main__':
 
         ax3[0].set_title(zone)
         ax3[0].plot(freq_fr_exc, spectrum_fr_exc, color='k')
-        ax3[0].set_xlim([-10,500])
+        ax3[0].set_xlim([-10,200])
         ax3[0].set_ylabel('spectrum fr')
         ax3[0].grid(linestyle='dotted')
         ax3[0].set_xlabel('frequecy (Hz)')
@@ -287,17 +288,19 @@ if __name__ == '__main__':
         
         ax3[1].plot(freq_LFP_w, spectrum_LFP_w, color='C5')
         ax3[1].plot(freq_LFP_w[1:], 1/(freq_LFP_w[1:]**2), alpha=0.5)
-        ax3[1].set_xscale('log')
-        ax3[1].set_yscale('log')
+        ax3[1].set_xlim([-10,200])
+        ax3[1].set_ylim([-0.0001,0.007])
+        # ax3[1].set_xscale('log')
+        # ax3[1].set_yscale('log')
         ax3[1].set_ylabel('spectrum LFP')
         ax3[1].set_xlabel('frequecy (Hz)')
         ax3[1].grid(linestyle='dotted')
 
         # Underline selected zone
-        ax4[0].plot(selected_window(fr_t, analysis[zone][0], analysis[zone][1]),
-                    selected_window(fr_smooth, analysis[zone][0], analysis[zone][1]), color='C1')
+        ax4[0].plot(selected_window(fr_t, analysis[zone][0], analysis[zone][1], duration=duration),
+                    selected_window(fr_smooth, analysis[zone][0], analysis[zone][1], duration=duration), color='C1')
         
-        ax4[1].plot(selected_window(mon_t, analysis[zone][0], analysis[zone][1]),
+        ax4[1].plot(selected_window(mon_t, analysis[zone][0], analysis[zone][1], duration=duration),
                     LFP_w, color='C1')
         
     # Neurons firnig rate distribuction
@@ -311,12 +314,12 @@ if __name__ == '__main__':
     # Mean firing rate and Recurrent current before and after GRE
     # before: trans- 2 second
     # after: 4 - 6.5 second
-    fr_exc_base = selected_window(firing_rate_exc, analysis['BASE'][0], analysis['BASE'][1])  
-    fr_inh_base = selected_window(firing_rate_inh, analysis['BASE'][0], analysis['BASE'][1])
-    fr_exc_gre1 = selected_window(firing_rate_exc, analysis['GRE1'][0], analysis['GRE1'][1])  
-    fr_inh_gre1 = selected_window(firing_rate_inh, analysis['GRE1'][0], analysis['GRE1'][1])
+    fr_exc_base = selected_window(firing_rate_exc, analysis['BASE'][0], analysis['BASE'][1], duration=duration)  
+    fr_inh_base = selected_window(firing_rate_inh, analysis['BASE'][0], analysis['BASE'][1], duration=duration)
+    fr_exc_gre1 = selected_window(firing_rate_exc, analysis['GRE1'][0], analysis['GRE1'][1], duration=duration)  
+    fr_inh_gre1 = selected_window(firing_rate_inh, analysis['GRE1'][0], analysis['GRE1'][1], duration=duration)
 
-    I_exc_base = selected_window(I_exc[0], 1.2*second, 5.5*second)
+    I_exc_base = selected_window(I_exc[0], 1.2*second, 5.5*second, duration=duration)
    
     ###########################################################################################
     ## Information #############################################################################
@@ -398,7 +401,7 @@ if __name__ == '__main__':
     ax1[1].set_ylabel('FR_exc (Hz)')
     ax1[1].grid(linestyle='dotted')
 
-    ax1[2].plot(firing_rate_inh_t[trans:]/second, firing_rate_inh[trans:]/Hz, color='C0')
+    ax1[2].plot(firing_rate_exc_t[trans:]/second, firing_rate_inh[trans:]/Hz, color='C0')
     ax1[2].set_ylabel('FR_inh (Hz)')
     ax1[2].set_xlabel('time (s)')
     ax1[2].grid(linestyle='dotted')
@@ -434,12 +437,12 @@ if __name__ == '__main__':
     ax6.set_ylabel('Number of neurons')
     ax6.legend()
 
-    # fig2, ax2 = plt.subplots(nrows=4, ncols=1, sharex=True, figsize=(13, 9), 
-    #                         num=f'astrocyte dynamics')
+    fig2, ax2 = plt.subplots(nrows=1, ncols=1, sharex=True, figsize=(13, 9), 
+                            num=f'astrocyte dynamics')
     # con_index = connected_astro[0:1] # synaptically connected astrocytes
     # free_index = free_astro[0:1]     # not synaptically connected astrocytes
-
-    # ax2[0].plot(t[trans:], Y_S[con_index][0,trans:]/umolar, color='C3', label='synaptically connected')
+    print(Y_S[0]/umolar)
+    ax2.plot( Y_S.mean(axis=0)/umolar, color='C3', label='synaptically connected')
     # ax2[0].plot(t[trans:], Y_S[free_index][0,trans:]/umolar, color='C3', ls='dashed', label='free')
     # ax2[0].set_ylabel(r'$Y_S$ ($\mu$M)')
     # ax2[0].grid(linestyle='dotted')
