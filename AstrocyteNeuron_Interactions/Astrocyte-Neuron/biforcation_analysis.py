@@ -4,7 +4,8 @@ Biforcation analysis fro saved data
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import argrelextrema
+from scipy.signal import argrelextrema, welch
+from scipy.fft import fft, ifft
 from brian2 import *
 
 def Biforcation_brian(variable, control_par, t_relax):
@@ -133,42 +134,67 @@ if __name__ == "__main__":
 	Gamma_S = np.load(f'{name}/Gamma_S.npy')
 	#################################################################################################
 	
+	array_plot = np.arange(5,55,5)
+
 	## Biforcation
 	par_list_c, C_bif = Biforcation_brian(C, rate_in, t_relax=int(t_relax/dt_astro))
 
 	## Period
 	period_list, period_list_err = Period_brian(C, t_astro, t_relax=int(t_relax/dt_astro))
 	
+	## Fourier analysis -and periods estimation
+	fig4, ax4 = plt.subplots(nrows=1, ncols=1, num='Spectral analysis')
+	for r in array_plot:
+		# yf = fft(C[r])
+		# xf = fftfreq(NN, dt_astro)[:NN//2]
+		# plt.plot(xf, 2.0/NN * np.abs(yf[0:NN//2]), label='fft')
+		NN = len(C[r])
+		f, Pxx_den = welch(C[r], 1/dt_astro, nperseg=NN//4)		
+		ax4.plot(f, Pxx_den, label=f'{rate_in[r]:.2f} (Hz)')
+	ax4.legend()
+	ax4.set_xlabel('frequency (Hz)')
+	ax4.set_xlim([-0.2, 1.0])
+	ax4.grid(linestyle='dotted')
+	
+
+
 	plt.figure()
 	plt.errorbar(rate_in, period_list, period_list_err,fmt='o', markersize=4, lw=0.4)
 
 	## Plots #######################################################################################
-	array_plot = [4,7,40]
+	
 	print(f'rate_in = {rate_in[0]/Hz} - {rate_in[-1]/Hz}')
 
 	C_theta = 0.0005
 	fig1, ax1 = plt.subplots(nrows=1,ncols=1, num='bifurcation') 
-	plt.hlines(C_theta, rate_in[0], rate_in[-1], color='k', ls='dashed', label='treshold')
+	ax1.hlines(C_theta/umolar, rate_in[0], rate_in[-1], color='k', ls='dashed', label='treshold')
 	for p, c in zip(par_list_c, C_bif):
-		plt.scatter(p, c, color='C3', s=2.0)
-	plt.legend()
+		ax1.scatter(p, c/umolar, color='C3', s=2.0)
+	ax1.set_xlabel(r'$\nu_S$ (Hz)')
+	ax1.set_ylabel(r'C ($\mu M$)')
+	ax1.grid(linestyle='dotted')
+	ax1.legend()
 	
 
 
 	fig2, ax2 = plt.subplots(nrows=1,ncols=1, num='astro variable C') 
 	for r in array_plot:
-		plt.plot(t_astro, C[r], label=rate_in[r])
-	plt.legend()
+		ax2.plot(t_astro[int(t_relax/dt_astro):], C[r,int(t_relax/dt_astro):]/umolar, label=f'{rate_in[r]/Hz:.2f} (Hz)')
+	ax2.legend()
+	ax2.set_xlabel('time (s)')
+	ax2.set_ylabel(r'C ($\mu M$)')
+	ax2.grid(linestyle='dotted')
+	
 
 	fig3, ax3 = plt.subplots(nrows=1,ncols=1, num='synaptic variable Y_S') 
 	for r in array_plot:
-		plt.plot(t_syn, Y_S[r], label=rate_in[r])
+		plt.plot(t_syn, Y_S[r], label=f'{rate_in[r]/Hz:.2f} (Hz)')
 		plt.plot()
 	plt.legend()
 
 	fig3, ax3 = plt.subplots(nrows=1,ncols=1, num='sybaptic variable r_S Gamma_S') 
 	for i,r in enumerate(array_plot):
-		plt.plot(t_syn, r_S[r], c=f'C{i}',label=rate_in[r])
+		plt.plot(t_syn, r_S[r], c=f'C{i}',label=f'{rate_in[r]/Hz:.2f} (Hz)')
 		plt.plot(t_syn, Gamma_S[r], c=f'C{i}')
 		plt.plot()
 	plt.legend()
