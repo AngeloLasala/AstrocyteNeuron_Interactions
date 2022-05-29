@@ -65,7 +65,7 @@ if __name__ == "__main__":
 	parser.add_argument('-p', action='store_true', help="show paramount plots, default=False")
 	args = parser.parse_args()
 
-	mod = {'A':[0.5, 1.2], 'F':[2.0, 0.6]}
+	mod = {'A':[0.5, 1.2], 'F':[3.2, 0.6]}
 	## PARAMETERS ###################################################################
 	# -- Synapse --
 	rho_c = 0.005                # Synaptic vesicle-to-extracellular space volume ratio
@@ -246,6 +246,7 @@ if __name__ == "__main__":
 		ax1_1.errorbar(rate_in/Hz, np.mean(syn_mon.r_S[N_syn:2*N_syn,trans:], axis=1), np.std(syn_mon.r_S[N_syn:2*N_syn,trans:], axis=1), 
                 fmt='o', markersize=4, lw=0.4, color='C2', label='open-loop')
 		ax1_1.set_ylabel(r'$\langle r_S \rangle$')
+		ax1_1.set_xlabel(r'$\nu_S$ (Hz)')
 		ax1_1.set_xscale('log')
 		ax1_1.legend()
 		ax1_1.grid(linestyle='dotted')
@@ -350,11 +351,12 @@ if __name__ == "__main__":
 		fig7, ax7 = plt.subplots(nrows=1, ncols=1, num='Average release probability vs incoming presyn AP -bif')
 
 		ax7.errorbar(rate_in/Hz, np.mean(syn_mon.r_S[2*N_syn:,trans:], axis=1), np.std(syn_mon.r_S[2*N_syn:,trans:], axis=1), 
-                fmt='o', markersize=4, lw=0.4, color='black', label='no gliotrasmission')
+                fmt='o', markersize=4, lw=0.4, color='black', label='STP')
 		ax7.errorbar(rate_in/Hz, np.mean(syn_mon.r_S[:N_syn,trans:], axis=1), np.std(syn_mon.r_S[:N_syn,trans:], axis=1), 
-                fmt='o', markersize=4, lw=0.4, color='C6', label='closed-loop')
+                fmt='o', markersize=4, lw=0.4, color='C6', label='Tripartite Synapses')
 		
 		ax7.set_ylabel(r'$\langle r_S \rangle$')
+		ax7.set_xlabel(r'$\nu_S$ (Hz)')
 		ax7.set_xscale('log')
 		ax7.legend()
 		ax7.grid(linestyle='dotted')

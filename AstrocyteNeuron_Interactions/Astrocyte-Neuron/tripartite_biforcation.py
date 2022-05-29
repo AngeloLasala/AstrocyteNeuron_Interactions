@@ -222,7 +222,7 @@ if __name__ == "__main__":
 	## Plots #########################################################################################
 	# Astro variable
 	trans = 50000   #trans*dt=50000*0.5*ms=25 s
-	trans = 47000   #trans*dt_sam = 40000*10*ms= 400 s
+	trans = 35000   #trans*dt_sam = 40000*10*ms= 400 s
 
 	if args.p:
 		index = 1

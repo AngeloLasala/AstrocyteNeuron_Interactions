@@ -48,6 +48,40 @@ def Biforcation_brian(variable, trans):
         
 	return I_list, Bif_list
 
+def STP_mean_field(u_0, nu_S_start=-1, nu_S_stop=2, nu_S_number=200):
+	"""
+	Mean field solution of simple synapses (no gliotramission modulation)
+	described by short-term plasticity.
+	Return steady state of synaptic variable, u_S and x_S, for constant 
+	synaptic input rate, nu_S (Hz)
+
+	Parameters
+	----------
+	nu_S_start : integer 
+				Order of magnitude of first nu_S value
+		
+	nu_S_stop : integer 
+				Order of magnitude of last nu_S value
+
+	nu_S_number : interger (optionl)
+				Total sample's number of nu_S. Default=200
+	Returns
+	-------
+	nu_S : 1D-array
+			Sample of synaptic rates (Hz)
+	u_S : 1D-array
+		Steady states of u_S
+
+	x_S : 1D-array
+		Steady state of x_S
+
+	"""
+	nu_S = np.logspace(nu_S_start, nu_S_stop, nu_S_number)*Hz
+	u_S =  (u_0*(Omega_f+nu_S))/(Omega_f+nu_S*u_0)
+	x_S = Omega_d / (Omega_d + u_S*nu_S)
+
+	return nu_S, u_S, x_S
+
 if __name__ == "__main__":
 	## PARAMETERS ###################################################################
 	# -- Neuron --
@@ -114,6 +148,8 @@ if __name__ == "__main__":
 	Omega_e = 60/second          # Gliotransmitter clearance rate
 	alpha = 0.0                  # Gliotransmission nature
 	#################################################################################
+	U_0 = 0.6
+	J_S = rho_e * O_G * G_T /Omega_e
 
 	## TIME PARAMETERS ##############################################################
 	defaultclock.dt = 0.01*second
@@ -154,13 +190,19 @@ if __name__ == "__main__":
 	# Neurotransmitter concentration in the extracellular space:
 	Y_S                         : mmolar
 	"""
-	
+	nu_S, u_S, x_S = STP_mean_field(u_0=U_0)
+	Y_S_daniele = (rho_c*Y_T*u_S*x_S*nu_S)/(Omega_c)
+	for i,hh in zip (nu_S, Y_S_daniele):
+		print(i,hh)
+
+	plt.figure()
+	plt.plot(nu_S/Hz, Y_S_daniele/umolar, color='k')
 
 	# y_s_values = [0]*uM
 	# Y_S_function = TimedArray(y_s_values, dt=duration)
 	N_a = 500
 	astrocyte = NeuronGroup(N_a, model=astro_eqs, method='rk4')
-	astrocyte.Y_S = np.linspace(0,100,N_a)*umolar
+	astrocyte.Y_S = np.linspace(8,20,N_a)*umolar
 	astrocyte.h = 0.9
 	astrocyte.I = 0.01*umolar
 	astrocyte.C = 0.01*umolar
