@@ -441,7 +441,6 @@ if __name__ == '__main__':
                             num=f'astrocyte dynamics')
     # con_index = connected_astro[0:1] # synaptically connected astrocytes
     # free_index = free_astro[0:1]     # not synaptically connected astrocytes
-    print(Y_S[0]/umolar)
     ax2.plot( Y_S.mean(axis=0)/umolar, color='C3', label='synaptically connected')
     # ax2[0].plot(t[trans:], Y_S[free_index][0,trans:]/umolar, color='C3', ls='dashed', label='free')
     # ax2[0].set_ylabel(r'$Y_S$ ($\mu$M)')
