@@ -285,7 +285,7 @@ def Period3D(model, par, par_start, par_stop, par_tot=300, t0=0., t_stop=500., d
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Dynamic analysis of ChI model')
-    parser.add_argument("-K3", type=float,
+    parser.add_argument("K3", type=float,
                         help="""K3 parameter descriminates Amplitude Modulation (AM) to Frequency Modelation (FM):
                                  K3=0.1 AM; K3=0.051 FM""")
 
@@ -307,7 +307,7 @@ if __name__ == "__main__":
     # Parameters IP3 metabolism
     #PLC delta production 
     if K3 == 0.1:  v_delta = 0.02  # Maximal rate of IP3 production by PLC_delta, muM*sec-1
-    if K3 ==0.051: v_delta = 0.05
+    if K3 == 0.051: v_delta = 0.05
     k_delta = 1.5      # Inhibition constant of PLC_delta activity, muM
     K_PLCdelta = 0.1   # Ca affinity of PLC_delta, muM
     #degradation
