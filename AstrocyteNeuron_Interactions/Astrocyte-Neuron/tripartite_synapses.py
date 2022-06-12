@@ -12,7 +12,7 @@ import makedir
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Tripartite synapses')
 	parser.add_argument('-p', action='store_true', help="show paramount plots, default=False")
-	parser.add_argument('-by_hand', action='store_true', help="show paramount plots, default=False")
+	parser.add_argument('-by_hand', action='store_true', help="presynaptic firing rate by hand, default=False")
 	args = parser.parse_args()
 
 	## PARAMETERS ###################################################################
@@ -57,13 +57,13 @@ if __name__ == "__main__":
 	d_5 = 0.08*umolar            # Ca^2+ activation dissociation constant
 	#  IP_3 production
 	# Agonist-dependent IP_3 production
-	O_beta = 0.5*umolar/second   # Maximal rate of IP_3 production by PLCbeta
+	O_beta = 3.2*umolar/second   # Maximal rate of IP_3 production by PLCbeta
 	O_N = 0.3/umolar/second      # Agonist binding rate
 	Omega_N = 0.5/second         # Maximal inactivation rate
 	K_KC = 0.5*umolar            # Ca^2+ affinity of PKC
 	zeta = 10                    # Maximal reduction of receptor affinity by PKC
 	# Endogenous IP3 production
-	O_delta = 1.2*umolar/second  # Maximal rate of IP_3 production by PLCdelta
+	O_delta = 0.6*umolar/second  # Maximal rate of IP_3 production by PLCdelta
 	kappa_delta = 1.5*umolar     # Inhibition constant of PLC_delta by IP_3
 	K_delta = 0.1*umolar         # Ca^2+ affinity of PLCdelta
 	# IP_3 degradation
@@ -87,7 +87,7 @@ if __name__ == "__main__":
 
 	## TIME PARAMETERS ##############################################################
 	defaultclock.dt = 0.05*ms
-	duration = 2*second
+	duration = 1.5*second
 	seed(28371)  # to get identical figures for repeated runs
 	#################################################################################
 
@@ -129,7 +129,7 @@ if __name__ == "__main__":
                 Omega_N*(1 + zeta * C/(C + K_KC)) * clip(Gamma_A,0,1) : 1
 
     # IP_3 dynamics (1)
-    dI/dt = J_beta + J_delta - J_3K - J_5P                           : mmolar
+    dI/dt = J_delta - J_3K - J_5P                           : mmolar
 
     J_beta = O_beta * Gamma_A                                        : mmolar/second
     J_delta = O_delta/(1 + I/kappa_delta) * C**2/(C**2 + K_delta**2) : mmolar/second
@@ -210,18 +210,19 @@ if __name__ == "__main__":
 	net = Network(pre_neurons, synapses, astrocyte, post_neurons, ecs_astro_to_syn, 
 						pre_AP, syn_mon, astro_mon, astro_var, post_mon )		
 	net.store()
-	fig4, ax4 = plt.subplots(nrows=3, ncols=1, sharex=True, figsize=(12,7),
+
+	plt.rc('font', size=13)   
+	plt.rc('legend', fontsize=10)	
+	fig4, ax4 = plt.subplots(nrows=3, ncols=1, sharex=True, figsize=(10,5),
 							num='Facilitation whit respect to G_T' )
 	
 	ii = 0
-	for G_T in [400,300,200]*mmolar:
+	for G_T in [200,300,400]*mmolar:
 		seed(1995235)
 		ii +=1
 
 		net.restore()		
 		net.run(duration, report='text')
-		print(syn_mon.u_S)
-		print(astro_mon.t[:])
 
 		## Facilitation - Paired Pulse Ratio (PPR)
 		spk_position = []
@@ -233,37 +234,46 @@ if __name__ == "__main__":
 		
 		PPR_noglio = r_S_noglio[1:]/r_S_noglio[:-1]
 		PPR_glio = r_S_glio[1:]/r_S_glio[:-1]
-		print(PPR_noglio)
-		print(PPR_glio)
+		# print(PPR_noglio)
+		# print(PPR_glio)
 
-		ax4[0].plot(syn_mon.t[:]/ms, syn_mon.U_0[1], label=r'$G_T$='f'{G_T/mmolar} mM')
+			
+		ax4[0].plot(syn_mon.t[:]/second, (1-syn_mon.Gamma_S[1])*U_0__star, label=r'$G_T$ = 'f'{G_T/mmolar}'+r' $\rm{mM}$')
 		ax4[0].grid(linestyle="dotted")
 		ax4[0].set_ylabel(r'$u_0$')
 		ax4[0].legend()
 
-		ax4[1].plot(syn_mon.t[:]/ms, syn_mon.Y_S[0]/umolar, color='black', alpha=0.1)
-		ax4[1].plot(syn_mon.t[:]/ms, syn_mon.Y_S[1]/umolar)
+		ax4[1].plot(syn_mon.t[:]/second, syn_mon.Y_S[0]/umolar, color='black', alpha=0.1)
+		ax4[1].plot(syn_mon.t[:]/second, syn_mon.Y_S[1]/umolar)
 		ax4[1].set_ylabel(r'$Y_S$ ($\mu$M)')
-		ax4[1].set_xlabel('time (ms)')
 		ax4[1].grid(linestyle="dotted")
 
-		for t, PPR in zip(syn_mon.t[spk_position][1:]/ms, PPR_noglio):
+		for t, PPR in zip(syn_mon.t[spk_position][1:]/second, PPR_noglio):
 			if PPR>1: color='C0'
 			else: color='C1'
 			ax4[2].scatter(t, 0, c=color, marker='|')
 
-		for t, PPR in zip(syn_mon.t[spk_position][1:]/ms, PPR_glio):
+		for t, PPR in zip(syn_mon.t[spk_position][1:]/second, PPR_glio):
 			if PPR>1: color='C0'
 			else: color='C1'
 			ax4[2].scatter(t, ii, c=color, marker='|')
+
+		
+		yticks = ['STP',r'$G_T$ = 200.0'+r' $\rm{mM}$', r'$G_T$ = 300.0'+r' $\rm{mM}$', r'$G_T$ = 400.0'+r' $\rm{mM}$']
+		ax4[2].set_xlabel('time '+r'($\rm{s}$)')
+		# ax4[2].set_ylim(yrange)
+		ax4[2].set_yticks(np.arange(len(yticks)))
+		ax4[2].set_yticklabels(yticks)
 				
 
-		print(syn_mon.u_S)
-		print(astro_mon.t[:])
+		# print(syn_mon.u_S)
+		# print(astro_mon.t[:])
 	
 				
 	## Plots #########################################################################################
 	if args.p:
+		 
+
 		fig1, ax1 = plt.subplots(nrows=5, ncols=1, sharex=True, figsize=(14,8), gridspec_kw={'height_ratios': [0.2,0.8,0.8,1,0.8]},
 								num= 'OPEN LOOP - Modulation of synaptic release by GRE')
 
@@ -323,32 +333,28 @@ if __name__ == "__main__":
 		ax2[2].set_xlabel('time (ms)')
 		ax2[2].grid(linestyle="dotted")
 
-		fig3, ax3 = plt.subplots(nrows=5, ncols=1, sharex=True,
+		fig3, ax3 = plt.subplots(nrows=4, ncols=1, sharex=True,
 								num="Astrocite dynamics - Open Loop")
 
-		ax3[0].plot(astro_var.t[:]/ms, astro_var.Y_S[0]/umolar, color='C3')
-		ax3[0].set_ylabel(r'$Y_S$ ($\mu$M)')
+		ax3[0].plot(astro_var.t[:]/second, astro_var.C[0]/umolar, color='C3')
+		ax3[0].set_ylabel(r'C ($\mu$M)')
+		ax3[0].axhline(C_Theta/umolar,0,duration/second, ls='dashed', color='black')
 		ax3[0].grid(linestyle='dotted')
 
-		ax3[1].plot(astro_var.t[:]/ms, astro_var.Gamma_A[0], color='C4')
-		ax3[1].set_ylabel(r'$\Gamma_A$')
+		ax3[1].plot(astro_var.t[:]/second, astro_var.G_A[0]/umolar, color='C5')
+		ax3[1].set_ylabel(r'$G_A$ ($\mu$M)')
 		ax3[1].grid(linestyle='dotted')
 
-		ax3[2].plot(astro_var.t[:]/ms, astro_var.I[0]/umolar, color='C0')
-		ax3[2].set_ylabel(r'I ($\mu$M)')
-		ax3[2].grid(linestyle='dotted')
+		ax3[2].plot(syn_mon.t[:]/second, syn_mon.Gamma_S[1], color='C9')
+		ax3[2].set_ylabel(r"$\Gamma_S$")
+		ax3[2].grid(linestyle="dotted")
+		ax2[2].legend()
 
-		ax3[3].plot(astro_var.t[:]/ms, astro_var.C[0]/umolar, color='C3')
-		ax3[3].set_ylabel(r'C ($\mu$M)')
-		ax3[3].axhline(C_Theta/umolar,0,duration/second, ls='dashed', color='black')
-		ax3[3].grid(linestyle='dotted')
-
-		ax3[4].plot(astro_var.t[:]/ms, astro_var.G_A[0]/umolar, color='C5')
-		ax3[4].set_ylabel(r'$G_A$ ($\mu$M)')
-		ax3[4].set_xlabel('time (ms)')
-		ax3[4].grid(linestyle='dotted')
+		ax3[3].plot(astro_var.t[:]/second, (1-syn_mon.Gamma_S[1])*U_0__star, color='C2')
+		ax3[3].set_ylabel(r'$u_0$')
+		ax3[3].set_xlabel('time'+r' ($\rm{s}$)')
+		ax3[3].grid(linestyle="dotted")
 		
-
 		plt.show()
 
 

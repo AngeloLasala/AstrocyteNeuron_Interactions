@@ -7,7 +7,7 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from brian2 import *
-from AstrocyteNeuron_Interactions import makedir
+import makedir
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Tripartite synapses')
@@ -202,11 +202,13 @@ if __name__ == "__main__":
 				
 	## Plots #########################################################################################
 	if args.p:
-		fig1, ax1 = plt.subplots(nrows=4, ncols=1, sharex=True, figsize=(12,7),
-								num='Astrocyte dynamics, Open- vs Closed loop')
+		plt.rc('font', size=13)
+		plt.rc('legend', fontsize=10)
+		fig1, ax1 = plt.subplots(nrows=3, ncols=1, sharex=True, figsize=(9,6),
+								num='Astrocyte dynamics, Open- vs Closed loop', tight_layout=True)
 
-		ax1[0].plot(astro_var.t[:]/second, astro_var.Y_S[0]/umolar, color='C3', ls='dashed', label='Open loop')
-		ax1[0].plot(astro_var.t[:]/second, astro_var.Y_S[1]/umolar, color='C3', label='Closed loop')
+		ax1[0].plot(astro_var.t[:]/second, astro_var.Y_S[0]/umolar, color='C1', ls='dashed', label='Open loop')
+		ax1[0].plot(astro_var.t[:]/second, astro_var.Y_S[1]/umolar, color='C1', label='Closed loop')
 		ax1[0].set_ylabel(r'$Y_S$ ($\mu$M)')
 		ax1[0].grid(linestyle='dotted')
 		ax1[0].legend()
@@ -223,11 +225,7 @@ if __name__ == "__main__":
 		ax1[2].axhline(C_Theta/umolar,0,duration/second, ls='dashed', color='black')
 		ax1[2].grid(linestyle='dotted')
 		ax1[2].legend()
-
-		ax1[3].scatter(astro_mon.t[:]/second, astro_mon.i[:],color='C2', marker='|')
-		ax1[3].set_ylim([-0.3,1.3])
-		ax1[3].set_ylabel('astro ind')
-		ax1[3].set_xlabel('time (s)')
+		ax1[2].set_xlabel(r'time ($\rm{s}$)')
 
 		fig2, ax2 = plt.subplots(nrows=3, ncols=1, sharex=True, 
 								num='Synapses dynamics')

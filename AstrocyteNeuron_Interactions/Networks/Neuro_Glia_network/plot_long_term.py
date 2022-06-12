@@ -322,6 +322,7 @@ if __name__ == '__main__':
     fig2, ax2 = plt.subplots(nrows=1, ncols=1, num='Synchrony')
     ax2.set_xlabel('time (s)')
     ax2.set_ylabel(r'$\chi$')
+    ax2.grid(linestyle='dotted')
 
     for w in range(1,total_window):
         name = args.file+f'/time_windows_{w}'
@@ -343,6 +344,11 @@ if __name__ == '__main__':
             ax2.scatter(t, synchrony_v(v_ii), color='k')
             ax2.scatter(t, synchrony_v(v_exc_ii), color='C3')
             ax2.scatter(t, synchrony_v(v_inh_ii), color='C0')
+        
+    ax2.scatter(t, synchrony_v(v_ii), color='k', label='network')
+    ax2.scatter(t, synchrony_v(v_exc_ii), color='C3', label='E')
+    ax2.scatter(t, synchrony_v(v_inh_ii), color='C0', label='I')
+    ax2.legend()
            
     #################################################################################################
            

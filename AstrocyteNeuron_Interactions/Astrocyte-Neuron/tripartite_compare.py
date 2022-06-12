@@ -41,7 +41,7 @@ if __name__ == "__main__":
 	w_e = 0.05*nS                # Excitatory synaptic conductance
 	w_i = 1.0*nS                 # Inhibitory synaptic conductance
 	# - Presynaptic receptors
-	O_G = 1.5/umolar/second      # Agonist binding (activating) rate
+	O_G = 0.9/umolar/second      # Agonist binding (activating) rate
 	Omega_G = 0.5/(60*second)    # Agonist release (deactivating) rate
 
 	# -- Astrocyte --
@@ -88,7 +88,7 @@ if __name__ == "__main__":
 	#################################################################################
 
 	## TIME PARAMETERS ##############################################################
-	defaultclock.dt = 0.05*ms
+	defaultclock.dt = 0.1*ms
 	duration = 20*second
 	seed(145624)
 	#################################################################################
@@ -174,7 +174,7 @@ if __name__ == "__main__":
 	synapses.connect(j='i')   # no gliotrasmission
 	synapses.x_S = 1.0
 
-	astrocyte = NeuronGroup(N_a * N_syn, model=astro_eqs, method='rk4', dt=1e-2*second,
+	astrocyte = NeuronGroup(N_a * N_syn, model=astro_eqs, method='rk2', dt=1e-2*second,
                             threshold='C>C_Theta', refractory='C>C_Theta', reset=astro_release)
 	astrocyte.x_A = 1.0
 	astrocyte.h = 0.9
@@ -198,52 +198,58 @@ if __name__ == "__main__":
 	run(duration, report='text')
 	print(syn_mon.Y_S[:].shape)
 	print(syn_mon.Y_S[:].mean(axis=0))
-	print(syn_mon.Y_S[:].mean(axis=0).shape)
+	print(syn_mon.Y_S[2*N_syn:].mean(axis=0).mean())
+	print(syn_mon.Y_S[2*N_syn:].mean(axis=0).std())
 				
 	## Plots #########################################################################################
 	if args.p:
-		fig1 = plt.figure(figsize=(15,6),
-						  num=f'Compare: noglio, open and close, nu_i={rate_in/Hz} Hz')
+		print('start plot')
+		plt.rc('font', size=13)
+		plt.rc('legend', fontsize=10)
+		fig1 = plt.figure(figsize=(13.5,6),
+						  num=f'Compare: noglio, open and close, nu_i={rate_in/Hz} Hz', tight_layout=True)
 
 		gs = fig1.add_gridspec(2,2)
 		ax1_1 = fig1.add_subplot(gs[0, 0])
 		ax1_2 = fig1.add_subplot(gs[1, 0])
 		ax1_3 = fig1.add_subplot(gs[:, 1])
 
-		ax1_1.set_title(r'$\nu_{in}=$'+f'{rate_in/Hz} Hz')
+		# ax1_1.set_title(r'$\nu_{in}=$'+f'{rate_in/Hz} Hz')
 		ax1_1.plot(syn_mon.t[:]/second, syn_mon.Y_S[2*N_syn:].mean(axis=0)/umolar, color='black', label='no gliotrasmission')
-		ax1_1.set_ylabel(r'$\langle Y_S \rangle$ ($\mu$M)')
+		ax1_1.set_ylabel(r'$\bar{Y_S}$ ($\mu$M)')
 		ax1_1.grid(linestyle='dotted')
 		ax1_1.legend()
 
-		ax1_2.axhline(syn_mon.Y_S[2*N_syn:].mean()/umolar,0,duration/second, ls='dashed', color='black', label='mean noglio')
+		# ax1_2.axhline(syn_mon.Y_S[2*N_syn:].mean()/umolar,0,duration/second, ls='dashed', color='black', label='mean noglio')
+		# ax1_2.plot(syn_mon.t[:]/second, syn_mon.Y_S[2*N_syn:].mean(axis=0)/umolar, alpha=0.5, color='black')
 		ax1_2.plot(syn_mon.t[:]/second, syn_mon.Y_S[N_syn:2*N_syn].mean(axis=0)/umolar, color='C2', label='open-loop')
 		ax1_2.plot(syn_mon.t[:]/second, syn_mon.Y_S[:N_syn].mean(axis=0)/umolar, color='C6', label='closed-loop')
-		ax1_2.set_ylabel(r'$\langle Y_S \rangle$ ($\mu$M)')
-		ax1_2.set_xlabel('time (s)')
+		ax1_2.set_ylabel(r'$\bar{Y_S}$ ($\mu$M)')
+		ax1_2.set_xlabel(r'time ($\rm{s}$)')
 		ax1_2.grid(linestyle='dotted')
 		ax1_2.legend()
 
 		ax1_3.scatter(GRE.t[:][GRE.i[:]<N_syn]/second, GRE.i[:][GRE.i[:]<N_syn], marker='|', color='C6')
 		ax1_3.scatter(GRE.t[:][GRE.i[:]>N_syn]/second, GRE.i[:][GRE.i[:]>N_syn], marker='|', color='C2')
-		ax1_3.set_ylabel('astrocite indeces')
-		ax1_3.set_xlabel('time (s)')
+		ax1_3.set_ylabel('astrocyte index')
+		ax1_3.set_xlabel(r'time ($\rm{s}$)')
 		
-		fig2, ax2 = plt.subplots(nrows=2, ncols=1,
-							   num=f'open-, closed- astro dynamics, Omega_G={Omega_G/Hz:.4f} Hz')
+		fig2, ax2 = plt.subplots(nrows=1, ncols=1,  tight_layout=True, figsize=(5.5,3), 
+							   num=f'open-, closed- astro dynamics, O_G={O_G*umolar*second:.4f} Hz_MT')
 
-		ax2[0].plot(syn_mon.t[:]/second, syn_mon.Gamma_S[0], color='C6', label='closed-loop')
-		ax2[0].plot(syn_mon.t[:]/second, syn_mon.Gamma_S[161], color='C2', label='open-loop')
-		ax2[0].set_ylabel(r'$\Gamma_S$')
-		ax2[0].grid(linestyle='dotted')
+		# ax2[0].plot(syn_mon.t[:]/second, syn_mon.Gamma_S[0], color='C6', label='closed-loop')
+		# ax2[0].plot(syn_mon.t[:]/second, syn_mon.Gamma_S[161], color='C2', label='open-loop')
+		# ax2[0].set_ylabel(r'$\Gamma_S$')
+		# ax2[0].grid(linestyle='dotted')
 
-		ax2[1].axhline(syn_mon.Y_S[2*N_syn:].mean()/umolar,0,duration/second, ls='dashed', color='black', label='mean noglio')
-		ax2[1].plot(syn_mon.t[:]/second, syn_mon.Y_S[N_syn:2*N_syn].mean(axis=0)/umolar, color='C2', label='open-loop')
-		ax2[1].plot(syn_mon.t[:]/second, syn_mon.Y_S[:N_syn].mean(axis=0)/umolar, color='C6', label='closed-loop')
-		ax2[1].set_ylabel(r'$\langle Y_S \rangle$ ($\mu$M)')
-		ax2[1].set_xlabel('time (s)')
-		ax2[1].grid(linestyle='dotted')
-		ax2[1].legend()
+		# ax2.axhline(syn_mon.Y_S[2*N_syn:].mean()/umolar,0,duration/second, ls='dashed', color='black', label='mean noglio')
+		ax2.plot(syn_mon.t[:]/second, syn_mon.Y_S[N_syn:2*N_syn].mean(axis=0)/umolar, color='C2', label='open-loop')
+		ax2.plot(syn_mon.t[:]/second, syn_mon.Y_S[:N_syn].mean(axis=0)/umolar, color='C6', label='closed-loop')
+		ax2.set_ylabel(r'$\bar{Y_S}$  ($\mu$M)')
+		ax2.set_xlabel('time (s)')
+		ax2.grid(linestyle='dotted')
+		# ax2[1].legend()
+		print('end plot')
 
 	device.delete()
 	plt.show()

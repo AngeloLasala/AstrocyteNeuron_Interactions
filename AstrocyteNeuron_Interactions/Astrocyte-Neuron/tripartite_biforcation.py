@@ -5,6 +5,8 @@ biforcation terms.
 
 Steady state variable are here monitored to compute the biforcation analysis with the goal to
 underline possible type of astrocite modulation and the time course od neurotrasmitters.
+
+Note: For the plot, put same dt in th monitor to have congurent images. For monitor it is does not need
 """
 import argparse
 import numpy as np
@@ -190,10 +192,10 @@ if __name__ == "__main__":
 		ecs_astro_to_syn.connect(j='i if i<N_syn')                      #closed-loop
 	
 	#Monitor
-	# syn_mon = StateMonitor(synapses, ['Y_S','Gamma_S','U_0','r_S'], record=np.arange(N_syn*(N_a+1)), when='after_synapses', dt=1*ms)
+	syn_mon = StateMonitor(synapses, ['Y_S','Gamma_S','U_0','u_S','x_S','r_S'], record=np.arange(N_syn*(N_a+1)), when='after_synapses' )
 	astro_mon = SpikeMonitor(astrocyte)
 	spike_mon = SpikeMonitor(pre_neurons)
-	astro_var = StateMonitor(astrocyte, ['Y_S','Gamma_A','I','C'], record=True, dt=10*ms)
+	astro_var = StateMonitor(astrocyte, ['Y_S', 'G_A','Gamma_A','I','C'], record=True)
 
 	run(duration, report='text')
 
@@ -222,13 +224,14 @@ if __name__ == "__main__":
 	## Plots #########################################################################################
 	# Astro variable
 	trans = 50000   #trans*dt=50000*0.5*ms=25 s
-	trans = 35000   #trans*dt_sam = 40000*10*ms= 400 s
+	trans = 350000   #trans*dt_sam = 40000*10*ms= 400 s
 
 	if args.p:
 		index = 1
 		fig4, ax4 = plt.subplots(nrows=4, ncols=1, figsize=(13,7), sharex=True,
 								num=f"Astrocite dynamics - rate={rate_in[index]/Hz:.2f} Hz")
 
+		ax4[0].plot(syn_mon.t[trans:], syn_mon.Y_S[index,trans:]/umolar, label='Y_S')
 		ax4[0].plot(astro_var.t[trans:]/second, astro_var.Y_S[index,trans:]/umolar, color='C1')
 		ax4[0].set_ylabel(r'$Y_S$ ($\mu$M)')
 		ax4[0].grid(linestyle='dotted')
@@ -247,7 +250,7 @@ if __name__ == "__main__":
 		ax4[3].set_ylabel(r'C ($\mu$M)')
 		# ax4[3].axhline(C_Theta/umolar,0,duration/second, ls='dashed', color='black')
 		ax4[3].grid(linestyle='dotted')
-		ax4[3].set_xlabel('time (s)')
+		ax4[3].set_xlabel('time '+r'($\rm{s}$)')
 
 		fig5, ax5 = plt.subplots(nrows=1, ncols=1, 
 								num='Charateristic curve nu_A vs nu_S')
@@ -262,6 +265,35 @@ if __name__ == "__main__":
 		ax5.set_xlabel(r'$\nu_S$ (Hz)')
 		ax5.set_ylabel(r'$\nu_A$ (Hz)')
 		ax5.grid(linestyle='dotted')
+
+		fig3, ax3 = plt.subplots(nrows=3, ncols=1, figsize=(13,7), sharex=True,
+								num=f"synaptic variable - rate={rate_in[index]/Hz:.2f} Hz")
+
+		ax3[0].plot(syn_mon.t[trans:], syn_mon.u_S[index,trans:], label='u_S')
+		ax3[0].plot(syn_mon.t[trans:], syn_mon.x_S[index,trans:], label='x_S')
+		ax3[1].plot(syn_mon.t[trans:], syn_mon.Gamma_S[index,trans:], label='Gamma_S')
+		ax3[2].plot(syn_mon.t[trans:], syn_mon.Y_S[index,trans:], label='Y_S')
+
+
+		fig2, ax2 = plt.subplots(nrows=3, ncols=1, figsize=(13,6), sharex=True,
+								num=f"Gliorelease event")
+		for axis in ax2:
+			axis.grid(linestyle='dotted')
+
+		ax2[0].plot(astro_var.t[10000:50000]/second, astro_var.C[index,10000:50000]/umolar, color='C3')
+		ax2[0].axhline(C_Theta/umolar,0,duration/second, ls='dashed', color='black')
+		ax2[0].set_ylabel(r'C ($\mu$M)')
+		
+		
+		ax2[1].plot(astro_var.t[10000:50000]/second, astro_var.G_A[index,10000:50000]/umolar, color='C5')
+		ax2[1].set_ylabel(r'$G_A$ ($\mu$M)')
+
+		ax2[2].plot(syn_mon.t[10000:50000], syn_mon.Gamma_S[index,10000:50000], color='C9')
+		ax2[2].set_ylabel(r'$\Gamma_A$')
+		ax2[2].set_xlabel('time '+r'($\rm{s}$)')
+
+
+		
 
 	device.delete()
 	plt.show()
