@@ -112,7 +112,7 @@ if __name__ == "__main__":
 	parser.add_argument('-p', action='store_true', help="show paramount plots, default=False")
 	args = parser.parse_args()
 
-	mod = {'A':[0.5, 1.2], 'F':[2.0, 0.6]}
+	mod = {'A':[0.5, 1.2], 'F':[3.2, 0.6]}
 	## PARAMETERS ###################################################################
 	# -- Synapse --
 	rho_c = 0.005                # Synaptic vesicle-to-extracellular space volume ratio
@@ -124,8 +124,8 @@ if __name__ == "__main__":
 	w_e = 0.05*nS                # Excitatory synaptic conductance
 	w_i = 1.0*nS                 # Inhibitory synaptic conductance
 	# - Presynaptic receptors
-	O_G = 1.5/umolar/second      # Agonist binding (activating) rate
-	Omega_G = 0.5/(60*second)    # Agonist release (deactivating) rate
+	O_G = 1.0/umolar/second      # Agonist binding (activating) rate
+	Omega_G = 0.008/second        # Agonist release (deactivating) rate
 
 	# -- Astrocyte --
 	# CICR
@@ -314,19 +314,38 @@ if __name__ == "__main__":
 
 	## Plots #########################################################################################
 	if args.p:
+		plt.rc('font', size=13)
+		plt.rc('legend', fontsize=10)
 		fig1, ax1 = plt.subplots(nrows=1, ncols=1, 
 				num=f'Average release probability vs incoming presyn AP - O_beta={mod[args.modulation][0]}')
 
 		ax1.errorbar(rate_in/Hz, np.mean(syn_mon.r_S[:,trans:], axis=1), np.std(syn_mon.r_S[:,trans:], axis=1), 
-                fmt='o', markersize=4, lw=0.4, color='C6', label='simulation')
+                fmt='o', markersize=4, lw=0.4, color='C6', label='CL gliotransmission')
 		# ax1.errorbar(rate_in[0]/Hz, np.mean(syn_mon.r_S[:]), np.std(syn_mon.r_S[:])/np.sqrt(len(rate_in)), 
         #         fmt='o', markersize=4, lw=0.4, color='C6', label='TS')
 		ax1.plot(nu_S_close, u_S_close*x_S_close, color='C6', label='mean field approximation')
 		ax1.set_xlabel(r'$\nu_S$ (Hz)')
 		ax1.set_ylabel(r'$\langle r_S \rangle$')
 		ax1.set_xscale('log')
+		ax1.set_xticks(np.logspace(-1, 2, 4))
+		xticks = [ 0.1, 1.0, 10.0, 100.0]
+		ax1.set_xticklabels(xticks)
 		ax1.legend()
 		ax1.grid(linestyle='dotted')
+
+		fig2, ax2 = plt.subplots(nrows=1, ncols=1, sharex=True, 
+							     num='Average U_0 vs incoming presyn AP')
+
+		ax2.errorbar(rate_in/Hz, np.mean(syn_mon.U_0[:N_syn,trans:], axis=1), np.std(syn_mon.U_0[:N_syn,trans:],ddof=1, axis=1), 
+                fmt='o', markersize=4, lw=0.4, color='C6', label='closed-loop')
+		ax2.plot(nu_S_close, u_0_close, color='C6')
+		ax2.set_xticks(np.logspace(-1, 2, 4))
+		ax2.set_xticklabels(xticks)
+		ax2.set_ylabel(r'$\langle u_0 \rangle$')
+		ax2.grid(linestyle='dotted')
+		ax2.set_xscale('log')
+		ax2.set_xlabel(r'$\nu_{in}$ (Hz)')
+		ax2.legend()
 
 	device.delete()
 	plt.show()

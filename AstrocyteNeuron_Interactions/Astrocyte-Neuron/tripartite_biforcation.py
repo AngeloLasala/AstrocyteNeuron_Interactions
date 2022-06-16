@@ -36,8 +36,8 @@ if __name__ == "__main__":
 	w_e = 0.05*nS                # Excitatory synaptic conductance
 	w_i = 1.0*nS                 # Inhibitory synaptic conductance
 	# - Presynaptic receptors
-	O_G = 1.5/umolar/second      # Agonist binding (activating) rate
-	Omega_G = 0.5/(60*second)    # Agonist release (deactivating) rate
+	O_G = 1.0/umolar/second      # Agonist binding (activating) rate
+	Omega_G = 0.008/second   # Agonist release (deactivating) rate
 
 	# -- Astrocyte --
 	# CICR

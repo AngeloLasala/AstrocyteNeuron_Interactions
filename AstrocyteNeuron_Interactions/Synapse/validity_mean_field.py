@@ -132,7 +132,7 @@ def guess_fuction_bif(nu_S, nu_A0=0.16, nu_S_bif=1.0, tau_A=3.2):
 	nu_A = nu_A_1 + nu_A_2
 	return np.asanyarray(nu_A)
 
-def validity_TS(nu_S, O_G, nu_A0=0.16, nu_S_bif=1.0, tau_A=3.2):
+def validity_TS(nu_S, O_G, Omega_G, nu_A0=0.16, nu_S_bif=1.0, tau_A=3.2):
 	"""
 	"""
 	# nu_A from gues function
@@ -147,7 +147,7 @@ def validity_TS(nu_S, O_G, nu_A0=0.16, nu_S_bif=1.0, tau_A=3.2):
 	
 	#C.V.
 	cv_Gamma_s = CVsquare_Gamma_S(nu_A)
-	cv_u_s = CVsquare_u(nu_S, u_0=u_0_din)
+	cv_u_s = CVsquare_u(nu_S, u_0=0.6)
 	
 	K = Gamma_S_val / (1-Gamma_S_val)
 	# print(X)
@@ -169,7 +169,7 @@ if __name__ == "__main__":
 	w_e = 0.05*nS                # Excitatory synaptic conductance
 	w_i = 1.0*nS                 # Inhibitory synaptic conductance
 	# - Presynaptic receptors
-	O_G = 0.3/umolar/second      # Agonist binding (activating) rate
+	O_G = 0.5/umolar/second      # Agonist binding (activating) rate
 	Omega_G = 0.5/(60*second)    # Agonist release (deactivating) rate
 
 	# -- Astrocyte --
@@ -187,13 +187,13 @@ if __name__ == "__main__":
 	d_5 = 0.08*umolar            # Ca^2+ activation dissociation constant
 	#  IP_3 production
 	# Agonist-dependent IP_3 production
-	O_beta = 0.5*umolar/second   # Maximal rate of IP_3 production by PLCbeta
+	O_beta = 3.2*umolar/second   # Maximal rate of IP_3 production by PLCbeta
 	O_N = 0.3/umolar/second      # Agonist binding rate
 	Omega_N = 0.5/second         # Maximal inactivation rate
 	K_KC = 0.5*umolar            # Ca^2+ affinity of PKC
 	zeta = 10                    # Maximal reduction of receptor affinity by PKC
 	# Endogenous IP3 production
-	O_delta = 1.2*umolar/second  # Maximal rate of IP_3 production by PLCdelta
+	O_delta = 0.6*umolar/second  # Maximal rate of IP_3 production by PLCdelta
 	kappa_delta = 1.5*umolar     # Inhibition constant of PLC_delta by IP_3
 	K_delta = 0.1*umolar         # Ca^2+ affinity of PLCdelta
 	# IP_3 degradation
@@ -222,46 +222,58 @@ if __name__ == "__main__":
 	nu_S_app, u_S_app, x_S_app = STP_mean_field(u_0=U_0__star)
 	nu_A_app, u_0_app = GRE_mean_field(select=False)
 
-	cv_us = CVsquare_u(nu_S_app, u_0=U_0__star)
-	cv_xs = CVsquare_x(nu_S_app, u_0=U_0__star)
+	cv_us = CVsquare_u(nu_S_app, u_0=0.7)
+	cv_xs = CVsquare_x(nu_S_app, u_0=0.7)
 	cv_Gammas = CVsquare_Gamma_S(nu_A_app)
 	cv_xa = CVsquare_xA(nu_A_app)
+
+	plt.figure(num='STP')
+	plt.plot(nu_S_app/Hz, np.sqrt(cv_us))
+	plt.plot(nu_S_app/Hz, np.sqrt(cv_xs)*np.sqrt(cv_us))
+
+	plt.figure(num='GRE')
+	plt.plot(nu_A_app, np.sqrt(cv_Gammas))
+	# plt.plot(nu_A_app, np.sqrt(cv_xa))
+	plt.plot(nu_A_app, np.sqrt(cv_Gammas)*np.sqrt(cv_xa))
+	
 
 
 	# VALIDITY CLOSED-LOOP
 	# 3.2 : nu_A0=0.16, nu_S_bif=1.0, tau_A=3.2
 	# 2.0 : nu_A0=0.15, nu_S_bif=1.5, tau_A=2.0
 	# 0.5 : nu_A0=0.1, nu_S_bif=0.0, tau_A=0.5
-	cv_u0, cv_us = validity_TS(nu_S_app, O_G, nu_A0=0.1, nu_S_bif=0.0, tau_A=0.5)
+	cv_u0, cv_us = validity_TS(nu_S_app, O_G, Omega_G, nu_A0=0.1, nu_S_bif=0.0, tau_A=0.5)
 
 	# validity with respect to O_G and Omega_G
-	plt.figure(num='validity w.r.t. O_G')
+	
 
-	O_G_list = np.linspace(0.3,1.5,3)/umolar/second
+	O_G_list = np.linspace(0.5,1.5,10)/umolar/second
+	Omega_G_list = np.linspace(0.008,0.10,10)/second
 	print()
+	plt.figure(num='validity w.r.t. O_G')
 	for o_g  in O_G_list:
-		 
-		cv_u0, cv_us = validity_TS(nu_S_app, o_g, nu_A0=0.1, nu_S_bif=0.0, tau_A=0.5)
+		cv_u0, cv_us = validity_TS(nu_S_app, o_g, Omega_G=0.01/second, nu_A0=0.1, nu_S_bif=0.0, tau_A=0.5)
 		plt.plot(nu_S_app, cv_us*cv_u0, label=f'{o_g*umolar*second}')
+		plt.xscale('log')
+		plt.legend()
+
+	plt.figure(num='validity w.r.t. Omega_G')
+	for omega_g  in Omega_G_list:
+		cv_u0, cv_us = validity_TS(nu_S_app, 1.0/umolar/second, omega_g, nu_A0=0.1, nu_S_bif=0.0, tau_A=0.5)
+		plt.plot(nu_S_app, cv_us*cv_u0, label=f'{omega_g/Hz}')
 		plt.xscale('log')
 		plt.legend()
 
 
 
-	plt.figure()
-	plt.plot(nu_S_app, u_S_app*x_S_app, label='STP')
-	plt.plot(nu_A_app, u_0_app, label='GRE')
-	plt.xscale('log')
-	plt.legend()
+	# plt.figure()
+	# plt.plot(nu_S_app, u_S_app*x_S_app, label='STP')
+	# plt.plot(nu_A_app, u_0_app, label='GRE')
+	# plt.xscale('log')
+	# plt.legend()
 
-	plt.figure(num='STP')
-	plt.plot(nu_S_app/Hz, np.sqrt(cv_us))
-	plt.plot(nu_S_app/Hz, np.sqrt(cv_xs)*np.sqrt(cv_us))
 	
-	plt.figure(num='GRE')
-	plt.plot(nu_A_app, np.sqrt(cv_Gammas))
-	plt.plot(nu_A_app, np.sqrt(cv_xa))
-	plt.plot(nu_A_app, np.sqrt(cv_Gammas)*np.sqrt(cv_xa))
+	
 
 	fig1, ax1 = plt.subplots(num='Validity tripartite synapses')
 	ax1.plot(nu_S_app, cv_us*cv_u0)

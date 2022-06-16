@@ -65,7 +65,7 @@ if __name__ == "__main__":
 	parser.add_argument('-p', action='store_true', help="show paramount plots, default=False")
 	args = parser.parse_args()
 
-	mod = {'A':[0.5, 1.2], 'F':[3.2, 0.6]}
+	mod = {'A':[0.5, 1.2], 'F':[2.0, 0.6]}
 	## PARAMETERS ###################################################################
 	# -- Synapse --
 	rho_c = 0.005                # Synaptic vesicle-to-extracellular space volume ratio
@@ -77,8 +77,8 @@ if __name__ == "__main__":
 	w_e = 0.05*nS                # Excitatory synaptic conductance
 	w_i = 1.0*nS                 # Inhibitory synaptic conductance
 	# - Presynaptic receptors
-	O_G = 1.5/umolar/second      # Agonist binding (activating) rate
-	Omega_G = 0.5/(60*second)    # Agonist release (deactivating) rate
+	O_G = 1.0/umolar/second      # Agonist binding (activating) rate
+	Omega_G = 0.02/second    # Agonist release (deactivating) rate
 
 	# -- Astrocyte --
 	# CICR

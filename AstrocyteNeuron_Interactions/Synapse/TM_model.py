@@ -1,6 +1,7 @@
 """
 TM model of synapse
 """
+import os
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
@@ -144,7 +145,7 @@ def chi_square_test(fun, val, std):
 	chi_e = []
 	for f,v,s in zip(fun,val,std):
 		# print((f-v)**2 / s**2)
-		print((f-v)**2,s**2)
+		# print((f-v)**2,s**2)
 		chi_e.append((f-v)**2/s**2)
 	# print(chi_e)
 	chi_e = np.asarray(chi_e)
@@ -154,7 +155,6 @@ def chi_square_test(fun, val, std):
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='TM model, approximation and simulation')
-	parser.add_argument('r', type=float, help="presynaptic firing rate")
 	parser.add_argument('-p', action='store_true', help="show paramount plots, default=False")
 	args = parser.parse_args()
 
@@ -193,7 +193,7 @@ if __name__ == "__main__":
 
 	"""
 
-	N_syn = 50
+	N_syn = 25
 	# rate_in = [args.r for i in range(N_syn)]*Hz
 	rate_in = np.logspace(-1,2,N_syn)*Hz
 	pre_neurons = PoissonGroup(N_syn, rates=rate_in)
@@ -209,13 +209,17 @@ if __name__ == "__main__":
 
 	trans = 20000   #trans*dt=300000*1*ms=300s
 
-	## SAVE VARIABLE
-	# name = f"Data/{rate_in[0]}/"
-	# makedir.smart_makedir(name)
-	# np.mean(synapse_mon.r_S[:]), np.std(synapse_mon.r_S[:])/np.sqrt(len(rate_in))
-	# np.save(f'{name}/rate_in',rate_in)
-	# np.save(f'{name}/r_S_mean',np.mean(synapse_mon.r_S[:]))
-	# np.save(f'{name}/r_S_error',np.std(synapse_mon.r_S[:])/np.sqrt(len(rate_in)))
+	## SAVE VARIABLE ###################################################################################
+	name = f"Data"
+	makedir.smart_makedir(name, trial=True)
+	trial_index = [int(trl.split('-')[-1]) for trl in os.listdir(name)]
+	trial_free = max(trial_index)
+
+	np.save(f'{name}'+f'/trial-{trial_free}/duration', duration)
+	np.save(f'{name}'+f'/trial-{trial_free}/rate_in', rate_in)
+	np.save(f'{name}'+f'/trial-{trial_free}/N', N_syn)
+	np.save(f'{name}'+f'/trial-{trial_free}/r_S', synapse_mon.r_S[:,-int(duration/defaultclock.dt)//3:])
+	####################################################################################################
 
 	## ERROR BLOCKING
 	# print(len(synapse_mon.r_S[0,:]))
@@ -230,61 +234,61 @@ if __name__ == "__main__":
 	# plt.yscale('log')
 	# plt.show()
 
-	r_S_mean, r_S_error = [], []
-	for rate, rs in zip(rate_in[:], synapse_mon.r_S[:,trans:]):
-		# print(rate, rs)
-		if rate/Hz<=1.0 : NN = int(duration*(rate/10))
-		else: NN = 60
-		mm, ss = standard_error_I(rs,N_mean=NN)
-		# print((ss/mm)*100)
-		r_S_mean.append(mm)
-		r_S_error.append(ss)
+	# r_S_mean, r_S_error = [], []
+	# for rate, rs in zip(rate_in[:], synapse_mon.r_S[:,trans:]):
+	# 	# print(rate, rs)
+	# 	if rate/Hz<=1.0 : NN = int(duration*(rate/10))
+	# 	else: NN = 60
+	# 	mm, ss = standard_error_I(rs,N_mean=NN)
+	# 	# print((ss/mm)*100)
+	# 	r_S_mean.append(mm)
+	# 	r_S_error.append(ss)
 
-	plt.figure()
-	plt.errorbar(rate_in/Hz, r_S_mean, r_S_error)
-	plt.plot(r_S_mean)
-
-
-
-	#DATA for ERROR OVER T
-	xxx=[]
-	r_S_mean, r_S_std = [],[]
-	for ind in range(len(rate_in)):
-		x = synapse_mon.r_S[ind,trans:]
-		sam = int((1/rate_in[ind])/defaultclock.dt)
-		indeces = np.arange(len(x))
-		r_S_sample = x[indeces%sam==0]
-		if ind == 30 : xxx.append(r_S_sample)
-		r_S_sample = np.array(r_S_sample)
-		r_S_mean.append(np.mean(r_S_sample))
-		r_S_std.append(np.std(r_S_sample,ddof=1)/np.sqrt(len(r_S_sample)))
-
-	plt.figure()
-	pois=xxx[0]
-	# print(len(pois))
-	plt.hist(pois, density=True)
-
-	nu_S_app, u_S_app, x_S_app = STP_mean_field(u_0=U_0__star,nu_S_start=-1,nu_S_stop=2,nu_S_number=N_syn)
-
-	chi_1 = chi_square_test(u_S_app[:N_syn//2]*x_S_app[:N_syn//2],
-							np.mean(synapse_mon.r_S[:N_syn//2,trans:], axis=1),
-							np.std(synapse_mon.r_S[:N_syn//2,trans:],ddof=1, axis=1))
-
-	chi_2 = chi_square_test(u_S_app[N_syn//2:]*x_S_app[N_syn//2:],
-							np.mean(synapse_mon.r_S[N_syn//2:,trans:], axis=1),
-							np.std(synapse_mon.r_S[N_syn//2:,trans:],ddof=1, axis=1))
-
-	# chi_tot = chi_square_test(u_S_app*x_S_app,
-	# 						np.mean(synapse_mon.r_S[:,trans:], axis=1),
-	# 						np.std(synapse_mon.r_S[:,trans:],ddof=1, axis=1))
-
-	chi_tot = chi_square_test(u_S_app*x_S_app, r_S_mean, r_S_error)
+	# plt.figure()
+	# plt.errorbar(rate_in/Hz, r_S_mean, r_S_error)
+	# plt.plot(r_S_mean)
 
 
-	print("CHI TEST")
-	print(f'chi all : {chi_tot/(N_syn)}')
-	print(f'chi 1 : {chi_1/(N_syn//2)}')
-	print(f'chi 2 : {chi_2/(N_syn//2)}')
+
+	# #DATA for ERROR OVER T
+	# xxx=[]
+	# r_S_mean, r_S_std = [],[]
+	# for ind in range(len(rate_in)):
+	# 	x = synapse_mon.r_S[ind,trans:]
+	# 	sam = int((1/rate_in[ind])/defaultclock.dt)
+	# 	indeces = np.arange(len(x))
+	# 	r_S_sample = x[indeces%sam==0]
+	# 	if ind == 30 : xxx.append(r_S_sample)
+	# 	r_S_sample = np.array(r_S_sample)
+	# 	r_S_mean.append(np.mean(r_S_sample))
+	# 	r_S_std.append(np.std(r_S_sample,ddof=1)/np.sqrt(len(r_S_sample)))
+
+	# plt.figure()
+	# pois=xxx[0]
+	# # print(len(pois))
+	# plt.hist(pois, density=True)
+
+	# nu_S_app, u_S_app, x_S_app = STP_mean_field(u_0=U_0__star,nu_S_start=-1,nu_S_stop=2,nu_S_number=N_syn)
+
+	# chi_1 = chi_square_test(u_S_app[:N_syn//2]*x_S_app[:N_syn//2],
+	# 						np.mean(synapse_mon.r_S[:N_syn//2,trans:], axis=1),
+	# 						np.std(synapse_mon.r_S[:N_syn//2,trans:],ddof=1, axis=1))
+
+	# chi_2 = chi_square_test(u_S_app[N_syn//2:]*x_S_app[N_syn//2:],
+	# 						np.mean(synapse_mon.r_S[N_syn//2:,trans:], axis=1),
+	# 						np.std(synapse_mon.r_S[N_syn//2:,trans:],ddof=1, axis=1))
+
+	# # chi_tot = chi_square_test(u_S_app*x_S_app,
+	# # 						np.mean(synapse_mon.r_S[:,trans:], axis=1),
+	# # 						np.std(synapse_mon.r_S[:,trans:],ddof=1, axis=1))
+
+	# chi_tot = chi_square_test(u_S_app*x_S_app, r_S_mean, r_S_error)
+
+
+	# print("CHI TEST")
+	# print(f'chi all : {chi_tot/(N_syn)}')
+	# print(f'chi 1 : {chi_1/(N_syn//2)}')
+	# print(f'chi 2 : {chi_2/(N_syn//2)}')
 
 	## Plots #########################################################################################
 	if args.p:

@@ -1,6 +1,7 @@
 """
 Simulated data and mean field description for heterosynapic connection
 """
+import os
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
@@ -53,6 +54,10 @@ def GRE_mean_field(nu_A_array=[], nu_A_start=-5, nu_A_stop=1, nu_A_number=200, s
 	return nu_A, u_0
 
 if __name__ == "__main__":
+	parser = argparse.ArgumentParser(description='TM model, approximation and simulation')
+	parser.add_argument('-p', action='store_true', help="show paramount plots, default=False")
+	args = parser.parse_args()
+
 	## Parameters #####################################################
 	U_0__star = 0.6
 	alpha = 0
@@ -60,18 +65,19 @@ if __name__ == "__main__":
 	U_A = 0.6
 	Omega_f = 3.33/second
 	Omega_d = 2/second
-	Omega_G = 0.08/second
+	Omega_G = 0.008/second
 	Omega_e = 60/second
 	Omega_A = 0.6/second
 	G_T = 200*mmolar
 	rho_e = 6.5e-4
-	O_G = 0.3/umolar/second
+	O_G = 0.5/umolar/second
 	J_S = rho_e * O_G * G_T /Omega_e
 	# print(J_S*Omega_A/(J_S*Omega_A+Omega_G))
+	U_thets = Omega_d / (Omega_f + Omega_d)
 
 	defaultclock.dt = 1*ms
-	duration = 3020*second
-	trans = 20000   #trans*dt=20000*1*ms=20s
+	duration = 1500*second
+	trans = 20000*2   #trans*dt=20000*1*ms=20s
 	# seed(28371)  # to get identical figures for repeated runs
 	###################################################################
 
@@ -88,9 +94,9 @@ if __name__ == "__main__":
     x_A -= U_A * x_A
     """
 
-	N_syn = 50
+	N_syn = 25
 	# rate_in = [args.r for i in range(N_syn)]*Hz
-	rate_in = np.logspace(-2,1,N_syn)*Hz
+	rate_in = np.logspace(-3,0,N_syn)*Hz
 	pre_neurons = PoissonGroup(N_syn, rates=rate_in)
 	post_neurons = NeuronGroup(N_syn, model="")
 
@@ -102,8 +108,19 @@ if __name__ == "__main__":
 	pre_mon = SpikeMonitor(pre_neurons)
 	run(duration, report='text')
 
+	## SAVE VARIABLE
+	name = f"Data_hetero"
+	makedir.smart_makedir(name, trial=True)
+	trial_index = [int(trl.split('-')[-1]) for trl in os.listdir(name)]
+	trial_free = max(trial_index)
+
+	np.save(f'{name}'+f'/trial-{trial_free}/duration', duration)
+	np.save(f'{name}'+f'/trial-{trial_free}/rate_in', rate_in)
+	np.save(f'{name}'+f'/trial-{trial_free}/N', N_syn)
+	np.save(f'{name}'+f'/trial-{trial_free}/u_0', synapse_mon.u_0[:,-int(duration/defaultclock.dt)//3:])
+
 	## Gliotrasmission modulation - release-decresing alpha=0 
-	nu_A, u_0 = GRE_mean_field( nu_A_start=-2, nu_A_stop=1, select=False)
+	nu_A, u_0 = GRE_mean_field( nu_A_start=-3, nu_A_stop=0, select=False)
 
 	# chi square
 	nu_a_chi, u_0_chi = GRE_mean_field(nu_A_array=rate_in/Hz, select=True)
@@ -120,23 +137,24 @@ if __name__ == "__main__":
 	# plt.legend()
 
 	## Plots 
-	plt.rc('font', size=13)
-	plt.rc('legend', fontsize=10)
-	fig2, ax2 = plt.subplots(nrows=1, ncols=1, num='MF solution of relese-decreasing GRE', tight_layout=True)
-	ax2.errorbar(rate_in/Hz, np.mean(synapse_mon.u_0[:,trans:], axis=1), 
-							np.std(synapse_mon.u_0[:,trans:],ddof=1, axis=1),
-             				fmt='o', markersize=4, lw=0.6, color='C2', label='gliotransmission')
-	ax2.plot(nu_A, u_0, color='C2', label='mean field approximation')
-	ax2.set_xlabel(r'$\nu_A$ ($\rm{spk/s})$')
-	ax2.set_ylabel(r'$\langle u_0 \rangle$')
-	ax2.legend()
-	ax2.grid(linestyle='dotted')
-	ax2.set_xscale('log')
-	yticks = [0.01, 0.10, 1.00, 10.00]
-	# ax4[2].set_ylim(yrange)
-	ax2.set_xticks(np.logspace(-2, 1, 4))
-	ax2.set_xticklabels(yticks)
-	# ax2.xaxis.set_major_formatter(ScalarFormatter())
+	if args.p:
+		plt.rc('font', size=13)
+		plt.rc('legend', fontsize=10)
+		fig2, ax2 = plt.subplots(nrows=1, ncols=1, num='MF solution of relese-decreasing GRE', tight_layout=True)
+		ax2.errorbar(rate_in/Hz, np.mean(synapse_mon.u_0[:,trans:], axis=1), 
+								np.std(synapse_mon.u_0[:,trans:],ddof=1, axis=1),
+								fmt='o', markersize=4, lw=0.6, color='C2', label='gliotransmission')
+		ax2.plot(nu_A, u_0, color='C2', label='mean field approximation')
+		ax2.set_xlabel(r'$\nu_A$ ($\rm{gre/s})$')
+		ax2.set_ylabel(r'$\langle u_0 \rangle$')
+		ax2.legend()
+		ax2.grid(linestyle='dotted')
+		ax2.set_xscale('log')
+		xticks = [0.001, 0.010, 0.1, 1.0]
+		# ax4[2].set_ylim(yrange)
+		ax2.set_xticks(np.logspace(-3, 0, 4))
+		ax2.set_xticklabels(xticks)
+		# ax2.xaxis.set_major_formatter(ScalarFormatter())
 	device.delete()
 	plt.show()
 
