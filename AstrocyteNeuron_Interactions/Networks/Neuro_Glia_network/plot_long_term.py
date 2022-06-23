@@ -132,7 +132,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     ## hyperparameters
-    total_window=11
+    total_window=8
 
     ## Temporal parameters
     duration = 10*second
@@ -236,82 +236,82 @@ if __name__ == '__main__':
     ########################################################################################################
 
     ## Spectral analysis and Modulation ####################################################################
-    base_fr = np.load(f'Baseline_g0.25_s1.0/spectrum_fr.npy')
-    base_LFP = np.load(f'Baseline_g0.25_s1.0/spectrum_LFP.npy')
+    # base_fr = np.load(f'Baseline_g0.25_s1.0_fixed/spectrum_fr.npy')
+    # base_LFP = np.load(f'Baseline_g0.25_s1.0_fixed/spectrum_LFP.npy')
 
-    fig4, ax4 = plt.subplots(nrows=1, ncols=2, num='Spectral Analysis')
-    ax4[0].set_title('Population firing rate')
-    ax4[0].plot(base_fr, color='k')
-    ax4[0].set_xlabel('frequency (Hz)')
-    ax4[0].set_xlim([-10,200])
-    ax4[0].grid(linestyle='dotted')
+    # fig4, ax4 = plt.subplots(nrows=1, ncols=2, num='Spectral Analysis')
+    # ax4[0].set_title('Population firing rate')
+    # ax4[0].plot(base_fr, color='k')
+    # ax4[0].set_xlabel('frequency (Hz)')
+    # ax4[0].set_xlim([-10,200])
+    # ax4[0].grid(linestyle='dotted')
 
-    ax4[1].set_title('LFP')
-    ax4[1].plot(base_LFP, color='C5') 
-    ax4[1].set_xlabel('frequency (Hz)')
-    ax4[1].set_xlim([-10,200])
-    ax4[1].grid(linestyle='dotted')
+    # ax4[1].set_title('LFP')
+    # ax4[1].plot(base_LFP, color='C5') 
+    # ax4[1].set_xlabel('frequency (Hz)')
+    # ax4[1].set_xlim([-10,200])
+    # ax4[1].grid(linestyle='dotted')
 
-    glio_LFP = []
-    for i_time,w in enumerate(range(9,11)):
-        name = args.file+f'/time_windows_{w}'
+    # glio_LFP = []
+    # for i_time,w in enumerate(range(9,11)):
+    #     name = args.file+f'/time_windows_{w}'
 
-        fr_t = np.load(f'{name}/firing_rate_exc.t.npy')
-        fr_exc = np.load(f'{name}/firing_rate_exc.rate.npy')
-        fr_inh = np.load(f'{name}/firing_rate_inh.rate.npy')
-        fr = np.load(f'{name}/firing_rate.rate.npy')
-        LFP = np.load(f'{name}/mon_LFP.LFP.npy')
-        LFP = LFP.sum(axis=0)
+    #     fr_t = np.load(f'{name}/firing_rate_exc.t.npy')
+    #     fr_exc = np.load(f'{name}/firing_rate_exc.rate.npy')
+    #     fr_inh = np.load(f'{name}/firing_rate_inh.rate.npy')
+    #     fr = np.load(f'{name}/firing_rate.rate.npy')
+    #     LFP = np.load(f'{name}/mon_LFP.LFP.npy')
+    #     LFP = LFP.sum(axis=0)
 
-        t_plot = t_window + duration*i_time
+    #     t_plot = t_window + duration*i_time
         
         
-        for ii in range(4):
-            start = ii*N_wind
-            stop = (ii+1)*N_wind
-            t = (duration/8)+(duration/4*ii)+(w-1)*duration
+    #     for ii in range(4):
+    #         start = ii*N_wind
+    #         stop = (ii+1)*N_wind
+    #         t = (duration/8)+(duration/4*ii)+(w-1)*duration
 
-            fr_exc_ii =  fr_exc[start:stop] 
-            fr_inh_ii =  fr_inh[start:stop]
-            fr_ii =  fr[start:stop]
-            LFP_ii = LFP[start:stop]
-            N_ii = len(fr_ii)
+    #         fr_exc_ii =  fr_exc[start:stop] 
+    #         fr_inh_ii =  fr_inh[start:stop]
+    #         fr_ii =  fr[start:stop]
+    #         LFP_ii = LFP[start:stop]
+    #         N_ii = len(fr_ii)
 
-            freq_fr_exc_ii, spectrum_fr_exc_ii = signal.welch(fr_exc_ii, fs=1/defaultclock.dt/Hz, nperseg=N_ii//3)
-            freq_fr_inh_ii, spectrum_fr_inh_ii = signal.welch(fr_inh_ii, fs=1/defaultclock.dt/Hz, nperseg=N_ii//3)
-            freq_fr_ii, spectrum_fr_ii = signal.welch(fr_ii, fs=1/defaultclock.dt/Hz, nperseg=N_ii//3)
-            freq_LFP_ii, spectrum_LFP_ii = signal.welch(LFP_ii, fs=1/defaultclock.dt/Hz, nperseg=N_ii//3)
-            glio_LFP.append(spectrum_LFP_ii)
+    #         freq_fr_exc_ii, spectrum_fr_exc_ii = signal.welch(fr_exc_ii, fs=1/defaultclock.dt/Hz, nperseg=N_ii//2)
+    #         freq_fr_inh_ii, spectrum_fr_inh_ii = signal.welch(fr_inh_ii, fs=1/defaultclock.dt/Hz, nperseg=N_ii//2)
+    #         freq_fr_ii, spectrum_fr_ii = signal.welch(fr_ii, fs=1/defaultclock.dt/Hz, nperseg=N_ii//3)
+    #         freq_LFP_ii, spectrum_LFP_ii = signal.welch(LFP_ii, fs=1/defaultclock.dt/Hz, nperseg=N_ii//3)
+    #         glio_LFP.append(spectrum_LFP_ii)
 
-            plt.figure(num=f'LFP spectrum: {(w-1)*10 + ii*2.5} - {((w-1)*10 + ii*2.5)+2.5} s')
-            plt.plot(freq_LFP_ii, spectrum_LFP_ii, label='gliotransmission')
-            plt.plot(freq_LFP_ii, base_LFP, label='baseline')
-            plt.xlabel('frequency (Hz)')
-            plt.ylabel('PSD ' + r'($\rm{V^2/Hz}$)')
-            plt.xlim([-10,200])
-            plt.grid(linestyle='dotted')
-            plt.legend()
+    #         plt.figure(num=f'LFP spectrum: {(w-1)*10 + ii*2.5} - {((w-1)*10 + ii*2.5)+2.5} s')
+    #         plt.plot(freq_LFP_ii, spectrum_LFP_ii, label='gliotransmission')
+    #         plt.plot(freq_LFP_ii, base_LFP, label='baseline')
+    #         plt.xlabel('frequency (Hz)')
+    #         plt.ylabel('PSD ' + r'($\rm{V^2/Hz}$)')
+    #         plt.xlim([-10,200])
+    #         plt.grid(linestyle='dotted')
+    #         plt.legend()
 
-    glio_LFP = np.asanyarray(glio_LFP)
-    glio_LFP = glio_LFP.mean(axis=0)
+    # glio_LFP = np.asanyarray(glio_LFP)
+    # glio_LFP = glio_LFP.mean(axis=0)
 
-    plt.figure(num='Baseline vs glio LFP spectrum')
-    plt.plot(freq_LFP_ii, base_LFP, label='baseline')
-    plt.plot(freq_LFP_ii, glio_LFP, label='gliotransmission')
-    plt.xlabel('frequency (Hz)')
-    plt.ylabel('PSD ' + r'($\rm{V^2/Hz}$)')
-    plt.xlim([-10,200])
-    plt.grid(linestyle='dotted')
-    plt.legend()
+    # plt.figure(num='Baseline vs glio LFP spectrum')
+    # plt.plot(freq_LFP_ii, base_LFP, label='baseline')
+    # plt.plot(freq_LFP_ii, glio_LFP, label='gliotransmission')
+    # plt.xlabel('frequency (Hz)')
+    # plt.ylabel('PSD ' + r'($\rm{V^2/Hz}$)')
+    # plt.xlim([-10,200])
+    # plt.grid(linestyle='dotted')
+    # plt.legend()
         
-        # LFP_astro = np.asanyarray(LFP_astro)
-        # LFP_astro = LFP_astro.mean(axis=0)
-        # mod_LFP = Modulation(base_LFP,LFP_astro)
-        # print(base_LFP[25], spectrum_LFP_ii[25], mod_LFP[25])
-        # plt.figure()
-        # plt.plot(freq_LFP_ii, LFP_astro)
-        # plt.plot(freq_LFP_ii, base_LFP)
-        # plt.xlim([-10,200])
+    #     # LFP_astro = np.asanyarray(LFP_astro)
+    #     # LFP_astro = LFP_astro.mean(axis=0)
+    #     # mod_LFP = Modulation(base_LFP,LFP_astro)
+    #     # print(base_LFP[25], spectrum_LFP_ii[25], mod_LFP[25])
+    #     # plt.figure()
+    #     # plt.plot(freq_LFP_ii, LFP_astro)
+    #     # plt.plot(freq_LFP_ii, base_LFP)
+    #     # plt.xlim([-10,200])
                
         
 

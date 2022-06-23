@@ -102,8 +102,6 @@ if __name__ == '__main__':
 	u_0_std_trl = np.asarray(u_0_std_trl)
 	u_0_error = errore_in_quadrature(u_0_std_trl)
 	
-
-
 	## Gliotrasmission modulation - release-decresing alpha=0 
 	nu_A, u_0 = GRE_mean_field( nu_A_start=-3, nu_A_stop=0, select=False)
 

@@ -49,7 +49,7 @@ Omega_f = 3.33/second  # Synaptic facilitation rate
 ## MODEL   ##################################################################################
 defaultclock.dt = k_EI.dt*ms
 duration = k_EI.duration*second  # Total simulation time
-# seed(19958)
+seed(19958)
 
 #Neurons
 neuron_eqs = """
@@ -130,12 +130,14 @@ population_fr = PopulationRateMonitor(neurons)
 
 dt_samp = k_EI.dt_samp*ms
 state_exc_mon = StateMonitor(exc_neurons, ['v', 'LFP', 'I_syn_ext'], record=[i for i in range(1000)], dt=dt_samp)
-state_inh_mon = StateMonitor(inh_neurons, ['v'], record=True, dt=dt_samp)
+state_inh_mon = StateMonitor(inh_neurons, ['v','g_e', 'g_i'], record=[0], dt=dt_samp)
+state_exc_mon_1 = StateMonitor(exc_neurons, [ 'g_e', 'g_i'], record=[0], dt=dt_samp)
+
 
 run(duration, report='text')
 #################################################################################################
 ## SAVE VARIABLE ################################################################################
-if not(args.no_connection): name = f"Neural_network/EI_net_STP/Network_pe_g{g}_s{s}_we{w_e/nS:.2f}/v_in{rate_in}/f-I_curve"
+if not(args.no_connection): name = f"Neural_network/EI_net_STP/Network_pe_g{g}_s{s}_we{w_e/nS:.2f}/v_in{rate_in}/f-I_curve_fixe"
 else: name = f"Neural_network/EI_net_STP/Network_pe_g{g}_s{s}_we{w_e/nS:.2f}/v_in{rate_in}/f-I_curve_no_connection"
 
 makedir.smart_makedir(name)
@@ -149,6 +151,7 @@ np.save(f'{name}/rate_in',rate_in)
 np.save(f'{name}/fr_exc', population_fr_exc.rate[:])
 np.save(f'{name}/fr_inh', population_fr_inh.rate[:])
 np.save(f'{name}/fr', population_fr.rate[:])
+# np.save(f'{name}/LFP', state_exc_mon.LFP[:])
 
 #Spikes monitor
 np.save(f'{name}/spikes_exc_mon_t', spikes_exc_mon.t[:])
@@ -157,6 +160,10 @@ np.save(f'{name}/spikes_inh_mon_t', spikes_inh_mon.t[:])
 np.save(f'{name}/spikes_inh_mon_i', spikes_inh_mon.i[:])
 np.save(f'{name}/v_exc', state_exc_mon.v[:])
 np.save(f'{name}/v_inh', state_inh_mon.v[:])
+np.save(f'{name}/g_e_inh', state_inh_mon.g_e[:])
+np.save(f'{name}/g_i_inh', state_inh_mon.g_i[:])
+np.save(f'{name}/g_e_exc', state_exc_mon_1.g_e[:])
+np.save(f'{name}/g_i_exc', state_exc_mon_1.g_i[:])
 
 #Connection
 # if not(args.no_connection):
@@ -202,7 +209,7 @@ print(f'pop-inh: {firing_rate_inh[trans:].mean()}')
 #################################################################################################
 if args.p:
     print(not(args.no_connection))
-    if not(args.no_connection): name = f"Neural_network/EI_net_STP/Network_pe_g{g}_s{s}_we{w_e/nS:.2f}/v_in{rate_in}/data_red_{dt_samp/ms:.2f}"
+    if not(args.no_connection): name = f"Neural_network/EI_net_STP/Network_pe_g{g}_s{s}_we{w_e/nS:.2f}/v_in{rate_in}/data_red_{dt_samp/ms:.2f}_fixed"
     else: name = f"Neural_network/EI_net_STP/Network_pe_g{g}_s{s}_we{w_e/nS:.2f}/v_in{rate_in}/data_no_connection"
     
     makedir.smart_makedir(name, trial=True)

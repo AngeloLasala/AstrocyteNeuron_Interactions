@@ -74,13 +74,13 @@ if __name__ == '__main__':
     d_5 = 0.08*umolar            # Ca^2+ activation dissociation constant
     #  IP_3 production
     # Agonist-dependent IP_3 production
-    O_beta = 0.5*umolar/second   # Maximal rate of IP_3 production by PLCbeta
+    O_beta = 3.2*umolar/second   # Maximal rate of IP_3 production by PLCbeta
     O_N = 0.3/umolar/second      # Agonist binding rate
     Omega_N = 0.5/second         # Maximal inactivation rate
     K_KC = 0.5*umolar            # Ca^2+ affinity of PKC
     zeta = 10                    # Maximal reduction of receptor affinity by PKC
     # Endogenous IP3 production
-    O_delta = 1.2*umolar/second  # Maximal rate of IP_3 production by PLCdelta
+    O_delta = 0.6*umolar/second  # Maximal rate of IP_3 production by PLCdelta
     kappa_delta = 1.5*umolar     # Inhibition constant of PLC_delta by IP_3
     K_delta = 0.1*umolar         # Ca^2+ affinity of PLCdelta
     # IP_3 degradation
@@ -105,7 +105,7 @@ if __name__ == '__main__':
     ## TIME PARAMETERS ##############################################################
     defaultclock.dt = k_NG.dt*ms
     duration = k_NG.duration*second
-    # seed(28371)  # to get identical figures for repeated runs
+    seed(19958)  # to get identical figures for repeated runs
     #################################################################################
 
     ## NETWORK #####################################################################
@@ -221,13 +221,22 @@ if __name__ == '__main__':
     # exc_syn.astrocyte_index = exc_syn.j[:]
 
     # ASTROCYTE
+    # Astrocytic dynamics start at time t0 = start_astro
+    # TimeedArray is creadted to stating vectot field after start
+    t_0_astro = 5*second
+    A_auxiliar = [0,1]
+    A_rest = [1,1]
+    for i_windows in range(k_NG.windows):
+        A_auxiliar += A_rest
+    start_astro = TimedArray(A_auxiliar, dt=t_0_astro)
+
     astro_eqs = """
     # Fraction of activated astrocyte receptors (1):
-    dGamma_A/dt = O_N * Y_S * (1 - clip(Gamma_A,0,1)) -
-                Omega_N*(1 + zeta * C/(C + K_KC)) * clip(Gamma_A,0,1) : 1
+    dGamma_A/dt = start_astro(t)*(O_N * Y_S * (1 - clip(Gamma_A,0,1)) -
+                Omega_N*(1 + zeta * C/(C + K_KC)) * clip(Gamma_A,0,1)) : 1
 
     # IP_3 dynamics (1)
-    dI/dt = J_beta + J_delta - J_3K - J_5P               : mmolar
+    dI/dt = start_astro(t)*(J_beta + J_delta - J_3K - J_5P)               : mmolar
 
     J_beta = O_beta * Gamma_A                                        : mmolar/second
     J_delta = O_delta/(1 + I/kappa_delta) * C**2/(C**2 + K_delta**2) : mmolar/second
@@ -237,8 +246,8 @@ if __name__ == '__main__':
     # J_coupling                                                       : mmolar/second
 
     # Calcium dynamics (2):
-    dC/dt = J_r + J_l - J_p                                   : mmolar
-    dh/dt = (h_inf - h)/tau_h                                 : 1
+    dC/dt = start_astro(t)*(J_r + J_l - J_p)                                   : mmolar
+    dh/dt = start_astro(t)*((h_inf - h)/tau_h)                                 : 1
 
     J_r = (Omega_C * m_inf**3 * h**3) * (C_T - (1 + rho_A)*C) : mmolar/second
     J_l = Omega_L * (C_T - (1 + rho_A)*C)                     : mmolar/second
@@ -249,9 +258,9 @@ if __name__ == '__main__':
     Q_2 = d_2 * (I + d_1)/(I + d_3)                           : mmolar
 
     # Fraction of gliotransmitter resources available for release (1):
-    dx_A/dt = Omega_A * (1 - x_A) : 1
+    dx_A/dt = start_astro(t)*(Omega_A * (1 - x_A)) : 1
     # gliotransmitter concentration in the extracellular space (1):
-    dG_A/dt = -Omega_e*G_A        : mmolar
+    dG_A/dt = start_astro(t)*(-Omega_e*G_A)        : mmolar
 
     # Neurotransmitter concentration in the extracellular space:
     Y_S                           : mmolar
@@ -351,7 +360,7 @@ if __name__ == '__main__':
         else: 
             grid_name='nogrid'
         
-        name = f'Neuro_Glia_network/NG_network_rate_in{rate_in/Hz:.1f}_ph_'+grid_name+f'_g{g}_s{s}_we_{w_e/nS:.2f}_running_F_{O_beta/(umolar/second):.1f}astro_ic/time_windows_{enu+1}'
+        name = f'Neuro_Glia_network/NG_network_rate_in{rate_in/Hz:.1f}_ph_'+grid_name+f'_g{g}_s{s}_we_{w_e/nS:.2f}_running_F_{O_beta/(umolar/second):.1f}_{O_delta/(umolar/second):.1f}_fixed/time_windows_{enu+1}'
         makedir.smart_makedir(name)
 
         # Duration

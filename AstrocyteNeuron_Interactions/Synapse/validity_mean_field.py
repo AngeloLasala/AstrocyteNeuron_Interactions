@@ -222,8 +222,8 @@ if __name__ == "__main__":
 	nu_S_app, u_S_app, x_S_app = STP_mean_field(u_0=U_0__star)
 	nu_A_app, u_0_app = GRE_mean_field(select=False)
 
-	cv_us = CVsquare_u(nu_S_app, u_0=0.7)
-	cv_xs = CVsquare_x(nu_S_app, u_0=0.7)
+	cv_us = CVsquare_u(nu_S_app, u_0=0.6)
+	cv_xs = CVsquare_x(nu_S_app, u_0=0.6)
 	cv_Gammas = CVsquare_Gamma_S(nu_A_app)
 	cv_xa = CVsquare_xA(nu_A_app)
 
@@ -242,7 +242,7 @@ if __name__ == "__main__":
 	# 3.2 : nu_A0=0.16, nu_S_bif=1.0, tau_A=3.2
 	# 2.0 : nu_A0=0.15, nu_S_bif=1.5, tau_A=2.0
 	# 0.5 : nu_A0=0.1, nu_S_bif=0.0, tau_A=0.5
-	cv_u0, cv_us = validity_TS(nu_S_app, O_G, Omega_G, nu_A0=0.1, nu_S_bif=0.0, tau_A=0.5)
+	cv_u0, cv_us = validity_TS(nu_S_app, O_G, Omega_G, nu_A0=0.17, nu_S_bif=1.5, tau_A=2.0)
 
 	# validity with respect to O_G and Omega_G
 	
@@ -250,20 +250,33 @@ if __name__ == "__main__":
 	O_G_list = np.linspace(0.5,1.5,10)/umolar/second
 	Omega_G_list = np.linspace(0.008,0.10,10)/second
 	print()
-	plt.figure(num='validity w.r.t. O_G')
+
+	fig1, ax1 = plt.subplots(nrows=1, ncols=2,figsize=(12,5), num='validity w.r.t. O_G and Omega_G', tight_layout=True)
 	for o_g  in O_G_list:
-		cv_u0, cv_us = validity_TS(nu_S_app, o_g, Omega_G=0.01/second, nu_A0=0.1, nu_S_bif=0.0, tau_A=0.5)
-		plt.plot(nu_S_app, cv_us*cv_u0, label=f'{o_g*umolar*second}')
-		plt.xscale('log')
-		plt.legend()
+		cv_u0, cv_us = validity_TS(nu_S_app, o_g, Omega_G=0.0083/second, nu_A0=0.16, nu_S_bif=1.0, tau_A=3.2)
+		ax1[0].plot(nu_S_app, cv_us*cv_u0, label=r'$O_G = $'+ f'{o_g*umolar*second:.2f}'+r' $\mu\rm{M}^{-1}s^{-1}$')
+		ax1[0].set_xscale('log')
+		ax1[0].grid(linestyle='dotted')
+		ax1[0].set_xlabel(r'$\nu_S$'+r' ($\rm{spk/s}$)')
+		ax1[0].set_ylabel(r'$\rm{CV}_{u_S}$ $\rm{CV}_{u_0}$')
+		xticks = [ 0.1, 1.0, 10.0, 100.0]
+		# ax4[2].set_ylim(yrange)
+		ax1[0].set_xticks(np.logspace(-1, 2, 4))
+		ax1[0].set_xticklabels(xticks)
+		ax1[0].legend()
 
-	plt.figure(num='validity w.r.t. Omega_G')
 	for omega_g  in Omega_G_list:
-		cv_u0, cv_us = validity_TS(nu_S_app, 1.0/umolar/second, omega_g, nu_A0=0.1, nu_S_bif=0.0, tau_A=0.5)
-		plt.plot(nu_S_app, cv_us*cv_u0, label=f'{omega_g/Hz}')
-		plt.xscale('log')
-		plt.legend()
-
+		cv_u0, cv_us = validity_TS(nu_S_app, 1.5/umolar/second, omega_g, nu_A0=0.16, nu_S_bif=1.0, tau_A=3.2)
+		ax1[1].plot(nu_S_app, cv_us*cv_u0, label=r'$\Omega_G = $'+ f'{omega_g/Hz:.3f}'+r' $\rm{Hz}$')
+		ax1[1].set_xscale('log')
+		ax1[1].grid(linestyle='dotted')
+		ax1[1].set_xlabel(r'$\nu_S$'+r' ($\rm{spk/s}$)')
+		ax1[1].set_ylabel(r'$\rm{CV}_{u_S}$ $\rm{CV}_{u_0}$')
+		xticks = [ 0.1, 1.0, 10.0, 100.0]
+		# ax4[2].set_ylim(yrange)
+		ax1[1].set_xticks(np.logspace(-1, 2, 4))
+		ax1[1].set_xticklabels(xticks)
+		ax1[1].legend()
 
 
 	# plt.figure()
@@ -275,12 +288,12 @@ if __name__ == "__main__":
 	
 	
 
-	fig1, ax1 = plt.subplots(num='Validity tripartite synapses')
-	ax1.plot(nu_S_app, cv_us*cv_u0)
-	ax1.set_xscale('log')
-	ax1.grid(linestyle='dotted')
-	ax1.set_xlabel(r'$\nu_S$'+r' ($\rm{spk/s}$)')
-	ax1.set_ylabel(r'$\rm{CV}_{u_S}$ $\rm{CV}_{u_0}$')
+	# fig1, ax1 = plt.subplots(num='Validity tripartite synapses')
+	# ax1.plot(nu_S_app, cv_us*cv_u0)
+	# ax1.set_xscale('log')
+	# ax1.grid(linestyle='dotted')
+	# ax1.set_xlabel(r'$\nu_S$'+r' ($\rm{spk/s}$)')
+	# ax1.set_ylabel(r'$\rm{CV}_{u_S}$ $\rm{CV}_{u_0}$')
 
 
 

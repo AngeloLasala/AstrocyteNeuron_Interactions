@@ -156,24 +156,24 @@ if __name__ == "__main__":
 	inh_neurons_fr, greater_ind_inh = neurons_firing(spikes_inh_mon.t[:]/second, spikes_inh_mon.i[:], time_start=0.5, time_stop=2.3)
 	#########################################################################################################
 	## SAVE VARIABLES #######################################################################################
-	if not(args.no_connection): name = f"Neural_network/EI_net_noSTP/Network_g{g}_s{s}_v_in{rate_in/Hz}"
-	else: name = f"Neural_network/EI_net_noSTP/Network_g{g}_s{s}_v_in{rate_in/Hz}_no_connection"
+	# if not(args.no_connection): name = f"Neural_network/EI_net_noSTP/Network_g{g}_s{s}_v_in{rate_in/Hz}"
+	# else: name = f"Neural_network/EI_net_noSTP/Network_g{g}_s{s}_v_in{rate_in/Hz}_no_connection"
 	
-	makedir.smart_makedir(name)
+	# makedir.smart_makedir(name)
 
-	# Time evolytion variable
-	np.save(f'{name}/trans',trans)
+	# # Time evolytion variable
+	# np.save(f'{name}/trans',trans)
 
-	# Excitatory neurons variable
-	np.save(f'{name}/state_exc_mon.t',state_exc_mon.t)
-	np.save(f'{name}/state_exc_mon.I_syn_ext',state_exc_mon.I_syn_ext[index])
-	np.save(f'{name}/state_inh_mon.I_syn_ext',state_inh_mon.I_syn_ext)
+	# # Excitatory neurons variable
+	# np.save(f'{name}/state_exc_mon.t',state_exc_mon.t)
+	# np.save(f'{name}/state_exc_mon.I_syn_ext',state_exc_mon.I_syn_ext[index])
+	# np.save(f'{name}/state_inh_mon.I_syn_ext',state_inh_mon.I_syn_ext)
 
-	# Population istantaneus firing rate
-	np.save(f'{name}/firing_rate_exc.t',firing_rate_exc.t)
-	np.save(f'{name}/firing_rate_inh.t',firing_rate_inh.t)
-	np.save(f'{name}/fr_exc',fr_exc)
-	np.save(f'{name}/fr_inh',fr_inh)
+	# # Population istantaneus firing rate
+	# np.save(f'{name}/firing_rate_exc.t',firing_rate_exc.t)
+	# np.save(f'{name}/firing_rate_inh.t',firing_rate_inh.t)
+	# np.save(f'{name}/fr_exc',fr_exc)
+	# np.save(f'{name}/fr_inh',fr_inh)
 	#########################################################################################################
 
 	# Plots  ################################################################################################

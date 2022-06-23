@@ -19,21 +19,21 @@ if __name__ == "__main__":
 	s = args.s
 	we = args.we
 
-	fig2, ax2 = plt.subplots(nrows=1, ncols=2, figsize=(12,5.5),
+	plt.rc('font', size=13)
+	plt.rc('legend', fontsize=10)
+	fig2, ax2 = plt.subplots(nrows=1, ncols=2, figsize=(12,5.5), tight_layout=True,
 							num=f'v_in-v_exc characteristic curve g:{g} s:{s} we:{we:.2f}')
-	ax2[0].set_title('Average Population Faring Rate')
-	ax2[0].set_ylabel(r'$\nu_{S}^{rec}$ (Hz)')
-	ax2[0].set_xlabel(r'$\nu_{in}$ (Hz)')
+	ax2[0].set_ylabel(r'$\nu^{rec}\; (\rm{spk/s})$')
+	ax2[0].set_xlabel(r'$\nu_{ext} \; (\rm{spk/s})$')
 	ax2[0].grid(linestyle='dotted')
 
-	ax2[1].set_title('I/E Firing rate Ratio')
-	ax2[1].set_ylabel(r'$I_{fr}$/$E_{fr}$')
-	ax2[1].set_xlabel(r'$\nu_{in}$ (Hz)')
+	ax2[1].set_ylabel(r'$I$/$E$')
+	ax2[1].set_xlabel(r'$\nu_{ext} \; (\rm{spk/s})$')
 	ax2[1].grid(linestyle='dotted')
 
 	rates_in =[40.0,45.0,50.0,55.0,60.0,65.0,70.0]
 	for rate_in in rates_in:
-		name_folder = f"EI_net_STP/Network_pe_g{g}_s{s}_we{we}/v_in{rate_in}/f-I_curve"
+		name_folder = f"EI_net_STP/Network_pe_g{g}_s{s}_we{we}/v_in{rate_in}/f-I_curve_fixed"
 		## LOAD VARIABLES ###################################################################
 		duration = np.load(f'{name_folder}/duration.npy')*second
 

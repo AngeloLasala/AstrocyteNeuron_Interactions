@@ -1,6 +1,7 @@
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy import stats
 from brian2 import *
 
 def STP_mean_field(u_0, nu_S_start=-1, nu_S_stop=2, nu_S_number=200):
@@ -53,11 +54,27 @@ def chi_square_test(fun, val, std):
 	chi_e = []
 	for f,v,s in zip(fun,val,std):
 		# print((f-v)**2 / s**2)
-		print((f-v)**2/s**2)
+		# print((f-v)**2/s**2)
 		chi_e.append((f-v)**2/s**2)
 	chi_e = np.asarray(chi_e)
 	chi_square = chi_e.sum()
 	return chi_square
+
+def CV_test(fun, val, std):
+	"""
+	"""
+	CV_data = std/val
+	error_app = (val - fun)/fun
+	return (error_app**2/ CV_data**2)
+
+def normality_test(x):
+	"""
+	Condition for normality of data over trial
+	"""
+	shapiro_test = stats.shapiro(x)
+	if shapiro_test.pvalue <= 0.05 : print(f'p_val={shapiro_test.pvalue:.5f}:posso rifiutare H_0 - NO NORMALI')
+	else :  print(f'p_val={shapiro_test.pvalue:.5f}: non posso rifiutare H_0 - SI NORMALI')
+	return shapiro_test.pvalue
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Bièartite sinapses filter characteristic')
@@ -80,7 +97,8 @@ if __name__ == '__main__':
 
 	r_S_mean_trl = list()
 	r_S_std_trl = list()
-	for trl in range(1,30):
+	r_S_dist = ()
+	for trl in range(1,60):
 		# rate array
 		rate_in = np.load(f'{name}'+f'/trial-{trl}/rate_in.npy')
 		duration = np.load(f'{name}'+f'/trial-{trl}/duration.npy')
@@ -104,11 +122,37 @@ if __name__ == '__main__':
 	r_S_std_trl = np.asarray(r_S_std_trl)
 	r_S_error = errore_in_quadrature(r_S_std_trl)
 
+	print(r_S_mean_trl.shape)
+	print(r_S_std_trl.shape)
+
+	x_mean_recurvively = list()
+	x_mean_n = 0
+	x_var_n = 0
+	for ii in range(r_S_mean_trl.shape[0]):
+		x_mean_n1 = x_mean_n + (r_S_mean_trl[ii,15]-x_mean_n)/ (ii+1)
+		x_var_n1 = x_var_n + x_mean_n**2 - x_mean_n1**2 + (r_S_mean_trl[ii,15]**2 - x_var_n - x_mean_n**2)/(ii+1)
+		x_mean_n = x_mean_n1
+		x_var_n = x_var_n1
+	# 	print(ii+1, x_mean_n1, np.sqrt(x_var_n1))
+	# 	plt.scatter(ii+1, x_mean_n1)
+	# print(r_S_mean_trl.shape[0], r_S_mean_trl.mean(axis=0)[15], r_S_mean_trl.std(axis=0)[15])
+	# print(r_S_mean_trl.shape[0], r_S_mean_trl.mean(axis=0)[15], r_S_error[15])
+
+	# print()
+
+	# Normality condition
+	# for i in range(len(rate_in)):
+		# normality_test(r_S_mean_trl[:,i])
+
 	## Chi square test
 	nu_S_app, u_S_app, x_S_app = STP_mean_field(u_0=U_0__star, nu_S_start=-1,nu_S_stop=2,nu_S_number=N)
-	chi_tot = chi_square_test(u_S_app*x_S_app, r_S_mean_trl.flatten(), r_S_error.flatten())
-	print(chi_tot/N)
-							
+	chi_tot = chi_square_test(u_S_app*x_S_app, r_S_mean_trl.mean(axis=0), r_S_error.flatten())
+	print(chi_tot/len(u_S_app))
+
+	## C.V. test
+	a = CV_test(u_S_app*x_S_app, r_S_mean_trl.mean(axis=0), r_S_error)
+	print(a.mean())
+	
 
 	## Plots
 	plt.rc('font', size=13)
