@@ -223,7 +223,7 @@ if __name__ == '__main__':
     # ASTROCYTE
     # Astrocytic dynamics start at time t0 = start_astro
     # TimeedArray is creadted to stating vectot field after start
-    t_0_astro = 5*second
+    t_0_astro = k_NG.t_0_astro*second
     A_auxiliar = [0,1]
     A_rest = [1,1]
     for i_windows in range(k_NG.windows):
@@ -337,16 +337,20 @@ if __name__ == '__main__':
         firing_rate = PopulationRateMonitor(neurons)
         
         neurons_mon = StateMonitor(neurons, ['v','g_e','g_i','I_exc', 'I_inh', 'I_syn_ext'], 
-                                record=[i for i in range(200)] + [i for i in range(N_e,N_e+200)])
-        mon_LFP = StateMonitor(exc_neurons, 'LFP', record=[i for i in range(1000)])
+                                record=[i for i in range(200)] + [i for i in range(N_e,N_e+200)], dt= k_NG.dt_sam*ms)
+        mon_LFP = StateMonitor(exc_neurons, 'LFP', record=[i for i in range(1000)], dt= k_NG.dt_sam*ms)
         var_astro_mon = StateMonitor(astrocyte, ['C','I','h','Gamma_A','Y_S','G_A','x_A'], record=[i for i in range(100)])
         ###########################################################################################
 
         ## RUN and NETWORK INFORMATION ###################################################################
+        print('============================')
         print(f'we : {w_e}')
         print(f'g : {g}')
         print(f's : {s}')
-        run(duration, report='text', report_period=1.8*ksecond)
+        print(f'dt : {k_NG.dt*ms}')
+        print(f'dt_sam : {k_NG.dt_sam*ms}')
+        print('============================')
+        run(duration, report='text', report_period=120*second)
         # print(np.unique(ecs_astro_to_syn.i[:]).shape)
         # print(np.unique(exc_syn.astrocyte_index[:]))
         # print(np.unique(exc_syn.astrocyte_index[:]).shape)        
@@ -360,7 +364,7 @@ if __name__ == '__main__':
         else: 
             grid_name='nogrid'
         
-        name = f'Neuro_Glia_network/NG_network_rate_in{rate_in/Hz:.1f}_ph_'+grid_name+f'_g{g}_s{s}_we_{w_e/nS:.2f}_running_F_{O_beta/(umolar/second):.1f}_{O_delta/(umolar/second):.1f}_fixed/time_windows_{enu+1}'
+        name = f'Neuro_Glia_network/NG_network_rate_in{rate_in/Hz:.1f}_ph_'+grid_name+f'_g{g}_s{s}_we_{w_e/nS:.2f}_running_F_{O_beta/(umolar/second):.1f}_{O_delta/(umolar/second):.1f}_fixed_0.05/time_windows_{enu+1}'
         makedir.smart_makedir(name)
 
         # Duration
@@ -432,6 +436,8 @@ if __name__ == '__main__':
         p_e = {p_e}
         p_i = {p_i}
         s = {s}
+        dt : {k_NG.dt} ms')
+        dt_sam : {k_NG.dt_sam} ms')
         rate_in = {rate_in/Hz} Hz (single external neuron)
         rate_in = {(rate_in/Hz) * 160} Hz(total external neurons)
 
