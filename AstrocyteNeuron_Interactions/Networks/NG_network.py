@@ -74,13 +74,13 @@ if __name__ == '__main__':
     d_5 = 0.08*umolar            # Ca^2+ activation dissociation constant
     #  IP_3 production
     # Agonist-dependent IP_3 production
-    O_beta = 3.2*umolar/second   # Maximal rate of IP_3 production by PLCbeta
+    O_beta = 0.5*umolar/second   # Maximal rate of IP_3 production by PLCbeta
     O_N = 0.3/umolar/second      # Agonist binding rate
     Omega_N = 0.5/second         # Maximal inactivation rate
     K_KC = 0.5*umolar            # Ca^2+ affinity of PKC
     zeta = 10                    # Maximal reduction of receptor affinity by PKC
     # Endogenous IP3 production
-    O_delta = 0.6*umolar/second  # Maximal rate of IP_3 production by PLCdelta
+    O_delta = 1.2*umolar/second  # Maximal rate of IP_3 production by PLCdelta
     kappa_delta = 1.5*umolar     # Inhibition constant of PLC_delta by IP_3
     K_delta = 0.1*umolar         # Ca^2+ affinity of PLCdelta
     # IP_3 degradation

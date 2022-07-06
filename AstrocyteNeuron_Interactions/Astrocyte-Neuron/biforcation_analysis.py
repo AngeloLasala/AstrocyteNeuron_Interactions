@@ -137,7 +137,9 @@ if __name__ == "__main__":
 	array_plot = np.arange(0,35,2)
 	# print(C.shape)
 	## Biforcation
+	
 	par_list_c, C_bif = Biforcation_brian(C, rate_in, t_relax=int(t_relax/dt_astro))
+	# par_list_gamma, Gamma_bif = Biforcation_brian(Gamma_A, rate_in, t_relax=int(t_relax/dt_astro))
 
 	## Period
 	period_list, period_list_err = Period_brian(C, t_astro, t_relax=int(t_relax/dt_astro))
@@ -168,13 +170,20 @@ if __name__ == "__main__":
 	print(f'rate_in = {rate_in[0]/Hz} - {rate_in[-1]/Hz}')
 
 	C_theta = 0.0005
-	fig1, ax1 = plt.subplots(nrows=1,ncols=1, num='bifurcation', tight_layout=True) 
+	fig1, ax1 = plt.subplots(nrows=1,ncols=1, num='bifurcation - C', tight_layout=True) 
 	ax1.hlines(C_theta/umolar, rate_in[0], rate_in[-1], color='k', ls='dashed')
 	for p, c in zip(par_list_c, C_bif):
 		ax1.scatter(p, c/umolar, color='C3', s=8.0)
 	ax1.set_xlabel(r'$\nu_S$'+r' ($\rm{spk/s}$)')
 	ax1.set_ylabel(r'C ($\mu\rm{M}$)')
 	ax1.grid(linestyle='dotted')
+
+	# fig1, ax1 = plt.subplots(nrows=1,ncols=1, num='bifurcation - Gamma', tight_layout=True) 
+	# for p, c in zip(par_list_gamma, Gamma_bif):
+	# 	ax1.scatter(p, c, color='C3', s=8.0)
+	# ax1.set_xlabel(r'$\nu_S$'+r' ($\rm{spk/s}$)')
+	# ax1.set_ylabel(r'C ($\mu\rm{M}$)')
+	# ax1.grid(linestyle='dotted')
 
 	
 

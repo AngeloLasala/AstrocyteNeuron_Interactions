@@ -16,7 +16,8 @@ N_i = 800
 N_a = 4000
 
 # TIME CONSTANT
-dt = 0.1 #ms            #0.05ms
+dt = 0.05 #ms            #0.05ms
+dt_sam = 1 #ms                
 duration = 10          #s   
 trans_time = 300 #ms    #300ms
 
@@ -26,7 +27,11 @@ trans_time = 300 #ms    #300ms
 # Note: at the end of each sub-simulation, all variable are saved in specific
 # folder, all 'Monitor group are deleted' such that the RAM is clear and 
 # next sub-simulation starts. 
-windows = 10                
+windows = 10  
+
+## Astrocytic activation
+# when the astro stat their dynamicas 
+t_0_astro = 15 #second
 
 
 # index: excitatory neurron index used to monitor variable
@@ -43,4 +48,5 @@ s = 1.00
 # g > 5: excitatory prevails 
 g = 0.25 
 p_e = 0.05  
+
 

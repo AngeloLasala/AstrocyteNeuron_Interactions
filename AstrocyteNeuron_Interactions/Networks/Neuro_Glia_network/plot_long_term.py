@@ -132,25 +132,27 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     ## hyperparameters
-    total_window=8
+    total_window = 11
 
     ## Temporal parameters
     duration = 10*second
-    defaultclock.dt = 0.1*ms
+    defaultclock.dt = 0.05*ms
     dt_astro = 1e-2*second
-    dt = 0.1*ms
+    dt = 1*ms
     N = duration/dt
     N_wind = int(N/4)
     t_window = np.arange(0,N)*dt
 
 	## E/I recurrent currents ratio #################################################################
     #initialize fig setting
-    fig1, ax1 = plt.subplots(nrows=3, ncols=1, num='EI ratio', figsize=(12,8))
+    plt.rc('font', size=13)
+    plt.rc('legend', fontsize=10)
+    fig1, ax1 = plt.subplots(nrows=3, ncols=1, num='EI ratio', figsize=(12,8), sharex=True, tight_layout=True)
     ax1[0].set_ylabel('E/I')
     ax1[0].grid(linestyle='dotted')
 
     ax1[1].grid(linestyle='dotted')
-    ax1[1].set_ylabel(r'$I_{exc}$ (pA)' )
+    ax1[1].set_ylabel(r'$I_{exc}^{rec}$ ($\rm{pA}$)')
     for i_time,w in enumerate(range(1,total_window)):
         name = args.file+f'/time_windows_{w}'
         I_exc = np.load(f'{name}/neurons_mon.I_exc.npy')
@@ -159,6 +161,7 @@ if __name__ == '__main__':
         t_plot = t_window + duration*i_time
         
         ## select consecutivewindows of 2.5 seconds
+        
         I_exc = I_exc.mean(axis=0)
         I_inh = I_inh.mean(axis=0)
 
@@ -166,8 +169,8 @@ if __name__ == '__main__':
         
         if w==1:
             print('baseline for current')
-            E_base = I_exc[2000:9000]/pA
-            I_base = I_inh[2000:9000]/pA
+            E_base = I_exc[500:5000]/pA
+            I_base = I_inh[500:5000]/pA
             print(E_base.shape)
 
             E_base_m , E_base_err = standard_error_I(E_base, N_mean=30)
@@ -179,9 +182,17 @@ if __name__ == '__main__':
             print(f'baseline: I = {I_base_m:.4f} +- {I_base_err:.4f} pA')
             print(f'baseline: E/I = {EI_ratio_base:.4f} +- {EI_ratio_base_err:.4f}')
 
+            EI_ratio_base = E_base.mean()/I_base.mean()
+            EI_ratio_base_err = ((E_base.std(ddof=1)/E_base_m) + (I_base.std(ddof=1)/I_base_m))*EI_ratio_base
+            print(f'baseline: E = {E_base.mean():.4f} +- {E_base.std(ddof=1):.4f} pA')
+            print(f'baseline: I = {I_base.mean():.4f} +- {I_base.std(ddof=1):.4f} pA')
+            print(f'baseline: E/I = {EI_ratio_base:.4f} +- {EI_ratio_base_err:.4f}')
+
         N_wind_p = int(N/2)
         for ii in range(2):
-            start = ii*N_wind_p
+            #select transient time for initial vale
+            if w == 1 and ii == 0 : start = 500
+            else : start = ii*N_wind_p
             stop = (ii+1)*N_wind_p
             t = (duration/4)+(duration/2*ii)+(w-1)*duration 
 
@@ -193,6 +204,9 @@ if __name__ == '__main__':
 
             EI_ratio = I_exc_ii_m/I_inh_ii_m
             EI_ratio_err = ((I_exc_ii_err/I_exc_ii_m) + (I_inh_ii_err/I_inh_ii_m))*EI_ratio
+
+            EI_ratio = I_exc_ii.mean()/I_inh_ii.mean()
+            EI_ratio_err = ((I_exc_ii.std(ddof=1)/I_exc_ii.mean()) + (I_inh_ii.std(ddof=1)/I_inh_ii.mean()))*EI_ratio
         
             ax1[0].errorbar(t, EI_ratio, EI_ratio_err, fmt='o', color='C0', capsize=1.5)
             # if w == 5:
@@ -225,7 +239,6 @@ if __name__ == '__main__':
                 axis.set_xlabel('time (s)')
                 axis.set_ylabel(r'C ($\mu$M)')
                 axis.grid(linestyle='dotted')
-
         
             # astro_oscillation.append(np.where(np.max(Pxx_den))[0])    
 
@@ -349,6 +362,8 @@ if __name__ == '__main__':
     ax2.scatter(t, synchrony_v(v_exc_ii), color='C3', label='E')
     ax2.scatter(t, synchrony_v(v_inh_ii), color='C0', label='I')
     ax2.legend()
+
+    
            
     #################################################################################################
            
