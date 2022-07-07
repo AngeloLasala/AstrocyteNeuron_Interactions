@@ -224,7 +224,7 @@ if __name__ == "__main__":
 	# ecs_astro_to_syn.connect(j='i if i >= N_syn and i < 2*N_syn')   #open-loop
 
 	#Monitor
-	syn_mon = StateMonitor(synapses, ['Y_S','Gamma_S','U_0','r_S'], record=np.arange(N_syn*(N_a+1)), when='after_synapses')
+	# syn_mon = StateMonitor(synapses, ['Y_S','Gamma_S','U_0','r_S'], record=np.arange(N_syn*(N_a+1)), when='after_synapses')
 	astro_mon = SpikeMonitor(astrocyte)
 	astro_var = StateMonitor(astrocyte, ['Gamma_A','I','C'], record=[5,35,70])
 
@@ -233,133 +233,134 @@ if __name__ == "__main__":
 
 	## Plots #########################################################################################
 	if args.p:
-		fig1 = plt.figure(figsize=(13,7), num='Average release probability vs incoming presyn AP')
+		# fig1 = plt.figure(figsize=(13,7), num='Average release probability vs incoming presyn AP')
 
-		gs = fig1.add_gridspec(2,2)
-		ax1_1 = fig1.add_subplot(gs[0, 0])
-		ax1_2 = fig1.add_subplot(gs[1, 0])
-		ax1_3 = fig1.add_subplot(gs[:, 1])
+		# gs = fig1.add_gridspec(2,2)
+		# ax1_1 = fig1.add_subplot(gs[0, 0])
+		# ax1_2 = fig1.add_subplot(gs[1, 0])
+		# ax1_3 = fig1.add_subplot(gs[:, 1])
 
 
-		ax1_1.errorbar(rate_in/Hz, np.mean(syn_mon.r_S[2*N_syn:,trans:], axis=1), np.std(syn_mon.r_S[2*N_syn:,trans:], axis=1), 
-                fmt='o', markersize=4, lw=0.4, color='black', label='no gliotrasmission')
-		ax1_1.errorbar(rate_in/Hz, np.mean(syn_mon.r_S[N_syn:2*N_syn,trans:], axis=1), np.std(syn_mon.r_S[N_syn:2*N_syn,trans:], axis=1), 
-                fmt='o', markersize=4, lw=0.4, color='C2', label='open-loop')
-		ax1_1.set_ylabel(r'$\langle r_S \rangle$')
-		ax1_1.set_xlabel(r'$\nu_S$ (Hz)')
-		ax1_1.set_xscale('log')
-		ax1_1.legend()
-		ax1_1.grid(linestyle='dotted')
+		# ax1_1.errorbar(rate_in/Hz, np.mean(syn_mon.r_S[2*N_syn:,trans:], axis=1), np.std(syn_mon.r_S[2*N_syn:,trans:], axis=1), 
+        #         fmt='o', markersize=4, lw=0.4, color='black', label='no gliotrasmission')
+		# ax1_1.errorbar(rate_in/Hz, np.mean(syn_mon.r_S[N_syn:2*N_syn,trans:], axis=1), np.std(syn_mon.r_S[N_syn:2*N_syn,trans:], axis=1), 
+        #         fmt='o', markersize=4, lw=0.4, color='C2', label='open-loop')
+		# ax1_1.set_ylabel(r'$\langle r_S \rangle$')
+		# ax1_1.set_xlabel(r'$\nu_S$ (Hz)')
+		# ax1_1.set_xscale('log')
+		# ax1_1.legend()
+		# ax1_1.grid(linestyle='dotted')
 		
 		
-		ax1_2.errorbar(rate_in/Hz, np.mean(syn_mon.r_S[2*N_syn:,trans:], axis=1), np.std(syn_mon.r_S[2*N_syn:,trans:], axis=1), 
-                fmt='o', markersize=4, lw=0.4, color='black', label='no gliotrasmission', alpha=0.5)
-		ax1_2.errorbar(rate_in/Hz, np.mean(syn_mon.r_S[:N_syn,trans:], axis=1), np.std(syn_mon.r_S[:N_syn,trans:], axis=1), 
-                fmt='o', markersize=4, lw=0.4, color='C6', label='closed-loop')
-		ax1_2.set_ylabel(r'$\langle r_S \rangle$')
-		ax1_2.grid(linestyle='dotted')
-		ax1_2.set_xscale('log')
-		ax1_2.set_xlabel(r'$\nu_{in}$ (Hz)')
-		ax1_2.legend()
+		# ax1_2.errorbar(rate_in/Hz, np.mean(syn_mon.r_S[2*N_syn:,trans:], axis=1), np.std(syn_mon.r_S[2*N_syn:,trans:], axis=1), 
+        #         fmt='o', markersize=4, lw=0.4, color='black', label='no gliotrasmission', alpha=0.5)
+		# ax1_2.errorbar(rate_in/Hz, np.mean(syn_mon.r_S[:N_syn,trans:], axis=1), np.std(syn_mon.r_S[:N_syn,trans:], axis=1), 
+        #         fmt='o', markersize=4, lw=0.4, color='C6', label='closed-loop')
+		# ax1_2.set_ylabel(r'$\langle r_S \rangle$')
+		# ax1_2.grid(linestyle='dotted')
+		# ax1_2.set_xscale('log')
+		# ax1_2.set_xlabel(r'$\nu_{in}$ (Hz)')
+		# ax1_2.legend()
 		
-		ax1_3.scatter(astro_mon.t[:][astro_mon.i[:]<N_syn]/second, astro_mon.i[:][astro_mon.i[:]<N_syn], marker='|', color='C6')
-		ax1_3.scatter(astro_mon.t[:][astro_mon.i[:]>N_syn]/second, astro_mon.i[:][astro_mon.i[:]>N_syn], marker='|', color='C2')
-		ax1_3.set_xlabel('time (s)')
-		ax1_3.set_ylabel('astrocyte indeces')
+		# ax1_3.scatter(astro_mon.t[:][astro_mon.i[:]<N_syn]/second, astro_mon.i[:][astro_mon.i[:]<N_syn], marker='|', color='C6')
+		# ax1_3.scatter(astro_mon.t[:][astro_mon.i[:]>N_syn]/second, astro_mon.i[:][astro_mon.i[:]>N_syn], marker='|', color='C2')
+		# ax1_3.set_xlabel('time (s)')
+		# ax1_3.set_ylabel('astrocyte indeces')
 
-		fig2, ax2 = plt.subplots(nrows=1, ncols=1, sharex=True, 
-							     num='Average U_0 vs incoming presyn AP')
+		# fig2, ax2 = plt.subplots(nrows=1, ncols=1, sharex=True, 
+		# 					     num='Average U_0 vs incoming presyn AP')
 
-		ax2.errorbar(rate_in/Hz, np.mean(syn_mon.U_0[2*N_syn:,trans:], axis=1), np.std(syn_mon.U_0[2*N_syn:,trans:], axis=1), 
-                fmt='o', markersize=4, lw=0.4, color='black', label='no gliotrasmission')
-		ax2.errorbar(rate_in/Hz, np.mean(syn_mon.U_0[:N_syn,trans:], axis=1), np.std(syn_mon.U_0[:N_syn,trans:], axis=1), 
-                fmt='o', markersize=4, lw=0.4, color='C6', label='closed-loop')
-		ax2.errorbar(rate_in/Hz, np.mean(syn_mon.U_0[N_syn:2*N_syn,trans:], axis=1), np.std(syn_mon.U_0[N_syn:2*N_syn,trans:], axis=1), 
-                fmt='o', markersize=4, lw=0.4, color='C2', label='open-loop')
-		ax2.set_ylabel(r'$\langle U_0 \rangle$')
-		ax2.grid(linestyle='dotted')
-		ax2.set_xscale('log')
-		ax2.set_xlabel(r'$\nu_{in}$ (Hz)')
-		ax2.legend()
+		# ax2.errorbar(rate_in/Hz, np.mean(syn_mon.U_0[2*N_syn:,trans:], axis=1), np.std(syn_mon.U_0[2*N_syn:,trans:], axis=1), 
+        #         fmt='o', markersize=4, lw=0.4, color='black', label='no gliotrasmission')
+		# ax2.errorbar(rate_in/Hz, np.mean(syn_mon.U_0[:N_syn,trans:], axis=1), np.std(syn_mon.U_0[:N_syn,trans:], axis=1), 
+        #         fmt='o', markersize=4, lw=0.4, color='C6', label='closed-loop')
+		# ax2.errorbar(rate_in/Hz, np.mean(syn_mon.U_0[N_syn:2*N_syn,trans:], axis=1), np.std(syn_mon.U_0[N_syn:2*N_syn,trans:], axis=1), 
+        #         fmt='o', markersize=4, lw=0.4, color='C2', label='open-loop')
+		# ax2.set_ylabel(r'$\langle U_0 \rangle$')
+		# ax2.grid(linestyle='dotted')
+		# ax2.set_xscale('log')
+		# ax2.set_xlabel(r'$\nu_{in}$ (Hz)')
+		# ax2.legend()
 
-		fig3, ax3 = plt.subplots(nrows=1, ncols=1,
-								num='Synaptic variable in r_s modulation')
+		# fig3, ax3 = plt.subplots(nrows=1, ncols=1,
+		# 						num='Synaptic variable in r_s modulation')
 
-		ax3.plot(syn_mon.t[trans:]/second, syn_mon.Gamma_S[5,trans:], 
-				 label=r'$\nu_{in}$='+f'{rate_in[5]/Hz:.4f} Hz,'+r' $\langle Y_S \rangle$='+f'{syn_mon.Y_S[5,trans:].mean()/umolar:.2f} uM')
-		ax3.plot(syn_mon.t[trans:]/second, syn_mon.Gamma_S[70,trans:], 
-				 label=r'$\nu_{in}$='+f'{rate_in[70]/Hz:.4f} Hz, 'r' $\langle Y_S \rangle$='+f'{syn_mon.Y_S[70,trans:].mean()/umolar:.2f} uM')
-		ax3.plot(syn_mon.t[trans:]/second, syn_mon.Gamma_S[100,trans:], 
-				 label=r'$\nu_{in}$='+f'{rate_in[100]/Hz:.4f} Hz, 'r' $\langle Y_S \rangle$='+f'{syn_mon.Y_S[100,trans:].mean()/umolar:.2f} uM')
-		ax3.grid(linestyle='dotted')
-		ax3.set_ylabel(r'$\Gamma_S$')
-		ax3.set_xlabel('time (second)')
-		ax3.legend()
+		# ax3.plot(syn_mon.t[trans:]/second, syn_mon.Gamma_S[5,trans:], 
+		# 		 label=r'$\nu_{in}$='+f'{rate_in[5]/Hz:.4f} Hz,'+r' $\langle Y_S \rangle$='+f'{syn_mon.Y_S[5,trans:].mean()/umolar:.2f} uM')
+		# ax3.plot(syn_mon.t[trans:]/second, syn_mon.Gamma_S[70,trans:], 
+		# 		 label=r'$\nu_{in}$='+f'{rate_in[70]/Hz:.4f} Hz, 'r' $\langle Y_S \rangle$='+f'{syn_mon.Y_S[70,trans:].mean()/umolar:.2f} uM')
+		# ax3.plot(syn_mon.t[trans:]/second, syn_mon.Gamma_S[100,trans:], 
+		# 		 label=r'$\nu_{in}$='+f'{rate_in[100]/Hz:.4f} Hz, 'r' $\langle Y_S \rangle$='+f'{syn_mon.Y_S[100,trans:].mean()/umolar:.2f} uM')
+		# ax3.grid(linestyle='dotted')
+		# ax3.set_ylabel(r'$\Gamma_S$')
+		# ax3.set_xlabel('time (second)')
+		# ax3.legend()
+		plt.rc('font', size=13)
+		plt.rc('legend', fontsize=10)
+		fig4 = plt.figure(figsize=(14,8),num=f"Astrocite dynamics - no J_ext", tight_layout=True)
 
-		fig4 = plt.figure(figsize=(13,7),num=f"Astrocite dynamics - no J_ext")
-
-		gs = fig1.add_gridspec(3,3)
+		gs = fig4.add_gridspec(3,3)
 		for i, i_rate in zip(range(3),[5,35,70]):
 			ax4_1 = fig4.add_subplot(gs[0, i])
-			ax4_2 = fig4.add_subplot(gs[1, i])
-			ax4_3 = fig4.add_subplot(gs[2, i])
+			ax4_2 = fig4.add_subplot(gs[1, i],sharex=ax4_1)
+			ax4_3 = fig4.add_subplot(gs[2, i],sharex=ax4_1)
 
 			ax4_1.set_title(r'$\nu_{in}$='+f'{rate_in[i_rate]/Hz:.4f} Hz')
 			ax4_1.plot(astro_var.t[:]/second, astro_var.Gamma_A[i], color='C7')
-			ax4_1.set_ylabel(r'$\Gamma_A$')
+			if i==0 : ax4_1.set_ylabel(r'$\Gamma_A$')
 			ax4_1.grid(linestyle='dotted')
 
 			ax4_2.plot(astro_var.t[:]/second, astro_var.I[i]/umolar, color='C0')
-			ax4_2.set_ylabel(r'I ($\mu$M)')
+			if i==0 : ax4_2.set_ylabel(r'I ($\mu$M)')
 			ax4_2.grid(linestyle='dotted')
 
 			ax4_3.plot(astro_var.t[:]/second, astro_var.C[i]/umolar, color='C3')
-			ax4_3.set_ylabel(r'C ($\mu$M)')
+			if i==0 : ax4_3.set_ylabel(r'C ($\mu$M)')
 			ax4_3.axhline(C_Theta/umolar,0,duration/second, ls='dashed', color='black')
 			ax4_3.grid(linestyle='dotted')
-			ax4_3.set_xlabel('time (ms)')
+			ax4_3.set_xlabel('time (s)')
 
-		fig5, ax5 = plt.subplots(nrows=1, ncols=1, 
-								num='Charateristic curve nu_A vs nu_S')
-		#GRE event rate (count/duration)
-		GRE_rates = []
-		for ii in range(N_syn):
-			GRE_rate = len(astro_mon.t[astro_mon.i==ii])/duration
-			GRE_rates.append(GRE_rate)
+		# fig5, ax5 = plt.subplots(nrows=1, ncols=1, 
+		# 						num='Charateristic curve nu_A vs nu_S')
+		# #GRE event rate (count/duration)
+		# GRE_rates = []
+		# for ii in range(N_syn):
+		# 	GRE_rate = len(astro_mon.t[astro_mon.i==ii])/duration
+		# 	GRE_rates.append(GRE_rate)
 
-		ax5.plot(rate_in/Hz, GRE_rates/Hz, color='C1')
-		ax5.set_xscale('log')
-		ax5.set_xlabel(r'$\nu_S$ (Hz)')
-		ax5.set_ylabel(r'$\nu_A$ (Hz)')
-		ax5.grid(linestyle='dotted')
+		# ax5.plot(rate_in/Hz, GRE_rates/Hz, color='C1')
+		# ax5.set_xscale('log')
+		# ax5.set_xlabel(r'$\nu_S$ (Hz)')
+		# ax5.set_ylabel(r'$\nu_A$ (Hz)')
+		# ax5.grid(linestyle='dotted')
 
-		fig6, ax6 = plt.subplots(nrows=1, ncols=1,
-								num='Immages for thesi')
-		r_mean, r_error = mean_error(syn_mon.r_S[2*N_syn:,trans:])
+		# fig6, ax6 = plt.subplots(nrows=1, ncols=1,
+		# 						num='Immages for thesi')
+		# r_mean, r_error = mean_error(syn_mon.r_S[2*N_syn:,trans:])
 
-		ax6.errorbar(rate_in/Hz, r_mean, r_error, 
-                fmt='o', markersize=4, lw=1, color='black', alpha=0.8, barsabove=False, label='simulation')
+		# ax6.errorbar(rate_in/Hz, r_mean, r_error, 
+        #         fmt='o', markersize=4, lw=1, color='black', alpha=0.8, barsabove=False, label='simulation')
 		
-		nu_S_app, u_S_app, x_S_app = STP_mean_field(u_0=U_0__star)
-		ax6.plot(nu_S_app/Hz, u_S_app*x_S_app, color='k', label='mean field approximation')
-		ax6.set_ylabel(r'$\langle r_S \rangle$')
-		ax6.set_xscale('log')
-		ax6.set_xlabel(r'$\nu_{S}$ (Hz)')
-		ax6.legend()
-		ax6.grid(linestyle='dotted')
+		# nu_S_app, u_S_app, x_S_app = STP_mean_field(u_0=U_0__star)
+		# ax6.plot(nu_S_app/Hz, u_S_app*x_S_app, color='k', label='mean field approximation')
+		# ax6.set_ylabel(r'$\langle r_S \rangle$')
+		# ax6.set_xscale('log')
+		# ax6.set_xlabel(r'$\nu_{S}$ (Hz)')
+		# ax6.legend()
+		# ax6.grid(linestyle='dotted')
 
-		fig7, ax7 = plt.subplots(nrows=1, ncols=1, num='Average release probability vs incoming presyn AP -bif')
+		# fig7, ax7 = plt.subplots(nrows=1, ncols=1, num='Average release probability vs incoming presyn AP -bif')
 
-		ax7.errorbar(rate_in/Hz, np.mean(syn_mon.r_S[2*N_syn:,trans:], axis=1), np.std(syn_mon.r_S[2*N_syn:,trans:], axis=1), 
-                fmt='o', markersize=4, lw=0.4, color='black', label='STP')
-		ax7.errorbar(rate_in/Hz, np.mean(syn_mon.r_S[:N_syn,trans:], axis=1), np.std(syn_mon.r_S[:N_syn,trans:], axis=1), 
-                fmt='o', markersize=4, lw=0.4, color='C6', label='Tripartite Synapses')
+		# ax7.errorbar(rate_in/Hz, np.mean(syn_mon.r_S[2*N_syn:,trans:], axis=1), np.std(syn_mon.r_S[2*N_syn:,trans:], axis=1), 
+        #         fmt='o', markersize=4, lw=0.4, color='black', label='STP')
+		# ax7.errorbar(rate_in/Hz, np.mean(syn_mon.r_S[:N_syn,trans:], axis=1), np.std(syn_mon.r_S[:N_syn,trans:], axis=1), 
+        #         fmt='o', markersize=4, lw=0.4, color='C6', label='Tripartite Synapses')
 		
-		ax7.set_ylabel(r'$\langle r_S \rangle$')
-		ax7.set_xlabel(r'$\nu_S$ (Hz)')
-		ax7.set_xscale('log')
-		ax7.legend()
-		ax7.grid(linestyle='dotted')
+		# ax7.set_ylabel(r'$\langle r_S \rangle$')
+		# ax7.set_xlabel(r'$\nu_S$ (Hz)')
+		# ax7.set_xscale('log')
+		# ax7.legend()
+		# ax7.grid(linestyle='dotted')
 
 	device.delete()
 	plt.show()

@@ -46,7 +46,7 @@ s = 1.00
 # g = 5: recurrent balance
 # g < 5: inhibitory prevails
 # g > 5: excitatory prevails 
-g = 0.25 
+g = 5.0 
 p_e = 0.05  
 
 
