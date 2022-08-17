@@ -152,6 +152,20 @@ def chi_square_test(fun, val, std):
 	chi_square = chi_e.sum()
 	return chi_square
 
+def take_rs(ni):
+	"""
+	Take only r_s at action potential arrival
+	"""
+	spk_index = np.in1d(synapse_mon.t, pre_mon.t[pre_mon.i == ni])
+
+	nspikes = np.sum(spk_index)
+
+	x_S_spike = synapse_mon.x_S[ni][spk_index]
+	u_S_spike = synapse_mon.u_S[ni][spk_index]
+	
+	r_S_take = x_S_spike*u_S_spike/(1-u_S_spike)
+	return r_S_take
+	
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='TM model, approximation and simulation')
@@ -172,7 +186,7 @@ if __name__ == "__main__":
 
 	## TIME PARAMETERS ##############################################################
 	defaultclock.dt = 1*ms
-	duration = 520*second
+	duration = 200*second
 	# seed(28371)  # to get identical figures for repeated runs
 	#################################################################################
 
@@ -195,8 +209,8 @@ if __name__ == "__main__":
 
 	N_syn = 25
 	# rate_in = [args.r for i in range(N_syn)]*Hz
-	rate_in = np.logspace(-1,2,N_syn)*Hz
-	pre_neurons = PoissonGroup(N_syn, rates=rate_in)
+	rate_in = np.logspace(-1,2,N_syn)*Hz #np.array([4 for i in range(N_syn)])*Hz 
+	pre_neurons = PoissonGroup(N_syn, rates=rate_in, dt=0.05*ms)
 	post_neurons = NeuronGroup(N_syn, model="")
 
 	synapses = Synapses(pre_neurons, post_neurons, model=syn_model, on_pre=action, method='linear')
@@ -208,17 +222,31 @@ if __name__ == "__main__":
 	run(duration, report='text')
 
 	trans = 20000   #trans*dt=300000*1*ms=300s
+	trans = int(50*second/defaultclock.dt)
+	
+	# print(f'{rate_in[0]}; r_S={take_rs(0).shape}')
+	# print(f'{rate_in[10]}; r_S={take_rs(10).shape}')
+	# print(f'{rate_in[20]}; r_S={take_rs(20).shape}')
+
+	# name = f"Data_STP"
+	# makedir.smart_makedir(name)
+	# np.save(f'{name}/rate_in', rate_in)
+	# for ni in range(N_syn):
+	# 	np.save(f'{name}/r_S_{ni}', take_rs(ni))
+
 
 	## SAVE VARIABLE ###################################################################################
-	name = f"Data"
-	makedir.smart_makedir(name, trial=True)
-	trial_index = [int(trl.split('-')[-1]) for trl in os.listdir(name)]
-	trial_free = max(trial_index)
+	# name = f"Data_STP"
+	# makedir.smart_makedir(name, trial=True)
+	# trial_index = [int(trl.split('-')[-1]) for trl in os.listdir(name)]
+	# trial_free = max(trial_index)
 
-	np.save(f'{name}'+f'/trial-{trial_free}/duration', duration)
-	np.save(f'{name}'+f'/trial-{trial_free}/rate_in', rate_in)
-	np.save(f'{name}'+f'/trial-{trial_free}/N', N_syn)
-	np.save(f'{name}'+f'/trial-{trial_free}/r_S', synapse_mon.r_S[:,-int(duration/defaultclock.dt)//3:])
+	# np.save(f'{name}'+f'/trial-{trial_free}/duration', duration)
+	# np.save(f'{name}'+f'/trial-{trial_free}/rate_in', rate_in)
+	# np.save(f'{name}'+f'/trial-{trial_free}/N', N_syn)
+	# # np.save(f'{name}'+f'/trial-{trial_free}/r_S', synapse_mon.r_S[:,-int(duration/defaultclock.dt)//3:])
+	# np.save(f'{name}'+f'/trial-{trial_free}/r_S', synapse_mon.r_S[:,trans:])
+
 	####################################################################################################
 
 	## ERROR BLOCKING
@@ -294,32 +322,32 @@ if __name__ == "__main__":
 	if args.p:
 		plt.rc('font', size=13)
 		plt.rc('legend', fontsize=10)
-		# fig1, ax1 = plt.subplots(nrows=2, ncols=1, figsize=(10,6.5), sharex=True, num='TM model, synaptic varibles')
-		# ni=0
-		# spk_index = np.in1d(synapse_mon.t, pre_mon.t[pre_mon.i == ni])
+		fig1, ax1 = plt.subplots(nrows=2, ncols=1, figsize=(10,6.5), sharex=True, num='TM model, synaptic varibles')
+		ni=0
+		spk_index = np.in1d(synapse_mon.t, pre_mon.t[pre_mon.i == ni])
 
-		# # Super-impose reconstructed solutions
-		# time = synapse_mon.t  # time vector
-		# tspk = Quantity(synapse_mon.t, copy=True)  # Spike times
-		# for ts in pre_mon.t[pre_mon.i == ni]:
-		# 	tspk[time >= ts] = ts
-		# ax1[0].plot(synapse_mon.t/second, 1 + (synapse_mon.x_S[0]-1)*exp(-(time-tspk)*Omega_d),
-		# 		'-', color='C4', label=r'$x_S$')
-		# ax1[0].plot(synapse_mon.t/second, synapse_mon.u_S[0]*exp(-(time-tspk)*Omega_f),
-		# 		'-', color='C1', label=r'$u_S$')
-		# ax1[0].set_ylabel(r'$u_S$, $x_S$')
-		# ax1[0].grid(linestyle='dotted')
-		# ax1[0].legend(loc='upper right')
+		# Super-impose reconstructed solutions
+		time = synapse_mon.t  # time vector
+		tspk = Quantity(synapse_mon.t, copy=True)  # Spike times
+		for ts in pre_mon.t[pre_mon.i == ni]:
+			tspk[time >= ts] = ts
+		ax1[0].plot(synapse_mon.t/second, 1 + (synapse_mon.x_S[0]-1)*exp(-(time-tspk)*Omega_d),
+				'-', color='C4', label=r'$x_S$')
+		ax1[0].plot(synapse_mon.t/second, synapse_mon.u_S[0]*exp(-(time-tspk)*Omega_f),
+				'-', color='C1', label=r'$u_S$')
+		ax1[0].set_ylabel(r'$u_S$, $x_S$')
+		ax1[0].grid(linestyle='dotted')
+		ax1[0].legend(loc='upper right')
 
-		# nspikes = np.sum(spk_index)
+		nspikes = np.sum(spk_index)
 
-		# x_S_spike = synapse_mon.x_S[0][spk_index]
-		# u_S_spike = synapse_mon.u_S[0][spk_index]
-		# ax1[1].vlines(synapse_mon.t[spk_index]/second, np.zeros(nspikes),
-        # 				x_S_spike*u_S_spike/(1-u_S_spike), color='C8')
-		# ax1[1].set_ylabel(r'$r_S$')
-		# ax1[1].set_xlabel('time '+r'($\rm{s}$)')
-		# ax1[1].grid(linestyle='dotted')
+		x_S_spike = synapse_mon.x_S[0][spk_index]
+		u_S_spike = synapse_mon.u_S[0][spk_index]
+		ax1[1].vlines(synapse_mon.t[spk_index]/second, np.zeros(nspikes),
+        				x_S_spike*u_S_spike/(1-u_S_spike), color='C8')
+		ax1[1].set_ylabel(r'$r_S$')
+		ax1[1].set_xlabel('time '+r'($\rm{s}$)')
+		ax1[1].grid(linestyle='dotted')
 
 		fig2, ax2 = plt.subplots(num='STP approx vs data', tight_layout=True)
 		ax2.errorbar(rate_in/Hz, np.mean(synapse_mon.r_S[:,trans:], axis=1), np.std(synapse_mon.r_S[:,trans:],ddof=1, axis=1),

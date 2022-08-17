@@ -20,6 +20,7 @@ if __name__ == '__main__':
     parser.add_argument("rate_in", type=float, help="value of external input rate expressed in Hz")
     parser.add_argument("-linear", action='store_false', help="""Square grid for neurons and astrocyte, if -linear there is 
                                                              no spatial arrangement""")
+    parser.add_argument("-trial", type=int, help="number of trial, defual=0", default=0)
     parser.add_argument("-cp", action='store_true', help="Connectivity plots, default=False")
     parser.add_argument("-p", action="store_true", help="Show all the plots, Default=False")
     args = parser.parse_args()
@@ -74,13 +75,13 @@ if __name__ == '__main__':
     d_5 = 0.08*umolar            # Ca^2+ activation dissociation constant
     #  IP_3 production
     # Agonist-dependent IP_3 production
-    O_beta = 0.5*umolar/second   # Maximal rate of IP_3 production by PLCbeta
+    O_beta = 3.2*umolar/second   # Maximal rate of IP_3 production by PLCbeta
     O_N = 0.3/umolar/second      # Agonist binding rate
     Omega_N = 0.5/second         # Maximal inactivation rate
     K_KC = 0.5*umolar            # Ca^2+ affinity of PKC
     zeta = 10                    # Maximal reduction of receptor affinity by PKC
     # Endogenous IP3 production
-    O_delta = 1.2*umolar/second  # Maximal rate of IP_3 production by PLCdelta
+    O_delta = 0.6*umolar/second  # Maximal rate of IP_3 production by PLCdelta
     kappa_delta = 1.5*umolar     # Inhibition constant of PLC_delta by IP_3
     K_delta = 0.1*umolar         # Ca^2+ affinity of PLCdelta
     # IP_3 degradation
@@ -130,7 +131,7 @@ if __name__ == '__main__':
     x : 1 (constant)
     y : 1 (constant)
     """
-    neurons = NeuronGroup(N_e+N_i, model=neuron_eqs, method='euler',
+    neurons = NeuronGroup(N_e+N_i, model=neuron_eqs, method='rk2',
                         threshold='v>V_th', reset='v=V_r', refractory='tau_r')
    
     exc_neurons = neurons[:N_e]
@@ -364,7 +365,7 @@ if __name__ == '__main__':
         else: 
             grid_name='nogrid'
         
-        name = f'Neuro_Glia_network/NG_network_rate_in{rate_in/Hz:.1f}_ph_'+grid_name+f'_g{g}_s{s}_we_{w_e/nS:.2f}_running_F_{O_beta/(umolar/second):.1f}_{O_delta/(umolar/second):.1f}_fixed_0.05/time_windows_{enu+1}'
+        name = f'Neuro_Glia_network/NG_network_rate_in{rate_in/Hz:.1f}_ph_'+grid_name+f'_g{g}_s{s}_we_{w_e/nS:.2f}_running_F_{O_beta/(umolar/second):.1f}_{O_delta/(umolar/second):.1f}_fixed_0.05_h0.5/trial_{args.trial}/time_windows_{enu+1}'
         makedir.smart_makedir(name)
 
         # Duration

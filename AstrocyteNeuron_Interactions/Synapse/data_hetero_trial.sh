@@ -1,5 +1,5 @@
 #!/bin/sh
-for i in 1 2 3 4 5 6 7 8 9 10  
+for i in {1..30} 
 	do
-		python hetero_connection.py  
+		python hetero_connection_vol2.py  
 done

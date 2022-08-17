@@ -125,13 +125,13 @@ if __name__ == "__main__":
 	d_5 = 0.08*umolar            # Ca^2+ activation dissociation constant
 	#  IP_3 production
 	# Agonist-dependent IP_3 production
-	O_beta = 0.5*umolar/second   # Maximal rate of IP_3 production by PLCbeta
+	O_beta = 2.0*umolar/second   # Maximal rate of IP_3 production by PLCbeta
 	O_N = 0.3/umolar/second      # Agonist binding rate
 	Omega_N = 0.5/second         # Maximal inactivation rate
 	K_KC = 0.5*umolar            # Ca^2+ affinity of PKC
 	zeta = 10                    # Maximal reduction of receptor affinity by PKC
 	# Endogenous IP3 production
-	O_delta = 1.2*umolar/second  # Maximal rate of IP_3 production by PLCdelta
+	O_delta = 0.6*umolar/second  # Maximal rate of IP_3 production by PLCdelta
 	kappa_delta = 1.5*umolar     # Inhibition constant of PLC_delta by IP_3
 	K_delta = 0.1*umolar         # Ca^2+ affinity of PLCdelta
 	# IP_3 degradation
@@ -202,7 +202,7 @@ if __name__ == "__main__":
 	# Y_S_function = TimedArray(y_s_values, dt=duration)
 	N_a = 500
 	astrocyte = NeuronGroup(N_a, model=astro_eqs, method='rk4')
-	astrocyte.Y_S = np.linspace(8,20,N_a)*umolar
+	astrocyte.Y_S = np.linspace(0,20,N_a)*umolar
 	astrocyte.h = 0.9
 	astrocyte.I = 0.01*umolar
 	astrocyte.C = 0.01*umolar
@@ -231,16 +231,23 @@ if __name__ == "__main__":
 
 
 	## Plots ##########################################################################
+	plt.rc('font', size=13)
+	plt.rc('legend', fontsize=10)
+	fig1, ax1 = plt.subplots(nrows=1, ncols=2, figsize=(12,5), num='Calcium stady state w.r.t. Y_S, network parameters', tight_layout=True)
 
-	fig1, ax1 = plt.subplots(nrows=1, ncols=1, num='Calcium stady state w.r.t. Y_S, network parameters')
+	for i in [10, 30 , 50, 100, 150, 250]:
+		ax1[0].plot(astro_mon.t[:]/second, astro_mon.C[i]/umolar, label = r'$Y_S$ ='+f' {astrocyte.Y_S[i]/umolar:.2f} uM')
+	ax1[0].axhline(C_Theta/umolar,0,duration/second, ls='dashed', color='black')
+	ax1[0].set_ylabel(r'C ($\mu M$)')
+	ax1[0].set_xlabel('time (s)')
+	ax1[0].legend()
+	ax1[0].grid(linestyle='dotted')
 
-	for i in range(5):
-		ax1.plot(astro_mon.t[:]/second, astro_mon.C[i]/umolar, label = r'$Y_S$ ='+f' {astrocyte.Y_S[i]/umolar:.2f} uM')
-	ax1.axhline(C_Theta/umolar,0,duration/second, ls='dashed', color='black')
-	ax1.set_ylabel(r'C ($\mu M$)')
-	ax1.set_xlabel('time (s)')
-	ax1.legend()
-	ax1.grid(linestyle='dotted')
+	ax1[1].plot(nu_S/Hz, Y_S_daniele/umolar, color='C1')
+	ax1[1].set_ylabel(r'$\langle \bar{Y_S}\rangle$ ($\mu M$)')
+	ax1[1].set_xlabel(r'$\nu_S$ ($\rm{spk/s}$)')
+	ax1[1].grid(linestyle='dotted')
+	
 
 	plt.figure()
 	for y, bif in zip(par_list, Bif_list):

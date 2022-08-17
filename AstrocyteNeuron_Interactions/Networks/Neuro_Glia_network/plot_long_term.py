@@ -157,6 +157,7 @@ if __name__ == '__main__':
         name = args.file+f'/time_windows_{w}'
         I_exc = np.load(f'{name}/neurons_mon.I_exc.npy')
         I_inh = np.load(f'{name}/neurons_mon.I_inh.npy')
+        I_ext = np.load(f'{name}/neurons_mon.I_syn_ext.npy').mean(axis=0)
 
         t_plot = t_window + duration*i_time
         
@@ -166,6 +167,7 @@ if __name__ == '__main__':
         I_inh = I_inh.mean(axis=0)
 
         ax1[1].plot(t_plot, I_exc/pA, color='C3', label='I_exc')
+        # ax1[0].plot(t_plot, I_ext/pA, color='C0')
         
         if w==1:
             print('baseline for current')
@@ -217,6 +219,7 @@ if __name__ == '__main__':
             #     plt.yscale('log')
             #     plt.legend()
             print(f'{t} second: E/I = {EI_ratio:.5f} +- {EI_ratio_err:.5f}')
+            
     print()
     #################################################################################################
 

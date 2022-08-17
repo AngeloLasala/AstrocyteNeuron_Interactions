@@ -77,7 +77,7 @@ def normality_test(x):
 	return shapiro_test.pvalue
 
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser(description='Bièartite sinapses filter characteristic')
+	parser = argparse.ArgumentParser(description='Bipartite sinapses filter characteristic')
 	parser.add_argument('file', type=str, help="file's name of network in 'Synapses' folder")
 	args = parser.parse_args()
 	name = args.file
@@ -98,7 +98,7 @@ if __name__ == '__main__':
 	r_S_mean_trl = list()
 	r_S_std_trl = list()
 	r_S_dist = ()
-	for trl in range(1,60):
+	for trl in range(1,30):
 		# rate array
 		rate_in = np.load(f'{name}'+f'/trial-{trl}/rate_in.npy')
 		duration = np.load(f'{name}'+f'/trial-{trl}/duration.npy')
@@ -107,7 +107,7 @@ if __name__ == '__main__':
 		# time array
 		duration = 520*second
 		dt_syn = 1*ms
-		t_relax = 20*second
+		t_relax = 50*second
 
 		#variable array
 		r_S = np.load(f'{name}'+f'/trial-{trl}/r_S.npy')

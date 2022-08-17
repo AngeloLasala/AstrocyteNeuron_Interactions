@@ -62,6 +62,7 @@ def mean_error(values):
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Tripartite synapses')
 	parser.add_argument('modulation', type=str, help='type of astromodulation: A or F')
+	parser.add_argument("-trial", type=int, help="number of trial, defual=0", default=0)
 	parser.add_argument('-p', action='store_true', help="show paramount plots, default=False")
 	args = parser.parse_args()
 
@@ -231,6 +232,18 @@ if __name__ == "__main__":
 	run(duration, report='text')
 	trans = 50000   #trans*dt=15000*0.1*ms=15s
 
+	## GUESS FUNCTION
+	GRE_rates = []
+	for ii in range(N_syn):
+		GRE_rate = len(astro_mon.t[astro_mon.i==ii])/duration
+		GRE_rates.append(GRE_rate)
+	GRE_rates = np.array(GRE_rates)
+
+	name = f'Tripartite_synapses/Biologocal_function/modulation{O_beta/(umolar/second):.1f}_{O_delta/(umolar/second):.1f}/trial-{args.trial}'
+	makedir.smart_makedir(name)
+	np.save(f'{name}'+'/nu_a', GRE_rates)
+
+
 	## Plots #########################################################################################
 	if args.p:
 		# fig1 = plt.figure(figsize=(13,7), num='Average release probability vs incoming presyn AP')
@@ -320,19 +333,15 @@ if __name__ == "__main__":
 			ax4_3.grid(linestyle='dotted')
 			ax4_3.set_xlabel('time (s)')
 
-		# fig5, ax5 = plt.subplots(nrows=1, ncols=1, 
-		# 						num='Charateristic curve nu_A vs nu_S')
-		# #GRE event rate (count/duration)
-		# GRE_rates = []
-		# for ii in range(N_syn):
-		# 	GRE_rate = len(astro_mon.t[astro_mon.i==ii])/duration
-		# 	GRE_rates.append(GRE_rate)
-
-		# ax5.plot(rate_in/Hz, GRE_rates/Hz, color='C1')
-		# ax5.set_xscale('log')
-		# ax5.set_xlabel(r'$\nu_S$ (Hz)')
-		# ax5.set_ylabel(r'$\nu_A$ (Hz)')
-		# ax5.grid(linestyle='dotted')
+		fig5, ax5 = plt.subplots(nrows=1, ncols=1, 
+								num='Charateristic curve nu_A vs nu_S')
+		#GRE event rate (count/duration)
+	
+		ax5.plot(rate_in/Hz, GRE_rates/Hz, color='C1')
+		ax5.set_xscale('log')
+		ax5.set_xlabel(r'$\nu_S$ (Hz)')
+		ax5.set_ylabel(r'$\nu_A$ (Hz)')
+		ax5.grid(linestyle='dotted')
 
 		# fig6, ax6 = plt.subplots(nrows=1, ncols=1,
 		# 						num='Immages for thesi')

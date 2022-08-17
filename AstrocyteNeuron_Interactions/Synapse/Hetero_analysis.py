@@ -46,6 +46,7 @@ def GRE_mean_field(nu_A_array=[], nu_A_start=-5, nu_A_stop=1, nu_A_number=200, s
 	# print(O_G)
 	x_A = Omega_A / (Omega_d + U_A*nu_A)
 	Gamma_S = J_S*U_A*Omega_A*nu_A / (Omega_A*Omega_G + U_A*nu_A*(Omega_G+J_S*Omega_A))
+	# Gamma_S = J_S*U_A*x_A / (Omega_G + (J_S*U_A*x_A*nu_A))
 	u_0 = U_0__star + (alpha - U_0__star)*Gamma_S
 
 	# print(J_S*x_A*nu_A)
@@ -80,7 +81,7 @@ if __name__ == '__main__':
 	
 	u_0_mean_trl = list()
 	u_0_std_trl = list()
-	for trl in range(1,10):
+	for trl in range(1,27):
 		rate_in = np.load(f'{name}'+f'/trial-{trl}/rate_in.npy')
 		duration = np.load(f'{name}'+f'/trial-{trl}/duration.npy')
 		N = np.load(f'{name}'+f'/trial-{trl}/N.npy')

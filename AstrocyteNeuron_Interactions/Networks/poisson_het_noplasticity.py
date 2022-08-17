@@ -58,7 +58,7 @@ fr_costant_3 = monitor_spk.count[3]/duration
 fr_costant_4 = monitor_spk.count[4]/duration
 
 ## NETWORK I_ext=Poisson ##########################################################################
-N_e = 300  # numer over wich compute mean adn std for each rate input
+N_e = 50  # numer over wich compute mean adn std for each rate input
 
 # Poisson input rates
 N_poisson = 160     #how many inputs receive each neuron (rate_in = N_poisson*rate_poisson)
@@ -105,17 +105,19 @@ firing_rates = np.array(firing_rates)
 ## PLOTS ###########################################################################################
 # plt.figure()
 # plt.scatter(monitor_spk.t[:], monitor_spk.i[:], marker='|')
-fig1,ax1 = plt.subplots(nrows=1, ncols=1, sharex=True,
+plt.rc('font', size=13)
+plt.rc('legend', fontsize=10)
+fig1,ax1 = plt.subplots(nrows=1, ncols=1, sharex=True, tight_layout=True,
                          num=f'Characteristic curve rate_out vs rate_in, N_poisson={N_poisson}')
-ax1.axhline(fr_costant_0/Hz, ls='dashed', color='black', label=r'$I_{ex}$'+f' {I_ex/pA}')
-ax1.axhline(fr_costant_1/Hz, ls='dashed', color='black')
-ax1.axhline(fr_costant_2/Hz, ls='dashed', color='black')
-ax1.axhline(fr_costant_3/Hz, ls='dashed', color='black')
-ax1.axhline(fr_costant_4/Hz, ls='dashed', color='black')
-ax1.errorbar(rate_in_list, firing_rates[:,0], firing_rates[:,1]/((N_e-1)**0.5),
-             fmt='o', markersize=2, lw=0.4, color='C9')
-ax1.set_xlabel(r'$\nu_{Poisson}$ $(Hz)$ ')
-ax1.set_ylabel(r'$\nu_{out}$ $(Hz)$ ')
+ax1.axhline(fr_costant_0/Hz, ls='dashed', color='C0', label=r'$I_{ext} =$'+f' {I_ex[0]/pA}'+ r' ($\rm{pA}$)')
+ax1.axhline(fr_costant_1/Hz, ls='dashed', color='C1',label=r'$I_{ext} =$'+f' {I_ex[1]/pA}'+ r' ($\rm{pA}$)')
+ax1.axhline(fr_costant_2/Hz, ls='dashed', color='C2',label=r'$I_{ext} =$'+f' {I_ex[2]/pA}'+ r' ($\rm{pA}$)')
+ax1.axhline(fr_costant_3/Hz, ls='dashed', color='C3',label=r'$I_{ext} =$'+f' {I_ex[3]/pA}'+ r' ($\rm{pA}$)')
+ax1.axhline(fr_costant_4/Hz, ls='dashed', color='C4',label=r'$I_{ext} =$'+f' {I_ex[4]/pA}'+ r' ($\rm{pA}$)')
+ax1.errorbar(rate_in_list*N_poisson/kHz, firing_rates[:,0], firing_rates[:,1]/(np.sqrt(N_e-1)),
+             fmt='o', markersize=3, lw=0.6, color='k')
+ax1.set_xlabel(r'$\nu_{ext}$ $(\rm{spk/ms})$ ')
+ax1.set_ylabel(r'$\nu_{out}$ $(\rm{spk/s})$ ')
 ax1.grid(linestyle='dotted')
 ax1.legend()
 
