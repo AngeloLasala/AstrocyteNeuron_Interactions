@@ -438,8 +438,8 @@ if __name__ == '__main__':
         
     ############################################################################################
     ## PLOTS ######################################################################################
-    plt.rc('font', size=13)
-    plt.rc('legend', fontsize=10)
+    plt.rc('font', size=14)
+    plt.rc('legend', fontsize=11)
     fig1, ax1 = plt.subplots(nrows=3, ncols=1, sharex=True, gridspec_kw={'height_ratios': [2.5,1,1]},
                             figsize=(12, 14), num=f'Raster plot')
     step = 10
@@ -465,14 +465,18 @@ if __name__ == '__main__':
 
     plt.savefig(name+f'Raster plot.png')
 
-    fig2, ax2 = plt.subplots(nrows=3, ncols=1, sharex=True, figsize=(12, 7),
+    fig2, ax2 = plt.subplots(nrows=3, ncols=1, sharex=True, figsize=(9, 5.5), tight_layout=True,
                             num='External and Recurrent current')
 
-    ax2[0].plot(mon_t[trans:]/second, I_external[:200].mean(axis=0)[trans:]/pA, color='C1', label='on Exc')
-    ax2[0].plot(mon_t[trans:]/second, I_external[200:].mean(axis=0)[trans:]/pA, color='C4', label='on Inh')
-    ax2[0].legend()
-    ax2[0].set_ylabel(r'$I_{ext}$ ($\rm{pA}$)')
-    ax2[0].grid(linestyle='dotted')
+    # ax2[0].plot(mon_t[trans:]/second, I_external[:200].mean(axis=0)[trans:]/pA, color='C1', label='on Exc')
+    # ax2[0].plot(mon_t[trans:]/second, I_external[200:].mean(axis=0)[trans:]/pA, color='C4', label='on Inh')
+    # ax2[0].legend()
+    # ax2[0].set_ylabel(r'$I_{ext}$ ($\rm{pA}$)')
+    # ax2[0].grid(linestyle='dotted')
+    ax2[0].axis('off')
+    ax2[0].errorbar(6, 0, yerr=None, xerr=0.2, fmt='o', capsize=10.0, color='C2', markersize=10)
+    ax2[0].set_ylabel('GRE')
+    ax2[0].set_ylim([-0.5,0.5])
 
     ax2[1].plot(mon_t[trans:]/second, I_exc[:200].mean(axis=0)[trans:]/pA, color='C3')
     ax2[1].set_ylabel(r'$I_{exc}^{rec}$ ($\rm{pA}$)')

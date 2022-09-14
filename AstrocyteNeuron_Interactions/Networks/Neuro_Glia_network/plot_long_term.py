@@ -145,8 +145,8 @@ if __name__ == '__main__':
 
 	## E/I recurrent currents ratio #################################################################
     #initialize fig setting
-    plt.rc('font', size=13)
-    plt.rc('legend', fontsize=10)
+    plt.rc('font', size=14)
+    plt.rc('legend', fontsize=11)
     fig1, ax1 = plt.subplots(nrows=3, ncols=1, num='EI ratio', figsize=(12,8), sharex=True, tight_layout=True)
     ax1[0].set_ylabel('E/I')
     ax1[0].grid(linestyle='dotted')

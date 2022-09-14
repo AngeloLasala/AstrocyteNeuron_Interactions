@@ -188,14 +188,34 @@ if __name__ == "__main__":
 	
 
 
-	# fig2, ax2 = plt.subplots(nrows=1,ncols=1, num='astro variable C') 
-	# for r in array_plot:
-	# 	ax2.plot(t_astro[int(t_relax/dt_astro):], C[r,int(t_relax/dt_astro):]/umolar, label=f'{rate_in[r]/Hz:.2f} (Hz)')
-	# ax2.legend()
-	# ax2.set_xlabel('time (s)')
-	# ax2.set_ylabel(r'C ($\mu M$)')
-	# ax2.grid(linestyle='dotted')
+	fig2, ax2 = plt.subplots(nrows=1,ncols=1, num='astro variable C') 
+	for r in array_plot:
+		ax2.plot(t_astro[int(t_relax/dt_astro):], C[r,int(t_relax/dt_astro):]/umolar, label=f'{rate_in[r]/Hz:.2f} (Hz)')
+	ax2.legend()
+	ax2.set_xlabel('time (s)')
+	ax2.set_ylabel(r'C ($\mu M$)')
+	ax2.grid(linestyle='dotted')
+
+	# fig4, ax4 = plt.subplots(nrows=2,ncols=1, sharex=True,
+	# 						figsize=(8,4), num='astro variable C_presentation', tight_layout=True)
+	# for r in [7]:
+	# 	ax4[0].plot(t_astro[int(t_relax/dt_astro):], I[r,int(t_relax/dt_astro):]/umolar, label=f'{rate_in[r]/Hz:.2f} (Hz)', color='C0')
+	# 	ax4[1].plot(t_astro[int(t_relax/dt_astro):], C[r,int(t_relax/dt_astro):]/umolar, label=f'{rate_in[r]/Hz:.2f} (Hz)', color='C3')
 	
+	# ax4[0].set_ylabel(r'I ($\mu M$)')
+	# ax4[0].grid(linestyle='dotted')
+
+	# ax4[1].set_xlabel('time (s)')
+	# ax4[1].set_ylabel(r'C ($\mu M$)')
+	# ax4[1].grid(linestyle='dotted')
+
+	fig4, ax4 = plt.subplots(nrows=1,ncols=1, sharex=True,
+							figsize=(8,4), num='astro variable C_presentation', tight_layout=True)
+	for r in [7]:
+		ax4.plot(t_astro[int(t_relax/dt_astro):], C[r,int(t_relax/dt_astro):]/umolar, label=f'{rate_in[r]/Hz:.2f} (Hz)', color='C3')
+	ax4.set_xlabel('time (s)')
+	ax4.set_ylabel(r'C ($\mu M$)')
+	ax4.grid(linestyle='dotted')
 
 	# fig3, ax3 = plt.subplots(nrows=1,ncols=1, num='synaptic variable Y_S') 
 	# for r in array_plot:
@@ -209,6 +229,8 @@ if __name__ == "__main__":
 	# 	plt.plot(t_syn, Gamma_S[r], c=f'C{i}')
 	# 	plt.plot()
 	# plt.legend()
+
+
 	plt.show()
 	
 

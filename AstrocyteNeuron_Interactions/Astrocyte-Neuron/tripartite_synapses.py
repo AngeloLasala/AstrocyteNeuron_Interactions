@@ -181,10 +181,10 @@ if __name__ == "__main__":
 					method='rk4')
 
 	synapses = Synapses(pre_neurons, post_neurons, model=syn_model, on_pre=action+exc, method='linear')
-	synapses.connect(i=[0,0], j=[0,1]) 
+	synapses.connect(i=[0,0], j=[0,1])
 	synapses.x_S = 1.0
 
-	astrocyte = NeuronGroup(1, model=astro_eqs, method='rk4',
+	astrocyte = NeuronGroup(1, model=astro_eqs, method='rk2',
                         threshold='C>C_Theta', refractory='C>C_Theta', reset=astro_release)
 	astrocyte.x_A = 1.0
 	astrocyte.h = 0.9
@@ -207,77 +207,83 @@ if __name__ == "__main__":
 	astro_var = StateMonitor(astrocyte, ['Y_S','Gamma_A','I','C','G_A'], record=True)
 	post_mon = StateMonitor(post_neurons, 'g_e', record=True)
 
-	net = Network(pre_neurons, synapses, astrocyte, post_neurons, ecs_astro_to_syn, 
-						pre_AP, syn_mon, astro_mon, astro_var, post_mon )		
+	net = Network(pre_neurons, synapses, astrocyte, post_neurons, ecs_astro_to_syn,
+						pre_AP, syn_mon, astro_mon, astro_var, post_mon )
 	net.store()
 
-	plt.rc('font', size=13)   
-	plt.rc('legend', fontsize=10)	
-	fig4, ax4 = plt.subplots(nrows=3, ncols=1, sharex=True, figsize=(10,5),
-							num='Facilitation whit respect to G_T' )
-	
+	plt.rc('font', size=13)
+	plt.rc('legend', fontsize=10)
+	fig4, ax4 = plt.subplots(nrows=3, ncols=1, sharex=True, figsize=(8,6),
+							num='Facilitation whit respect to G_T_presentation', tight_layout=True )
+
 	ii = 0
 	for G_T in [200,300,400]*mmolar:
 		seed(1995235)
 		ii +=1
 
-		net.restore()		
+		net.restore()
 		net.run(duration, report='text')
 
 		## Facilitation - Paired Pulse Ratio (PPR)
 		spk_position = []
 		for spk in pre_AP.t[:]/ms:
 			spk_position.append(np.where(syn_mon.t[:]/ms == spk)[0][0])
-		
+
 		r_S_noglio = syn_mon.r_S[0][spk_position]
 		r_S_glio = syn_mon.r_S[1][spk_position]
-		
+
 		PPR_noglio = r_S_noglio[1:]/r_S_noglio[:-1]
 		PPR_glio = r_S_glio[1:]/r_S_glio[:-1]
 		# print(PPR_noglio)
 		# print(PPR_glio)
 
-			
-		ax4[0].plot(syn_mon.t[:]/second, (1-syn_mon.Gamma_S[1])*U_0__star, label=r'$G_T$ = 'f'{G_T/mmolar}'+r' $\rm{mM}$')
+		if G_T/mmolar == 200.0:
+			ax4[0].plot(syn_mon.t[:]/second, (0*syn_mon.Gamma_S[1])+U_0__star, label=r'STP', color='black', alpha=0.6)
+		ax4[0].plot(syn_mon.t[:]/second, (1-syn_mon.Gamma_S[1])*U_0__star,label=r'$G_T$ = 'f'{G_T/mmolar}'+r' $\rm{mM}$')
 		ax4[0].grid(linestyle="dotted")
 		ax4[0].set_ylabel(r'$u_0$')
+		ax4[0].set_ylim([-0.016,0.629])
 		ax4[0].legend()
 
-		ax4[1].plot(syn_mon.t[:]/second, syn_mon.Y_S[0]/umolar, color='black', alpha=0.1)
+		if G_T/mmolar == 200.0:
+			ax4[1].plot(syn_mon.t[:]/second, syn_mon.Y_S[0]/umolar, color='black', alpha=0.2)
 		ax4[1].plot(syn_mon.t[:]/second, syn_mon.Y_S[1]/umolar)
 		ax4[1].set_ylabel(r'$Y_S$ ($\mu$M)')
 		ax4[1].grid(linestyle="dotted")
 
+		ax4[2].set_ylim([-0.15,3.15])
 		for t, PPR in zip(syn_mon.t[spk_position][1:]/second, PPR_noglio):
 			if PPR>1: color='C0'
 			else: color='C1'
-			ax4[2].scatter(t, 0, c=color, marker='|')
+
+			ax4[2].scatter(t, 0, c=color, marker='|', s=50)
 
 		for t, PPR in zip(syn_mon.t[spk_position][1:]/second, PPR_glio):
 			if PPR>1: color='C0'
 			else: color='C1'
-			ax4[2].scatter(t, ii, c=color, marker='|')
+			ax4[2].scatter(t, ii, c=color, marker='|', s=50)
 
-		
-		yticks = ['STP',r'$G_T$ = 200.0'+r' $\rm{mM}$', r'$G_T$ = 300.0'+r' $\rm{mM}$', r'$G_T$ = 400.0'+r' $\rm{mM}$']
+
+		yticks = ['STP',r'$G_T = 200.0$'+r' $\rm{mM}$', r'$G_T$ = 300.0'+r' $\rm{mM}$', r'$G_T$ = 400.0'+r' $\rm{mM}$']
 		ax4[2].set_xlabel('time '+r'($\rm{s}$)')
 		# ax4[2].set_ylim(yrange)
 		ax4[2].set_yticks(np.arange(len(yticks)))
 		ax4[2].set_yticklabels(yticks)
-				
+
 
 		# print(syn_mon.u_S)
 		# print(astro_mon.t[:])
-	
-				
+
+
 	## Plots #########################################################################################
 	if args.p:
-		 
+
 
 		fig1, ax1 = plt.subplots(nrows=5, ncols=1, sharex=True, figsize=(14,8), gridspec_kw={'height_ratios': [0.2,0.8,0.8,1,0.8]},
 								num= 'OPEN LOOP - Modulation of synaptic release by GRE')
 
 		ax1[0].set_title('Spikes (presynaptic)')
+		ax1[0].axis('off')
 		for spk in pre_AP.t[:]/ms:
 			ax1[0].axvline(x=spk, ymin=0.00, ymax=2.00, color='C0')
 
@@ -327,7 +333,7 @@ if __name__ == "__main__":
 		ax2[1].plot(syn_mon.t[:]/ms, syn_mon.U_0[1], color='C2')
 		ax2[1].set_ylabel(r'$u_0$')
 		ax2[1].grid(linestyle="dotted")
-		
+
 		ax2[2].plot(syn_mon.t[:]/ms, syn_mon.U_0[1], color='C2')
 		ax2[2].set_ylabel(r'$u_0$')
 		ax2[2].set_xlabel('time (ms)')
@@ -354,7 +360,7 @@ if __name__ == "__main__":
 		ax3[3].set_ylabel(r'$u_0$')
 		ax3[3].set_xlabel('time'+r' ($\rm{s}$)')
 		ax3[3].grid(linestyle="dotted")
-		
+
 		plt.show()
 
 

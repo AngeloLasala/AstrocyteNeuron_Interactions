@@ -186,8 +186,8 @@ if __name__ == "__main__":
 
 	## TIME PARAMETERS ##############################################################
 	defaultclock.dt = 1*ms
-	duration = 200*second
-	# seed(28371)  # to get identical figures for repeated runs
+	duration = 3*second
+	seed(28371)  # to get identical figures for repeated runs
 	#################################################################################
 
 	## SYNAPSES
@@ -209,8 +209,8 @@ if __name__ == "__main__":
 
 	N_syn = 25
 	# rate_in = [args.r for i in range(N_syn)]*Hz
-	rate_in = np.logspace(-1,2,N_syn)*Hz #np.array([4 for i in range(N_syn)])*Hz 
-	pre_neurons = PoissonGroup(N_syn, rates=rate_in, dt=0.05*ms)
+	rate_in = np.array([4 for i in range(N_syn)])*Hz#np.logspace(-1,2,N_syn)*Hz # 
+	pre_neurons = PoissonGroup(N_syn, rates=rate_in)
 	post_neurons = NeuronGroup(N_syn, model="")
 
 	synapses = Synapses(pre_neurons, post_neurons, model=syn_model, on_pre=action, method='linear')
@@ -324,6 +324,7 @@ if __name__ == "__main__":
 		plt.rc('legend', fontsize=10)
 		fig1, ax1 = plt.subplots(nrows=2, ncols=1, figsize=(10,6.5), sharex=True, num='TM model, synaptic varibles')
 		ni=0
+		print(pre_mon.t[pre_mon.i == ni])
 		spk_index = np.in1d(synapse_mon.t, pre_mon.t[pre_mon.i == ni])
 
 		# Super-impose reconstructed solutions
@@ -340,11 +341,10 @@ if __name__ == "__main__":
 		ax1[0].legend(loc='upper right')
 
 		nspikes = np.sum(spk_index)
-
 		x_S_spike = synapse_mon.x_S[0][spk_index]
 		u_S_spike = synapse_mon.u_S[0][spk_index]
 		ax1[1].vlines(synapse_mon.t[spk_index]/second, np.zeros(nspikes),
-        				x_S_spike*u_S_spike/(1-u_S_spike), color='C8')
+        				x_S_spike*u_S_spike/(1-u_S_spike), color='C8', linewidth=4)
 		ax1[1].set_ylabel(r'$r_S$')
 		ax1[1].set_xlabel('time '+r'($\rm{s}$)')
 		ax1[1].grid(linestyle='dotted')
